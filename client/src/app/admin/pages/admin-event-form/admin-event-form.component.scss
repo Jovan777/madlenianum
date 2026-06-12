@@ -1,0 +1,168 @@
+.event-form-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.back,
+.ghost-link {
+  color: #9b742e;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.page-hero,
+.card {
+  border: 1px solid rgba(33, 25, 15, 0.08);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 16px 40px rgba(33, 25, 15, 0.07);
+}
+
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.page-hero p {
+  margin: 0 0 0.4rem;
+  color: #9b742e;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.page-hero h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.page-hero span {
+  display: block;
+  margin-top: 0.35rem;
+  color: #7c6e59;
+}
+
+.event-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  padding: 1.4rem;
+}
+
+.card h2 {
+  margin: 0 0 1rem;
+}
+
+.form-grid,
+.nested {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.nested {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(33, 25, 15, 0.08);
+}
+
+label {
+  display: grid;
+  gap: 0.45rem;
+  color: #5d4a29;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+label.wide {
+  grid-column: 1 / -1;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid rgba(33, 25, 15, 0.14);
+  border-radius: 16px;
+  padding: 0.78rem 0.9rem;
+  background: #fffdf8;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #c7a34a;
+  box-shadow: 0 0 0 3px rgba(199, 163, 74, 0.18);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 48px;
+}
+
+.check-row input {
+  width: auto;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.primary,
+.ghost-link {
+  border-radius: 16px;
+  padding: 0.8rem 1rem;
+}
+
+.primary {
+  border: none;
+  background: #120f0b;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ghost-link {
+  background: #efe7d4;
+  color: #3a2c16;
+}
+
+.error,
+.success,
+.loading {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 18px;
+}
+
+.error {
+  background: #ffe3e3;
+  color: #8d1515;
+}
+
+.success {
+  background: #e6f6e8;
+  color: #21692b;
+}
+
+.loading {
+  color: #7c6e59;
+}
+
+@media (max-width: 900px) {
+  .form-grid,
+  .nested {
+    grid-template-columns: 1fr;
+  }
+}

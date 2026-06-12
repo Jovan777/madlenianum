@@ -1,0 +1,8 @@
+<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+
+<section class="static-page" *ngIf="!isLoading() && page() as item">
+  <p class="eyebrow">Madlenianum</p>
+  <h1>{{ item.title }}</h1>
+  <article>{{ item.content || item.body || item.excerpt }}</article>
+  <a routerLink="/repertoar">Program</a>
+</section>

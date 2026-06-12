@@ -1,0 +1,36 @@
+<div class="system-page">
+  <header>
+    <div>
+      <span>Health check</span>
+      <h2>System status</h2>
+      <p>Pregled backend podataka i upozorenja za admin/ticketing sistem.</p>
+    </div>
+
+    <button type="button" (click)="load()">Refresh</button>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading...</p>
+
+  <section>
+    <h3>Counts</h3>
+
+    <div class="grid">
+      <article *ngFor="let item of counts()">
+        <span>{{ item.key }}</span>
+        <strong>{{ item.value }}</strong>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h3>Warnings</h3>
+
+    <div class="grid warning-grid">
+      <article *ngFor="let item of warnings()">
+        <span>{{ item.key }}</span>
+        <strong>{{ item.value }}</strong>
+      </article>
+    </div>
+  </section>
+</div>

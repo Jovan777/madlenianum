@@ -1,0 +1,40 @@
+<div class="admin-shell">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/admin">
+      <img src="/madlenianum/logo.png" alt="Madlenianum" />
+      <span>Testing CMS</span>
+    </a>
+
+    <nav>
+      <a
+        *ngFor="let item of menuItems"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.path === '/admin' }"
+      >
+        <span class="icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <button class="logout" type="button" (click)="logout()">Logout</button>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <p>Madlenianum Opera &amp; Theatre</p>
+        <h1>Admin testing panel</h1>
+      </div>
+
+      <div class="admin-chip" *ngIf="authService.admin() as admin">
+        <strong>{{ admin.username }}</strong>
+        <span>{{ admin.role }}</span>
+      </div>
+    </header>
+
+    <section class="page-content">
+      <router-outlet />
+    </section>
+  </main>
+</div>

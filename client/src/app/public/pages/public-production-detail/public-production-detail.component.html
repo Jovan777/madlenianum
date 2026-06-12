@@ -1,0 +1,58 @@
+<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<ng-container *ngIf="!isLoading() && production() as item">
+  <section class="detail-hero">
+    <img *ngIf="image(item.poster)" [src]="image(item.poster)" [alt]="item.title">
+    <div class="hero-copy">
+      <p class="eyebrow">{{ item.type || 'Stage' }}</p>
+      <h1>{{ item.title }}</h1>
+      <div class="hero-actions">
+        <a class="btn btn-gold" *ngIf="events().length" [routerLink]="['/kupovina', eventId(events()[0])]">Buy</a>
+        <a class="btn btn-light" routerLink="/repertoar">Dates</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="story">
+    <aside>
+      <span>{{ item.season || '2025/2026' }}</span>
+      <span>{{ item.authorComposer || 'Madlenianum' }}</span>
+      <span>{{ item.type || 'Stage' }}</span>
+    </aside>
+
+    <article>
+      <h2>{{ item.subtitle || 'After silence.' }}</h2>
+      <p>{{ item.description || item.synopsis || item.shortDescription }}</p>
+    </article>
+  </section>
+
+  <section class="dates" *ngIf="events().length">
+    <article *ngFor="let event of events()">
+      <strong>{{ eventDate(event) }}</strong>
+      <a [routerLink]="['/kupovina', eventId(event)]">Buy</a>
+    </article>
+  </section>
+
+  <section class="people" *ngIf="item.creativeTeam?.length || item.cast?.length">
+    <div *ngIf="item.creativeTeam?.length">
+      <h3>Team</h3>
+      <p *ngFor="let member of item.creativeTeam">
+        <span>{{ member.role || 'Role' }}</span>
+        <strong>{{ member.name || member.artist?.displayName || '-' }}</strong>
+      </p>
+    </div>
+
+    <div *ngIf="item.cast?.length">
+      <h3>Cast</h3>
+      <p *ngFor="let cast of item.cast">
+        <span>{{ cast.character || 'Role' }}</span>
+        <strong>{{ castNames(cast) }}</strong>
+      </p>
+    </div>
+  </section>
+
+  <section class="gallery" *ngIf="gallery(item).length">
+    <img *ngFor="let media of gallery(item)" [src]="image(media)" [alt]="item.title">
+  </section>
+</ng-container>

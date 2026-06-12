@@ -1,0 +1,84 @@
+<div class="detail-page">
+  <a class="back" routerLink="/admin/events">← Events</a>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading event...</p>
+
+  <ng-container *ngIf="event() as item">
+    <header class="hero">
+      <div>
+        <span>{{ item.production?.type || 'event' }}</span>
+        <h2>{{ item.production?.title || 'Event' }}</h2>
+        <p>{{ formatDate(item.startsAt) }} · {{ item.venue?.name || '-' }}</p>
+      </div>
+
+      <div class="status-stack">
+        <strong>{{ item.saleStatus }}</strong>
+        <span>{{ item.ticketing?.provider || 'manual' }}</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article>
+        <h3>Event setup</h3>
+        <dl>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ item.status }}</dd>
+          </div>
+          <div>
+            <dt>Sale status</dt>
+            <dd>{{ item.saleStatus }}</dd>
+          </div>
+          <div>
+            <dt>Seat map</dt>
+            <dd>{{ item.seatMap?.name || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Price plan</dt>
+            <dd>{{ item.pricePlan?.name || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Max tickets</dt>
+            <dd>{{ item.maxTicketsPerOrder }}</dd>
+          </div>
+          <div>
+            <dt>Lock duration</dt>
+            <dd>{{ item.lockDurationMinutes }} min</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article>
+        <h3>Ticketing stats</h3>
+        <dl *ngIf="summary()?.stats as stats">
+          <div>
+            <dt>Reserved orders</dt>
+            <dd>{{ stats.reservedOrdersCount }}</dd>
+          </div>
+          <div>
+            <dt>Paid orders</dt>
+            <dd>{{ stats.paidOrdersCount }}</dd>
+          </div>
+          <div>
+            <dt>Reserved items</dt>
+            <dd>{{ stats.reservedItemsCount }}</dd>
+          </div>
+          <div>
+            <dt>Paid items</dt>
+            <dd>{{ stats.paidItemsCount }}</dd>
+          </div>
+          <div>
+            <dt>Active locks</dt>
+            <dd>{{ stats.activeLocksCount }}</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
+
+    <section class="ticketing">
+      <h3>Ticketing configuration</h3>
+      <pre>{{ item.ticketing | json }}</pre>
+    </section>
+  </ng-container>
+</div>

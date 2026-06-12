@@ -1,0 +1,21 @@
+<section class="order-page">
+  <header>
+    <p class="eyebrow">Tickets</p>
+    <h1>Order</h1>
+  </header>
+
+  <form class="lookup" (ngSubmit)="lookup()">
+    <input placeholder="Order code" [ngModel]="identifier()" name="identifier" (ngModelChange)="identifier.set($event)">
+    <button class="btn btn-primary" type="submit" [disabled]="isLoading()">Find</button>
+  </form>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+  <article class="order-card" *ngIf="order() as item">
+    <span>{{ item.status }}</span>
+    <h2>{{ item.orderCode || item._id }}</h2>
+    <p>{{ eventTitle(item) }}</p>
+    <small>{{ eventDate(item) }}</small>
+    <strong>{{ item.totalAmount | number }} {{ item.currency || 'RSD' }}</strong>
+  </article>
+</section>

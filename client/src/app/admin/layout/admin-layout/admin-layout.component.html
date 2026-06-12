@@ -1,0 +1,34 @@
+<div class="admin-shell">
+  <aside class="side-rail">
+    <a class="admin-brand" routerLink="/admin" aria-label="Admin home">
+      <span>M</span>
+    </a>
+
+    <nav aria-label="Admin navigation">
+      <a
+        *ngFor="let item of menuItems"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.path === '/admin' }"
+      >
+        <small>{{ item.icon }}</small>
+        <strong>{{ item.label }}</strong>
+      </a>
+    </nav>
+
+    <button class="logout" type="button" (click)="logout()">Exit</button>
+  </aside>
+
+  <main class="admin-main">
+    <header class="admin-top">
+      <div>
+        <span>Atelier CMS</span>
+        <strong>Madlenianum</strong>
+      </div>
+
+      <a class="view-site" routerLink="/">View site</a>
+    </header>
+
+    <router-outlet />
+  </main>
+</div>

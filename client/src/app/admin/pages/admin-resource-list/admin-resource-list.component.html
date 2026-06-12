@@ -1,0 +1,49 @@
+<section class="resource-page">
+  <header class="resource-hero">
+    <div>
+      <span>{{ total() }}</span>
+      <h1>{{ config().title }}</h1>
+    </div>
+
+    <div class="hero-actions">
+      <a *ngIf="newLink() as link" [routerLink]="link">New</a>
+      <button type="button" (click)="loadData()">Sync</button>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+
+  <section class="seat-note" *ngIf="pageKey() === 'seats'">
+    <span>504</span>
+    <h2>No table.</h2>
+    <p>Sedišta se ne uređuju kao Excel lista. Koristi mapu sale.</p>
+    <a routerLink="/admin/seat-maps">Open maps</a>
+  </section>
+
+  <section class="card-grid" *ngIf="pageKey() !== 'seats'">
+    <article class="resource-card" *ngFor="let item of items(); let index = index">
+      <span class="card-index">{{ index + 1 }}</span>
+      <h2>{{ primaryValue(item) }}</h2>
+
+      <div class="card-meta">
+        <p *ngFor="let column of metaColumns()">
+          <small>{{ column.label }}</small>
+          <strong [class.status-pill]="column.type === 'status'">
+            {{ formatValue(getValue(item, column.key), column) }}
+          </strong>
+        </p>
+      </div>
+
+      <div class="card-actions">
+        <a *ngIf="detailLink(item) as link" [routerLink]="link">Open</a>
+        <a *ngIf="editLink(item) as link" [routerLink]="link">Edit</a>
+        <a *ngIf="mapLink(item) as link" [routerLink]="link">Map</a>
+        <button *ngIf="config().canDelete" type="button" (click)="deleteItem(item)">Delete</button>
+      </div>
+    </article>
+
+    <article class="empty-card" *ngIf="!isLoading() && items().length === 0">Empty.</article>
+    <article class="empty-card" *ngIf="isLoading()">Loading...</article>
+  </section>
+</section>

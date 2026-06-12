@@ -1,0 +1,99 @@
+<div class="resource-form-page">
+  <a class="back" [routerLink]="listLink">← {{ config.title }}</a>
+
+  <header class="page-hero">
+    <div>
+      <p>{{ isEditMode ? 'Edit resource' : 'New resource' }}</p>
+      <h1>{{ isEditMode ? 'Edit ' + config.title : 'Create ' + config.title }}</h1>
+      <span>{{ config.subtitle }}</span>
+    </div>
+
+    <button
+      *ngIf="isEditMode && config.canDelete"
+      class="danger"
+      type="button"
+      (click)="deleteItem()"
+    >
+      Delete
+    </button>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading...</p>
+
+  <section class="form-card" *ngIf="fields.length; else noForm">
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field" *ngFor="let field of fields" [class.wide]="field.type === 'textarea'">
+        <label [for]="field.key">{{ field.label }}</label>
+
+        <input
+          *ngIf="field.type === 'text'"
+          [id]="field.key"
+          type="text"
+          [formControlName]="field.key"
+          [placeholder]="field.placeholder || ''"
+        />
+
+        <input
+          *ngIf="field.type === 'number'"
+          [id]="field.key"
+          type="number"
+          [formControlName]="field.key"
+          [placeholder]="field.placeholder || ''"
+        />
+
+        <input
+          *ngIf="field.type === 'date'"
+          [id]="field.key"
+          type="datetime-local"
+          [formControlName]="field.key"
+        />
+
+        <textarea
+          *ngIf="field.type === 'textarea'"
+          [id]="field.key"
+          rows="6"
+          [formControlName]="field.key"
+          [placeholder]="field.placeholder || ''"
+        ></textarea>
+
+        <select *ngIf="field.type === 'select'" [id]="field.key" [formControlName]="field.key">
+          <option value="">Select...</option>
+          <option *ngFor="let option of field.options || []" [ngValue]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+
+        <label class="check" *ngIf="field.type === 'checkbox'">
+          <input type="checkbox" [formControlName]="field.key" />
+          <span>{{ field.label }}</span>
+        </label>
+
+        <input
+          *ngIf="field.type === 'array'"
+          [id]="field.key"
+          type="text"
+          [formControlName]="field.key"
+          [placeholder]="field.placeholder || 'value 1, value 2'"
+        />
+
+        <small *ngIf="field.helper">{{ field.helper }}</small>
+      </div>
+
+      <footer>
+        <button class="ghost" type="button" [routerLink]="listLink">Cancel</button>
+        <button class="primary" type="submit" [disabled]="isSaving()">
+          {{ isSaving() ? 'Saving...' : 'Save' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+
+  <ng-template #noForm>
+    <section class="form-card muted">
+      <h2>No edit form configured</h2>
+      <p>This resource is currently read-only in the testing admin panel.</p>
+    </section>
+  </ng-template>
+</div>

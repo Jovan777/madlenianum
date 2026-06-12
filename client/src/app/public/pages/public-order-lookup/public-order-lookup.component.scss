@@ -1,0 +1,88 @@
+.order-page {
+  width: min(820px, calc(100vw - 40px));
+  margin: 0 auto;
+  padding: 150px 0 60px;
+}
+
+header h1 {
+  margin: 12px 0 30px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(6rem, 16vw, 15rem);
+  font-weight: 400;
+  letter-spacing: -0.12em;
+  line-height: 0.72;
+}
+
+.lookup {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.lookup input {
+  border: 0;
+  padding: 0 20px;
+  color: var(--ink);
+  background: transparent;
+  outline: none;
+}
+
+.error {
+  color: var(--clay-dark);
+  font-weight: 850;
+}
+
+.order-card {
+  margin-top: 14px;
+  border-radius: 36px;
+  padding: 28px;
+  color: var(--paper);
+  background: var(--void);
+}
+
+.order-card span,
+.order-card small {
+  color: var(--gold-2);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.order-card h2 {
+  margin: 18px 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.8rem, 7vw, 6.5rem);
+  font-weight: 400;
+  letter-spacing: -0.1em;
+  line-height: 0.78;
+}
+
+.order-card p {
+  color: rgba(248, 243, 232, 0.72);
+  font-size: 1.1rem;
+}
+
+.order-card strong {
+  display: block;
+  margin-top: 24px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3rem;
+  font-weight: 400;
+  letter-spacing: -0.08em;
+}
+
+@media (max-width: 640px) {
+  .lookup {
+    grid-template-columns: 1fr;
+    border-radius: 28px;
+  }
+
+  .lookup input {
+    min-height: 54px;
+  }
+}

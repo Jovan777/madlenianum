@@ -1,0 +1,120 @@
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+
+import { AdminApiService } from '../../../core/services/admin-api.service';
+import { ADMIN_RESOURCE_CONFIGS, ResourceColumn } from '../../config/admin-resource.config';
+
+@Component({
+  selector: 'app-admin-resource-list',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './admin-resource-list.component.html',
+  styleUrl: './admin-resource-list.component.scss',
+})
+export class AdminResourceListComponent implements OnInit {
+  readonly pageKey = signal('productions');
+  readonly items = signal<Record<string, unknown>[]>([]);
+  readonly isLoading = signal(false);
+  readonly errorMessage = signal('');
+  readonly total = signal(0);
+
+  readonly config = computed(() => {
+    return ADMIN_RESOURCE_CONFIGS[this.pageKey()] || ADMIN_RESOURCE_CONFIGS['productions'];
+  });
+
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly api: AdminApiService
+  ) {}
+
+  ngOnInit(): void {
+    this.route.paramMap.subscribe((params) => {
+      this.pageKey.set(params.get('resource') || 'productions');
+      this.loadData();
+    });
+  }
+
+  loadData(): void {
+    const config = this.config();
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+
+    this.api.getList<Record<string, unknown>>(config.resource, config.query || '').subscribe({
+      next: (response) => {
+        this.items.set(response.items || []);
+        this.total.set(response.pagination?.total ?? response.items?.length ?? 0);
+      },
+      error: (error) => {
+        this.items.set([]);
+        this.total.set(0);
+        this.errorMessage.set(error?.error?.message || 'Data could not be loaded.');
+      },
+      complete: () => {
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  getValue(item: Record<string, unknown>, path: string): unknown {
+    return path.split('.').reduce<unknown>((value, key) => {
+      if (value === null || value === undefined || typeof value !== 'object') {
+        return undefined;
+      }
+
+      return (value as Record<string, unknown>)[key];
+    }, item);
+  }
+
+  formatValue(value: unknown, column?: ResourceColumn): string {
+    if (value === null || value === undefined || value === '') {
+      return '-';
+    }
+
+    if (column?.type === 'date' && typeof value === 'string') {
+      return new Date(value).toLocaleString('sr-RS');
+    }
+
+    if (column?.type === 'money' && typeof value === 'number') {
+      return `${value.toLocaleString('sr-RS')} RSD`;
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
+
+    if (typeof value === 'object') {
+      const objectValue = value as Record<string, unknown>;
+      return String(
+        objectValue['title'] ||
+          objectValue['name'] ||
+          objectValue['displayName'] ||
+          objectValue['email'] ||
+          objectValue['_id'] ||
+          '-'
+      );
+    }
+
+    return String(value);
+  }
+
+  getItemId(item: Record<string, unknown>): string {
+    return String(item['_id'] || item['id'] || '');
+  }
+
+  detailLink(item: Record<string, unknown>): string[] | null {
+    const route = this.config().detailRoute;
+    const id = this.getItemId(item);
+
+    if (!route || !id) {
+      return null;
+    }
+
+    return [route, id];
+  }
+}

@@ -1,0 +1,30 @@
+<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<section class="productions" *ngIf="!isLoading()">
+  <header class="page-head">
+    <p class="eyebrow">Stage</p>
+    <h1>Works</h1>
+  </header>
+
+  <div class="type-row">
+    <a
+      *ngFor="let type of types"
+      [routerLink]="['/predstave']"
+      [queryParams]="{ type: type.value }"
+      [class.active]="activeType() === type.value"
+    >
+      {{ type.label }}
+    </a>
+  </div>
+
+  <div class="work-grid">
+    <a class="work-card" *ngFor="let production of filteredProductions(); let index = index" [routerLink]="['/predstave', production.slug]">
+      <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title">
+      <div class="work-copy">
+        <span>{{ index + 1 }} · {{ production.type || 'stage' }}</span>
+        <h2>{{ production.title }}</h2>
+      </div>
+    </a>
+  </div>
+</section>

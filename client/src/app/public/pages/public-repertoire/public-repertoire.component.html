@@ -1,0 +1,42 @@
+<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<section class="repertoire" *ngIf="!isLoading()">
+  <header class="page-head">
+    <p class="eyebrow">Dates</p>
+    <h1>Program</h1>
+    <div class="filters">
+      <button
+        *ngFor="let type of filters()"
+        type="button"
+        [class.active]="activeType() === type"
+        (click)="setType(type)"
+      >
+        {{ filterLabel(type) }}
+      </button>
+    </div>
+  </header>
+
+  <div class="date-list">
+    <article class="date-card" *ngFor="let event of filteredEvents()">
+      <a class="image" [routerLink]="['/predstave', productionSlug(event)]">
+        <img *ngIf="productionImage(event)" [src]="productionImage(event)" [alt]="productionTitle(event)">
+      </a>
+
+      <div class="date-mark">
+        <strong>{{ dateDay(event) }}</strong>
+        <span>{{ dateMonth(event) }}</span>
+      </div>
+
+      <div class="date-copy">
+        <span>{{ timeLabel(event) }} · {{ venueName(event) }}</span>
+        <h2>{{ productionTitle(event) }}</h2>
+      </div>
+
+      <div class="date-actions">
+        <a [routerLink]="['/predstave', productionSlug(event)]">Info</a>
+        <a class="buy" [routerLink]="['/kupovina', eventId(event)]">Buy</a>
+      </div>
+    </article>
+  </div>
+</section>

@@ -1,0 +1,55 @@
+<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<section class="home" *ngIf="!isLoading()">
+  <section class="hero" [style.background-image]="heroBackground()">
+    <div class="hero-shade"></div>
+
+    <div class="hero-copy" *ngIf="activeSlide() as slide">
+      <p class="eyebrow">Now</p>
+      <h1>{{ slide.title || 'Madlenianum' }}</h1>
+      <p>{{ slide.subtitle || 'Opera, ballet, theatre.' }}</p>
+      <div class="hero-actions">
+        <a class="btn btn-gold" *ngIf="slideEventId(slide)" [routerLink]="['/kupovina', slideEventId(slide)]">Buy</a>
+        <a class="btn btn-light" *ngIf="slideProduction(slide) as production" [routerLink]="['/predstave', production.slug]">View</a>
+      </div>
+    </div>
+
+    <div class="slide-dots" *ngIf="slides().length > 1">
+      <button
+        *ngFor="let slide of slides(); let index = index"
+        type="button"
+        [class.active]="index === activeSlideIndex()"
+        (click)="setSlide(index)"
+      >
+        {{ index + 1 }}
+      </button>
+    </div>
+  </section>
+
+  <section class="program-strip" *ngIf="events().length > 0">
+    <a class="program-item" *ngFor="let event of events().slice(0, 4)" [routerLink]="['/kupovina', eventId(event)]">
+      <span>{{ productionDateLabel(event) }}</span>
+      <strong>{{ productionTitleFromEvent(event) }}</strong>
+      <small>{{ productionTypeFromEvent(event) }}</small>
+    </a>
+  </section>
+
+  <section class="editorial">
+    <div class="editorial-head">
+      <p class="eyebrow">Program</p>
+      <h2>Less noise. More stage.</h2>
+      <a routerLink="/repertoar">All dates</a>
+    </div>
+
+    <div class="poster-grid">
+      <a class="poster" *ngFor="let production of productions().slice(0, 5)" [routerLink]="['/predstave', production.slug]">
+        <img *ngIf="productionImage(production)" [src]="productionImage(production)" [alt]="production.title">
+        <div>
+          <span>{{ production.type || 'Stage' }}</span>
+          <strong>{{ production.title }}</strong>
+        </div>
+      </a>
+    </div>
+  </section>
+</section>

@@ -1,0 +1,43 @@
+<div class="dashboard-page">
+  <section class="hero">
+    <div>
+      <span>Backend testing</span>
+      <h2>Madlenianum CMS</h2>
+      <p>Brz pregled podataka, ticketing sistema i potencijalnih problema.</p>
+    </div>
+
+    <a routerLink="/admin/system">Open system status</a>
+  </section>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+  <section class="cards" *ngIf="!isLoading()">
+    <a class="card" *ngFor="let card of cards()" [routerLink]="card.route">
+      <span>{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+    </a>
+  </section>
+
+  <section class="warnings" *ngIf="warnings() as warningMap">
+    <h3>Warnings</h3>
+
+    <div class="warning-grid">
+      <article>
+        <span>Events on sale</span>
+        <strong>{{ warningMap['eventsOnSale'] || 0 }}</strong>
+      </article>
+
+      <article>
+        <span>Missing seat map</span>
+        <strong>{{ warningMap['eventsMissingSeatMap'] || 0 }}</strong>
+      </article>
+
+      <article>
+        <span>Missing price plan</span>
+        <strong>{{ warningMap['eventsMissingPricePlan'] || 0 }}</strong>
+      </article>
+    </div>
+  </section>
+
+  <p class="loading" *ngIf="isLoading()">Loading dashboard...</p>
+</div>

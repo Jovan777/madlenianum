@@ -1,0 +1,177 @@
+<div class="event-form-page">
+  <a class="back" routerLink="/admin/events">← Events</a>
+
+  <header class="page-hero">
+    <div>
+      <p>Central ticketing form</p>
+      <h1>{{ isEditMode ? 'Edit event' : 'Create event' }}</h1>
+      <span>Production + venue + date + seat map + price plan + ticketing provider.</span>
+    </div>
+
+    <a *ngIf="eventId()" class="ghost-link" [routerLink]="['/admin/events', eventId()]">
+      Details
+    </a>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading event...</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="event-form">
+    <section class="card">
+      <h2>Main data</h2>
+
+      <div class="form-grid">
+        <label>
+          Production
+          <select formControlName="production">
+            <option value="">Select production...</option>
+            <option *ngFor="let item of productions" [value]="item._id">
+              {{ item.title }} · {{ item.type }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Venue
+          <select formControlName="venue">
+            <option value="">Select venue...</option>
+            <option *ngFor="let item of venues" [value]="item._id">
+              {{ item.name }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Starts at
+          <input type="datetime-local" formControlName="startsAt" />
+        </label>
+
+        <label>
+          Ends at
+          <input type="datetime-local" formControlName="endsAt" />
+        </label>
+
+        <label>
+          Badge
+          <input type="text" formControlName="badge" placeholder="PREMIJERA, 24. jun..." />
+        </label>
+
+        <label>
+          Status
+          <select formControlName="status">
+            <option *ngFor="let item of eventStatuses" [value]="item.value">
+              {{ item.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Sale status
+          <select formControlName="saleStatus">
+            <option *ngFor="let item of saleStatuses" [value]="item.value">
+              {{ item.label }}
+            </option>
+          </select>
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" formControlName="isPremiere" />
+          <span>Premiere</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Ticketing setup</h2>
+
+      <div class="form-grid">
+        <label>
+          Seat map
+          <select formControlName="seatMap">
+            <option value="">No seat map</option>
+            <option *ngFor="let item of seatMaps" [value]="item._id">
+              {{ item.name }} · {{ item.venue?.name }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Price plan
+          <select formControlName="pricePlan">
+            <option value="">No price plan</option>
+            <option *ngFor="let item of pricePlans" [value]="item._id">
+              {{ item.name }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Sale starts
+          <input type="datetime-local" formControlName="saleStartsAt" />
+        </label>
+
+        <label>
+          Sale ends
+          <input type="datetime-local" formControlName="saleEndsAt" />
+        </label>
+
+        <label>
+          Max tickets per order
+          <input type="number" formControlName="maxTicketsPerOrder" min="1" max="20" />
+        </label>
+
+        <label>
+          Lock duration minutes
+          <input type="number" formControlName="lockDurationMinutes" min="1" max="60" />
+        </label>
+      </div>
+
+      <div class="nested" formGroupName="ticketing">
+        <label class="check-row">
+          <input type="checkbox" formControlName="enabled" />
+          <span>Ticketing enabled</span>
+        </label>
+
+        <label>
+          Provider
+          <select formControlName="provider">
+            <option *ngFor="let item of ticketingProviders" [value]="item.value">
+              {{ item.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Legacy event id
+          <input type="text" formControlName="legacyEventId" />
+        </label>
+
+        <label>
+          External checkout URL
+          <input type="url" formControlName="externalCheckoutUrl" />
+        </label>
+
+        <label class="wide">
+          Ticketing note
+          <textarea rows="3" formControlName="note"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Notes</h2>
+      <label>
+        Internal notes
+        <textarea rows="4" formControlName="notes"></textarea>
+      </label>
+    </section>
+
+    <footer class="actions">
+      <a class="ghost-link" routerLink="/admin/events">Cancel</a>
+      <button class="primary" type="submit" [disabled]="isSaving()">
+        {{ isSaving() ? 'Saving...' : 'Save event' }}
+      </button>
+    </footer>
+  </form>
+</div>

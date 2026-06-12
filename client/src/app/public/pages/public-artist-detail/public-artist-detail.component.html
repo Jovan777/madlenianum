@@ -1,0 +1,16 @@
+<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+<section class="artist-detail" *ngIf="!isLoading() && artist() as item">
+  <div class="portrait">
+    <img *ngIf="image(item)" [src]="image(item)" [alt]="item.displayName || item.name">
+    <span *ngIf="!image(item)">{{ (item.displayName || item.name || 'M').slice(0, 1) }}</span>
+  </div>
+
+  <article>
+    <a routerLink="/umetnici">Artists</a>
+    <p class="eyebrow">{{ item.professions?.join(', ') || 'Artist' }}</p>
+    <h1>{{ item.displayName || item.name }}</h1>
+    <p>{{ item.biography || 'Biography will be added.' }}</p>
+  </article>
+</section>

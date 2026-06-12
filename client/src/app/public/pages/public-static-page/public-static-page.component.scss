@@ -1,0 +1,35 @@
+.static-page {
+  width: min(980px, calc(100vw - 40px));
+  margin: 0 auto;
+  padding: 150px 0 70px;
+}
+
+h1 {
+  margin: 14px 0 38px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(5rem, 14vw, 14rem);
+  font-weight: 400;
+  letter-spacing: -0.12em;
+  line-height: 0.72;
+}
+
+article {
+  border-left: 2px solid var(--ink);
+  padding-left: 28px;
+  color: rgba(21, 19, 15, 0.74);
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  line-height: 1.72;
+}
+
+a {
+  display: inline-flex;
+  margin-top: 32px;
+  border-radius: 999px;
+  padding: 13px 18px;
+  color: var(--paper);
+  background: var(--void);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

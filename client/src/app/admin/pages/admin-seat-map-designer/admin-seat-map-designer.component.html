@@ -1,0 +1,177 @@
+<div class="seat-map-page">
+  <a class="back" routerLink="/admin/seat-maps">← Seat Maps</a>
+
+  <header class="page-hero">
+    <div>
+      <p>Visual seat manager</p>
+      <h1>{{ seatMap()?.name || 'Seat map' }}</h1>
+      <span>{{ seats().length }} seats · {{ seatMap()?.venue?.name || 'Venue' }}</span>
+    </div>
+
+    <button type="button" (click)="reloadCurrent()" [disabled]="!seatMap()">
+      Refresh
+    </button>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading seat map...</p>
+
+  <section class="toolbar">
+    <button type="button" [class.active]="sectionFilter() === 'all'" (click)="selectSection('all')">
+      All
+    </button>
+    <button
+      type="button"
+      *ngFor="let section of sections()"
+      [class.active]="sectionFilter() === section"
+      (click)="selectSection(section)"
+    >
+      {{ section }}
+    </button>
+  </section>
+
+  <section class="workspace">
+    <div class="map-card">
+      <div class="stage-label">STAGE</div>
+
+      <div class="canvas-wrap">
+        <div class="seat-canvas" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()">
+          <button
+            type="button"
+            class="seat-dot"
+            *ngFor="let seat of filteredSeats()"
+            [ngClass]="seatClass(seat)"
+            [ngStyle]="seatStyle(seat)"
+            [title]="seat.label + ' · ' + seat.section"
+            (click)="selectSeat(seat)"
+          >
+            {{ seat.number || '' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i class="category1"></i>I</span>
+        <span><i class="category2"></i>II</span>
+        <span><i class="category3"></i>III</span>
+        <span><i class="auxiliary"></i>Auxiliary</span>
+        <span><i class="unsellable"></i>Not sellable</span>
+      </div>
+    </div>
+
+    <aside class="editor-card" *ngIf="selectedSeat() as seat; else emptyEditor">
+      <h2>{{ seat.label }}</h2>
+      <p>{{ seat.section }} · {{ seat.priceCategory?.name || 'No category' }}</p>
+
+      <form [formGroup]="editForm" (ngSubmit)="saveSeat()">
+        <label>
+          Label
+          <input type="text" formControlName="label" />
+        </label>
+
+        <label>
+          Section
+          <input type="text" formControlName="section" />
+        </label>
+
+        <div class="two">
+          <label>
+            Row
+            <input type="text" formControlName="row" />
+          </label>
+
+          <label>
+            Number
+            <input type="number" formControlName="number" />
+          </label>
+        </div>
+
+        <label>
+          Seat type
+          <select formControlName="seatType">
+            <option value="standard">Standard</option>
+            <option value="box">Box</option>
+            <option value="central_box">Central box</option>
+            <option value="auxiliary">Auxiliary</option>
+            <option value="wheelchair">Wheelchair</option>
+            <option value="unavailable">Unavailable</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label>
+          Price category
+          <select formControlName="priceCategory">
+            <option value="">No category</option>
+            <option *ngFor="let item of priceCategories()" [value]="item._id">
+              {{ item.code }} · {{ item.name }}
+            </option>
+          </select>
+        </label>
+
+        <div class="two">
+          <label>
+            X
+            <input type="number" formControlName="x" />
+          </label>
+
+          <label>
+            Y
+            <input type="number" formControlName="y" />
+          </label>
+        </div>
+
+        <div class="move-grid">
+          <button type="button" (click)="moveSelected(0, -5)">↑</button>
+          <button type="button" (click)="moveSelected(-5, 0)">←</button>
+          <button type="button" (click)="moveSelected(5, 0)">→</button>
+          <button type="button" (click)="moveSelected(0, 5)">↓</button>
+        </div>
+
+        <div class="two">
+          <label>
+            Width
+            <input type="number" formControlName="width" />
+          </label>
+
+          <label>
+            Height
+            <input type="number" formControlName="height" />
+          </label>
+        </div>
+
+        <label>
+          Rotation
+          <input type="number" formControlName="rotation" />
+        </label>
+
+        <label>
+          Visual group
+          <input type="text" formControlName="visualGroup" />
+        </label>
+
+        <label class="check">
+          <input type="checkbox" formControlName="isSellable" />
+          <span>Sellable</span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" formControlName="isActive" />
+          <span>Active</span>
+        </label>
+
+        <button class="primary" type="submit" [disabled]="isSaving()">
+          {{ isSaving() ? 'Saving...' : 'Save seat' }}
+        </button>
+      </form>
+    </aside>
+
+    <ng-template #emptyEditor>
+      <aside class="editor-card empty">
+        <h2>Select a seat</h2>
+        <p>Click any seat on the map to edit its label, category, sellable state and coordinates.</p>
+      </aside>
+    </ng-template>
+  </section>
+</div>
