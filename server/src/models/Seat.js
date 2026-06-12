@@ -63,6 +63,7 @@ const seatSchema = new mongoose.Schema(
             type: Number,
             default: 24,
         },
+        // izbaciti
         rotation: {
             type: Number,
             default: 0,

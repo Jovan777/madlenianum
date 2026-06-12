@@ -20,6 +20,7 @@ const customerSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
+    // Optional fields for customer profile
     address: {
       type: String,
       default: "",

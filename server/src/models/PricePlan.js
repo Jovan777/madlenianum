@@ -50,6 +50,7 @@ const pricePlanSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // srediti currency da se dohvata iz nekog default fila
     currency: {
       type: String,
       default: "RSD",

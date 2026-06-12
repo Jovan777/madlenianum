@@ -73,6 +73,7 @@ const newsSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // izbaciti
     weight: {
       type: Number,
       default: 0,

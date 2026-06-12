@@ -53,6 +53,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
+app.use("/api/customer", customerRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

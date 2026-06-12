@@ -78,6 +78,7 @@ const venueSchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "published",
     },
+    // izbaciti
     weight: {
       type: Number,
       default: 0,

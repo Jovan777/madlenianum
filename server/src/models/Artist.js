@@ -59,7 +59,7 @@ const artistSchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "published",
     },
-    weight: {
+    weight: { // izbaciti
       type: Number,
       default: 0,
     },

@@ -21,6 +21,7 @@ const seatMapSectionSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // izbaciti
     order: {
       type: Number,
       default: 0,

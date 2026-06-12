@@ -18,6 +18,7 @@ const priceCategorySchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // izbaciti
     weight: {
       type: Number,
       default: 0,

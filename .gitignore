@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+**/node_modules/
+client/node_modules/
+server/node_modules/
+
+# Angular
+client/dist/
+client/tmp/
+client/out-tsc/
+client/.angular/cache/
+
+# Backend uploads
+server/uploads/
+server/logs/
+
+# Env
+.env
+.env.*
+!.env.example
+client/.env
+client/.env.*
+server/.env
+server/.env.*
+!client/.env.example
+!server/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

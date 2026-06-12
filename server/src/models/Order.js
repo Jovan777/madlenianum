@@ -13,6 +13,7 @@ const customerSnapshotSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
+    // izbaciti
     address: {
       type: String,
       default: "",
@@ -33,6 +34,7 @@ const customerSnapshotSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    // do ovde izbaciti
     phone: {
       type: String,
       default: "",

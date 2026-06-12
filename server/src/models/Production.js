@@ -75,6 +75,7 @@ const productionSchema = new mongoose.Schema(
       trim: true,
     },
     type: {
+      // sifra -> konverter
       type: String,
       enum: [
         "opera",
@@ -180,6 +181,7 @@ const productionSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // broj izvodjenja
     weight: {
       type: Number,
       default: 0,

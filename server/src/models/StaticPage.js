@@ -74,6 +74,7 @@ const staticPageSchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "draft",
     },
+    // izbaciti
     weight: {
       type: Number,
       default: 0,
