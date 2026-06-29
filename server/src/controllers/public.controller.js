@@ -14,13 +14,16 @@ const getHome = asyncHandler(async (req, res) => {
 
   const [slides, featuredNews, upcomingEvents, featuredProductions] = await Promise.all([
     PromoSlide.find({ status: "published" })
-      .sort("weight -createdAt")
+      .sort("-createdAt")
       .limit(8)
       .populate("image")
-      .populate("relatedProduction"),
+      .populate({
+        path: "relatedProduction",
+        populate: [{ path: "poster" }],
+      }),
 
     News.find({ status: "published", isFeatured: true })
-      .sort("weight -publishedAt")
+      .sort("-publishedAt -createdAt")
       .limit(6)
       .populate("image")
       .populate("relatedProduction"),
@@ -41,7 +44,7 @@ const getHome = asyncHandler(async (req, res) => {
       status: "published",
       isFeatured: true,
     })
-      .sort("weight title")
+      .sort("-isFeatured title")
       .limit(8)
       .populate("poster")
       .populate("venue"),
@@ -49,6 +52,10 @@ const getHome = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
+    slides,
+    featuredNews,
+    upcomingEvents,
+    featuredProductions,
     data: {
       slides,
       featuredNews,
@@ -84,6 +91,7 @@ const getRepertoire = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
+    events: events.filter((event) => event.production),
     data: {
       month,
       year,
@@ -114,7 +122,7 @@ const listProductions = asyncHandler(async (req, res) => {
   }
 
   const items = await Production.find(filter)
-    .sort("weight title")
+    .sort("-isFeatured title")
     .populate("poster")
     .populate("venue");
 
@@ -151,6 +159,8 @@ const getProductionBySlug = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     item: production,
+    production,
+    events: upcomingEvents,
     upcomingEvents,
   });
 });
@@ -169,7 +179,7 @@ const listArtists = asyncHandler(async (req, res) => {
   }
 
   const items = await Artist.find(filter)
-    .sort("weight displayName")
+    .sort("displayName")
     .populate("image");
 
   res.json({
@@ -205,6 +215,7 @@ const getArtistBySlug = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     item: artist,
+    artist,
     productions,
   });
 });
@@ -290,7 +301,7 @@ const subscribeNewsletter = asyncHandler(async (req, res) => {
     },
     {
       upsert: true,
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }
   );

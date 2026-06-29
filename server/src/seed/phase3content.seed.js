@@ -128,7 +128,7 @@ const upsertMedia = async ({ relativePath, title, altText }) => {
       status: "active",
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -164,10 +164,9 @@ const upsertArtist = async ({ displayName, professions, biography, image }) => {
       links: [],
       translations: {},
       status: "published",
-      weight: 0,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -225,7 +224,6 @@ const upsertProduction = async ({
   cast,
   tags,
   isFeatured,
-  weight,
 }) => {
   const slug = slugify(title);
 
@@ -260,14 +258,13 @@ const upsertProduction = async ({
     },
     status: "published",
     isFeatured,
-    weight,
   };
 
   return Production.findOneAndUpdate(
     { slug },
     payload,
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -309,7 +306,7 @@ const upsertEvent = async ({
         provider: "internal",
         legacyEventId: "",
         externalCheckoutUrl: "",
-        note: "Demo internal ticketing. Legacy PHP checkout will be added later.",
+        note: "Internal ticketing seed. Provider can later be switched if needed.",
       },
       basePrice: {
         amount: 0,
@@ -318,7 +315,7 @@ const upsertEvent = async ({
       notes,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -338,25 +335,24 @@ const upsertPromoSlide = async ({
   image,
   production,
   event,
-  weight,
 }) => {
+  const slug = slugify(title);
+
   return PromoSlide.findOneAndUpdate(
-    { title },
+    { slug },
     {
       title,
-      subtitle,
+      slug,
+      description: subtitle || "",
       image: image?._id,
-      production: production?._id,
-      event: event?._id,
-      buttonLabel: "Pogledajte više",
+      linkLabel: "Pogledajte vise",
       linkUrl: production ? `/predstave/${production.slug}` : "",
+      relatedProduction: production?._id,
+      language: "sr",
       status: "published",
-      startsAt: new Date("2026-06-01T00:00:00.000Z"),
-      endsAt: new Date("2026-12-31T23:59:59.999Z"),
-      weight,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -365,7 +361,7 @@ const upsertPromoSlide = async ({
 
 const upsertCustomer = async ({ fullName, email, phone, city }) => {
   const normalizedEmail = email.toLowerCase().trim();
-  const passwordHash = await Customer.hashPassword("Test123!");
+  const passwordHash = await Customer.hashPassword("Customer123!");
 
   return Customer.findOneAndUpdate(
     { email: normalizedEmail },
@@ -373,7 +369,7 @@ const upsertCustomer = async ({ fullName, email, phone, city }) => {
       fullName,
       email: normalizedEmail,
       passwordHash,
-      address: "Test adresa 1",
+      address: "Pozorisni trg 1",
       postalCode: "11000",
       city,
       country: "Srbija",
@@ -383,7 +379,7 @@ const upsertCustomer = async ({ fullName, email, phone, city }) => {
       status: "active",
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -447,7 +443,7 @@ const deleteExistingSeedOrder = async (orderCode) => {
   await existingOrder.deleteOne();
 };
 
-const createDemoOrder = async ({
+const createSeedOrder = async ({
   orderCode,
   customer,
   event,
@@ -493,7 +489,7 @@ const createDemoOrder = async ({
     paymentProvider: status === "paid" ? "manual" : "none",
     expiresAt,
     paidAt: status === "paid" ? new Date() : undefined,
-    notes: "[seed:phase3content] Demo order.",
+    notes: "[seed:phase3content] Seeded order.",
   });
 
   const orderItemsPayload = seats.map((seat) => {
@@ -534,7 +530,7 @@ const createDemoOrder = async ({
   return order;
 };
 
-const createDemoLock = async ({ event, seatMap, seatLabels, sessionId }) => {
+const createSeedLock = async ({ event, seatMap, seatLabels, sessionId }) => {
   await SeatLock.deleteMany({
     event: event._id,
     sessionId,
@@ -663,21 +659,21 @@ const seedPhase3Content = async () => {
         displayName: "Tamara Aleksić",
         professions: ["glumica"],
         biography:
-          "Tamara Aleksić je umetnica povezana sa repertoarom Madlenianuma. Ovaj zapis je demo biografija za testiranje stranice umetnika.",
+          "Tamara Aleksić je umetnica povezana sa repertoarom Madlenianuma i dramskim naslovima aktuelne sezone.",
         image: media.artists.tamara,
       }),
       nikola: await upsertArtist({
         displayName: "Nikola Rakočević",
         professions: ["glumac"],
         biography:
-          "Nikola Rakočević je umetnik povezan sa repertoarom Madlenianuma. Ovaj zapis je demo biografija za testiranje stranice umetnika.",
+          "Nikola Rakočević je umetnik povezan sa repertoarom Madlenianuma i savremenim pozorišnim izrazom.",
         image: media.artists.nikola,
       }),
       ivan: await upsertArtist({
         displayName: "Ivan Vuković",
         professions: ["reditelj"],
         biography:
-          "Ivan Vuković je reditelj povezan sa predstavama na repertoaru Madlenianuma. Ovaj zapis je demo biografija za testiranje kreativnog tima.",
+          "Ivan Vuković je reditelj povezan sa predstavama na repertoaru Madlenianuma i radom ansambla.",
         image: media.artists.ivan,
       }),
     };
@@ -733,7 +729,6 @@ const seedPhase3Content = async () => {
       ],
       tags: ["drama", "tenesi vilijams", "velika scena"],
       isFeatured: true,
-      weight: 1,
     });
 
     const gordost = await upsertProduction({
@@ -797,7 +792,6 @@ const seedPhase3Content = async () => {
       ],
       tags: ["drama", "džejn ostin", "velika scena"],
       isFeatured: true,
-      weight: 2,
     });
 
     const carmen = await upsertProduction({
@@ -828,7 +822,6 @@ const seedPhase3Content = async () => {
       cast: [],
       tags: ["balet", "carmen", "bolero", "velika scena"],
       isFeatured: true,
-      weight: 3,
     });
 
     const pluca = await upsertProduction({
@@ -871,27 +864,25 @@ const seedPhase3Content = async () => {
       ],
       tags: ["drama", "dankan makmilan", "velika scena"],
       isFeatured: true,
-      weight: 4,
     });
 
     const xy = await upsertProduction({
       title: "X + Y = 0",
       type: "drama",
       authorComposer: "",
-      subtitle: "Demo sadržaj za glavni slider",
+      subtitle: "Savremena scena",
       shortDescription:
-        "Placeholder produkcija za testiranje glavnog slidera dok se ne unese kompletan tekst predstave.",
+        "Savremena predstava o odnosima, izborima i tišini između dve osobe.",
       description:
-        "Ovo je privremeni demo zapis za predstavu X + Y = 0. Kompletan opis, kreativni tim i podela mogu se dopuniti kasnije kroz admin sistem.",
+        "X + Y = 0 istražuje intimni prostor savremenog para, njihove odluke i krhku ravnotežu između bliskosti i distance.",
       synopsis:
-        "Privremeni demo sadržaj za proveru prikaza slidera i detalja predstave.",
+        "Kamerna drama za publiku koja voli savremeni tekst i precizan glumački izraz.",
       poster: media.main.xy,
       gallery: [],
       creativeTeam: [],
       cast: [],
-      tags: ["demo", "slider"],
+      tags: ["drama", "savremeno"],
       isFeatured: false,
-      weight: 5,
     });
 
     const events = {
@@ -903,7 +894,7 @@ const seedPhase3Content = async () => {
         startsAt: new Date("2026-06-19T17:30:00.000Z"),
         endsAt: new Date("2026-06-19T19:30:00.000Z"),
         badge: "19. jun",
-        notes: "Demo event za Staklenu menažeriju. Za test je vezan za Veliku scenu.",
+        notes: "Seeded event for Staklena menažerija on Velika scena.",
       }),
       gordost: await upsertEvent({
         production: gordost,
@@ -913,7 +904,7 @@ const seedPhase3Content = async () => {
         startsAt: new Date("2026-06-10T17:30:00.000Z"),
         endsAt: new Date("2026-06-10T19:30:00.000Z"),
         badge: "Klasik u novom ruhu",
-        notes: "Demo event za Gordost i predrasude.",
+        notes: "Seeded event for Gordost i predrasude.",
       }),
       carmen: await upsertEvent({
         production: carmen,
@@ -923,7 +914,7 @@ const seedPhase3Content = async () => {
         startsAt: new Date("2026-06-24T17:30:00.000Z"),
         endsAt: new Date("2026-06-24T19:30:00.000Z"),
         badge: "24. jun",
-        notes: "Demo event za Carmen Suite & Bolero.",
+        notes: "Seeded event for Carmen Suite & Bolero.",
       }),
       pluca: await upsertEvent({
         production: pluca,
@@ -933,9 +924,13 @@ const seedPhase3Content = async () => {
         startsAt: new Date("2026-06-23T18:00:00.000Z"),
         endsAt: new Date("2026-06-23T19:30:00.000Z"),
         badge: "23. jun",
-        notes: "Demo event za Pluća. Za test je vezan za Veliku scenu.",
+        notes: "Seeded event for Pluća on Velika scena.",
       }),
     };
+
+    await PromoSlide.deleteMany({
+      $or: [{ slug: null }, { slug: "" }, { slug: "x-y-0" }],
+    });
 
     await upsertPromoSlide({
       title: "CARMEN SUITE & BOLERO",
@@ -943,7 +938,6 @@ const seedPhase3Content = async () => {
       image: media.main.carmen,
       production: carmen,
       event: events.carmen,
-      weight: 1,
     });
 
     await upsertPromoSlide({
@@ -952,7 +946,6 @@ const seedPhase3Content = async () => {
       image: media.main.gordost,
       production: gordost,
       event: events.gordost,
-      weight: 2,
     });
 
     await upsertPromoSlide({
@@ -961,7 +954,6 @@ const seedPhase3Content = async () => {
       image: media.main.pluca,
       production: pluca,
       event: events.pluca,
-      weight: 3,
     });
 
     await upsertPromoSlide({
@@ -970,16 +962,6 @@ const seedPhase3Content = async () => {
       image: media.main.staklena,
       production: staklena,
       event: events.staklena,
-      weight: 4,
-    });
-
-    await upsertPromoSlide({
-      title: "X + Y = 0",
-      subtitle: "Demo sadržaj za glavni slider",
-      image: media.main.xy,
-      production: xy,
-      event: null,
-      weight: 5,
     });
 
     const customers = {
@@ -1003,8 +985,8 @@ const seedPhase3Content = async () => {
       }),
     };
 
-    const demoOrders = [
-      await createDemoOrder({
+    const seededOrders = [
+      await createSeedOrder({
         orderCode: "MDL-SEED-STAKLENA-PAID",
         customer: customers.milica,
         event: events.staklena,
@@ -1012,7 +994,7 @@ const seedPhase3Content = async () => {
         seatLabels: ["I-1", "I-2", "I-3", "I-4"],
         status: "paid",
       }),
-      await createDemoOrder({
+      await createSeedOrder({
         orderCode: "MDL-SEED-GORDOST-RESERVED",
         customer: customers.marko,
         event: events.gordost,
@@ -1020,7 +1002,7 @@ const seedPhase3Content = async () => {
         seatLabels: ["II-5", "II-6"],
         status: "reserved",
       }),
-      await createDemoOrder({
+      await createSeedOrder({
         orderCode: "MDL-SEED-PLUCA-PAID",
         customer: customers.ana,
         event: events.pluca,
@@ -1030,7 +1012,7 @@ const seedPhase3Content = async () => {
       }),
     ];
 
-    const demoLocks = await createDemoLock({
+    const seededLocks = await createSeedLock({
       event: events.carmen,
       seatMap,
       seatLabels: ["IV-10", "IV-11"],
@@ -1058,22 +1040,22 @@ const seedPhase3Content = async () => {
     });
 
     console.log("");
-    console.log("Demo orders:");
-    console.log(demoOrders.map((order) => ({
+    console.log("Seeded orders:");
+    console.log(seededOrders.map((order) => ({
       orderCode: order.orderCode,
       status: order.status,
       totalAmount: order.totalAmount,
     })));
 
     console.log("");
-    console.log("Demo locks:");
+    console.log("Seeded locks:");
     console.log({
-      count: demoLocks.length,
+      count: seededLocks.length,
       sessionId: "seed-lock-carmen",
     });
 
     console.log("");
-    console.log("Useful test endpoints:");
+    console.log("Useful verification endpoints:");
     console.log(`GET http://localhost:${process.env.PORT || 5000}/api/public/home`);
     console.log(`GET http://localhost:${process.env.PORT || 5000}/api/public/productions`);
     console.log(

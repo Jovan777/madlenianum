@@ -1,6 +1,7 @@
 .resource-form-page {
   display: grid;
   gap: 1.25rem;
+  color: var(--admin-ink);
 }
 
 .back {
@@ -36,6 +37,7 @@
 
 .page-hero h1 {
   margin: 0;
+  color: var(--admin-ink);
   font-size: 2rem;
 }
 
@@ -77,6 +79,7 @@ select {
   border: 1px solid rgba(33, 25, 15, 0.14);
   border-radius: 16px;
   padding: 0.78rem 0.9rem;
+  color: var(--admin-ink);
   background: #fffdf8;
   outline: none;
 }

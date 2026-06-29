@@ -5,6 +5,8 @@ const Venue = require("../models/Venue");
 const SeatMap = require("../models/SeatMap");
 const PricePlan = require("../models/PricePlan");
 const PriceCategory = require("../models/PriceCategory");
+const Artist = require("../models/Artist");
+const Media = require("../models/Media");
 
 const EVENT_STATUSES = [
   { value: "draft", label: "Draft" },
@@ -70,7 +72,7 @@ const getEventFormOptions = asyncHandler(async (req, res) => {
       .sort("title"),
     Venue.find(venueFilter)
       .select("name slug venueType capacity status")
-      .sort("weight name"),
+      .sort("name"),
     SeatMap.find(seatMapFilter)
       .populate("venue")
       .select("name slug venue status canvas sections")
@@ -80,7 +82,7 @@ const getEventFormOptions = asyncHandler(async (req, res) => {
       .populate("rules.priceCategory")
       .select("name venue productionTypes isPremiere currency rules status validFrom validTo")
       .sort("name"),
-    PriceCategory.find({ status: "active" }).sort("weight code"),
+    PriceCategory.find({ status: "active" }).sort("code"),
   ]);
 
   res.json({
@@ -99,10 +101,59 @@ const getEventFormOptions = asyncHandler(async (req, res) => {
   });
 });
 
+const getProductionFormOptions = asyncHandler(async (req, res) => {
+  const [artists, media, venues] = await Promise.all([
+    Artist.find({ status: { $ne: "archived" } })
+      .select("displayName slug professions status image")
+      .sort("displayName"),
+    Media.find({ fileType: "image" })
+      .select("title originalName filename url alt caption fileType createdAt")
+      .sort("-createdAt")
+      .limit(200),
+    Venue.find({ status: { $ne: "archived" } })
+      .select("name slug venueType capacity status")
+      .sort("name"),
+  ]);
+
+  res.json({
+    success: true,
+    options: {
+      artists,
+      media,
+      venues,
+      productionTypes: PRODUCTION_TYPES,
+      statuses: [
+        { value: "draft", label: "Draft" },
+        { value: "published", label: "Published" },
+        { value: "archived", label: "Archived" },
+      ],
+    },
+  });
+});
+
+const getArtistFormOptions = asyncHandler(async (req, res) => {
+  const media = await Media.find({ fileType: "image" })
+    .select("title originalName filename url alt caption fileType createdAt")
+    .sort("-createdAt")
+    .limit(200);
+
+  res.json({
+    success: true,
+    options: {
+      media,
+      statuses: [
+        { value: "draft", label: "Draft" },
+        { value: "published", label: "Published" },
+        { value: "archived", label: "Archived" },
+      ],
+    },
+  });
+});
+
 const getSeatMapFormOptions = asyncHandler(async (req, res) => {
   const venues = await Venue.find()
     .select("name slug venueType capacity status")
-    .sort("weight name");
+    .sort("name");
 
   res.json({
     success: true,
@@ -121,8 +172,8 @@ const getPricePlanFormOptions = asyncHandler(async (req, res) => {
   const [venues, priceCategories] = await Promise.all([
     Venue.find()
       .select("name slug venueType capacity status")
-      .sort("weight name"),
-    PriceCategory.find({ status: "active" }).sort("weight code"),
+      .sort("name"),
+    PriceCategory.find({ status: "active" }).sort("code"),
   ]);
 
   res.json({
@@ -142,6 +193,8 @@ const getPricePlanFormOptions = asyncHandler(async (req, res) => {
 
 module.exports = {
   getEventFormOptions,
+  getProductionFormOptions,
+  getArtistFormOptions,
   getSeatMapFormOptions,
   getPricePlanFormOptions,
 };

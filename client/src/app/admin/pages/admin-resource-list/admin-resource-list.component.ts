@@ -95,7 +95,7 @@ export class AdminResourceListComponent implements OnInit {
 
   formatValue(value: unknown, column?: ResourceColumn): string {
     if (value === null || value === undefined || value === '') {
-      return '—';
+      return '-';
     }
 
     if (column?.type === 'date' && typeof value === 'string') {
@@ -127,7 +127,7 @@ export class AdminResourceListComponent implements OnInit {
           objectValue['displayName'] ||
           objectValue['email'] ||
           objectValue['_id'] ||
-          '—'
+          '-'
       );
     }
 

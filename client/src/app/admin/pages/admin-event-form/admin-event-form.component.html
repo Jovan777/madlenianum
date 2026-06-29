@@ -84,6 +84,7 @@
 
     <section class="card">
       <h2>Ticketing setup</h2>
+      <p class="hint">For internal sales, select a seat map and a price plan. Public seat selection uses these rules.</p>
 
       <div class="form-grid">
         <label>
@@ -105,6 +106,28 @@
             </option>
           </select>
         </label>
+
+        <div class="setup-summary" *ngIf="selectedSeatMap() as map">
+          <strong>Seat map</strong>
+          <span>{{ map.name }}</span>
+          <small>{{ map.sections?.length || 0 }} sections / {{ map.canvas?.width || '-' }} x {{ map.canvas?.height || '-' }}</small>
+        </div>
+
+        <div class="setup-summary" *ngIf="selectedPricePlan() as plan">
+          <strong>Price plan</strong>
+          <span>{{ plan.name }} / {{ plan.currency || 'RSD' }}</span>
+          <small>{{ pricePlanRules().length }} category prices</small>
+          <ul>
+            <li *ngFor="let rule of pricePlanRules()">{{ formatRule(rule) }}</li>
+          </ul>
+          <a [routerLink]="['/admin/price-plans', plan._id, 'edit']">Edit price plan</a>
+        </div>
+
+        <div class="setup-summary muted" *ngIf="!selectedPricePlan()">
+          <strong>No price plan selected</strong>
+          <span>Ticketing can be configured after creating a price plan.</span>
+          <a routerLink="/admin/price-plans/new">Create price plan</a>
+        </div>
 
         <label>
           Sale starts

@@ -1,0 +1,117 @@
+<div class="admin-edit-page">
+  <a class="back" routerLink="/admin/price-plans">← Price plans</a>
+
+  <header class="page-hero">
+    <div>
+      <p>Ticket pricing</p>
+      <h1>{{ isEditMode ? 'Edit price plan' : 'Create price plan' }}</h1>
+      <span>Define which seat categories and prices apply to events.</span>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading price plan...</p>
+
+  <form [formGroup]="form" (ngSubmit)="save()" class="edit-form">
+    <section class="panel">
+      <h2>Main data</h2>
+      <div class="form-grid">
+        <label>
+          Name
+          <input type="text" formControlName="name" />
+        </label>
+
+        <label>
+          Venue
+          <select formControlName="venue">
+            <option value="">Any venue</option>
+            <option *ngFor="let venue of venues" [value]="venue._id">{{ venue.name }}</option>
+          </select>
+        </label>
+
+        <label>
+          Currency
+          <input type="text" formControlName="currency" />
+        </label>
+
+        <label>
+          Status
+          <select formControlName="status">
+            <option *ngFor="let item of statuses" [value]="item.value">{{ item.label }}</option>
+          </select>
+        </label>
+
+        <label>
+          Valid from
+          <input type="date" formControlName="validFrom" />
+        </label>
+
+        <label>
+          Valid to
+          <input type="date" formControlName="validTo" />
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" formControlName="isPremiere" />
+          <span>Premiere plan</span>
+        </label>
+      </div>
+
+      <div class="type-grid">
+        <span>Production types</span>
+        <label *ngFor="let type of productionTypes">
+          <input
+            type="checkbox"
+            [checked]="hasProductionType(type.value)"
+            (change)="toggleProductionType(type.value, $any($event.target).checked)"
+          />
+          {{ type.label }}
+        </label>
+      </div>
+
+      <label>
+        Notes
+        <textarea rows="3" formControlName="notes"></textarea>
+      </label>
+    </section>
+
+    <section class="panel">
+      <div class="section-row">
+        <h2>Category prices</h2>
+        <button type="button" (click)="addRule()">Add price</button>
+      </div>
+
+      <div class="repeat-list" formArrayName="rules">
+        <div class="repeat-row" *ngFor="let group of ruleControls(); let index = index" [formGroupName]="index">
+          <label>
+            Seat category
+            <select formControlName="priceCategory">
+              <option value="">Select category</option>
+              <option *ngFor="let category of priceCategories" [value]="category._id">
+                {{ category.code }} / {{ category.name }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Amount
+            <input type="number" formControlName="amount" min="0" />
+          </label>
+
+          <label>
+            Label
+            <input type="text" formControlName="label" placeholder="Parter, loža..." />
+          </label>
+
+          <button type="button" class="danger" (click)="removeRule(index)">Remove</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="actions">
+      <a routerLink="/admin/price-plans">Cancel</a>
+      <button type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Saving...' : 'Save price plan' }}</button>
+    </footer>
+  </form>
+</div>

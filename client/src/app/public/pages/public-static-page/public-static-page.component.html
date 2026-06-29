@@ -1,8 +1,21 @@
-<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="loading-state" *ngIf="isLoading()">Ucitavanje strane...</div>
 
 <section class="static-page" *ngIf="!isLoading() && page() as item">
-  <p class="eyebrow">Madlenianum</p>
-  <h1>{{ item.title }}</h1>
-  <article>{{ item.content || item.body || item.excerpt }}</article>
-  <a routerLink="/repertoar">Program</a>
+  <div class="page-image">
+    <img [src]="image(item)" [alt]="item.title" />
+  </div>
+
+  <article>
+    <p class="eyebrow">Madlenianum</p>
+    <h1>{{ item.title }}</h1>
+    <div class="body" [innerHTML]="content(item)"></div>
+
+    <div class="contact-strip" *ngIf="isContact(item)">
+      <span>Blagajna</span>
+      <strong>Program i karte su dostupni kroz repertoar.</strong>
+      <a routerLink="/repertoar">Otvori program</a>
+    </div>
+
+    <a class="cta" routerLink="/repertoar">Program</a>
+  </article>
 </section>

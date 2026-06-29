@@ -2,6 +2,8 @@ const express = require("express");
 
 const {
   getEventFormOptions,
+  getProductionFormOptions,
+  getArtistFormOptions,
   getSeatMapFormOptions,
   getPricePlanFormOptions,
 } = require("../controllers/adminFormOptions.controller");
@@ -9,6 +11,8 @@ const {
 const router = express.Router();
 
 router.get("/event", getEventFormOptions);
+router.get("/production", getProductionFormOptions);
+router.get("/artist", getArtistFormOptions);
 router.get("/seat-map", getSeatMapFormOptions);
 router.get("/price-plan", getPricePlanFormOptions);
 

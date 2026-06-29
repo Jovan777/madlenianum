@@ -57,23 +57,16 @@ const promoSlideSchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "draft",
     },
-    // izbaciti
-    weight: {
-      type: Number,
-      default: 0,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-promoSlideSchema.pre("validate", function (next) {
+promoSlideSchema.pre("validate", function () {
   if (!this.slug && this.title) {
     this.slug = slugify(this.title);
   }
-
-  next();
 });
 
 module.exports = mongoose.model("PromoSlide", promoSlideSchema, "promo_slides");

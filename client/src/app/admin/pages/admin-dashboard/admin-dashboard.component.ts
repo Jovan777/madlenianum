@@ -38,12 +38,12 @@ export class AdminDashboardComponent implements OnInit {
         const counts = response.counts || {};
 
         this.cards.set([
-          { label: 'Program', value: counts['productions'] || 0, route: '/admin/productions' },
-          { label: 'Dates', value: counts['events'] || 0, route: '/admin/events' },
-          { label: 'Maps', value: counts['seatMaps'] || counts['seatmaps'] || 0, route: '/admin/seat-maps' },
+          { label: 'Productions', value: counts['productions'] || 0, route: '/admin/productions' },
+          { label: 'Events', value: counts['events'] || 0, route: '/admin/events' },
+          { label: 'Seat maps', value: counts['seatMaps'] || counts['seatmaps'] || 0, route: '/admin/seat-maps' },
           { label: 'Orders', value: counts['orders'] || 0, route: '/admin/orders' },
-          { label: 'People', value: counts['artists'] || 0, route: '/admin/artists' },
-          { label: 'Clients', value: counts['customers'] || 0, route: '/admin/customers' },
+          { label: 'Artists', value: counts['artists'] || 0, route: '/admin/artists' },
+          { label: 'Customers', value: counts['customers'] || 0, route: '/admin/customers' },
         ]);
 
         this.warnings.set(response.warnings || {});

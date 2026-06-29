@@ -147,18 +147,20 @@ export class PublicApiService {
       return [];
     }
 
-    for (const key of keys) {
-      if (Array.isArray(response[key])) {
-        return response[key] as T[];
+    for (const root of this.responseRoots(response)) {
+      for (const key of keys) {
+        if (Array.isArray(root[key])) {
+          return root[key] as T[];
+        }
       }
-    }
 
-    if (Array.isArray(response.items)) {
-      return response.items as T[];
-    }
+      if (Array.isArray(root.items)) {
+        return root.items as T[];
+      }
 
-    if (Array.isArray(response.data)) {
-      return response.data as T[];
+      if (Array.isArray(root.data)) {
+        return root.data as T[];
+      }
     }
 
     return [];
@@ -169,13 +171,19 @@ export class PublicApiService {
       return null;
     }
 
-    for (const key of keys) {
-      if (response[key]) {
-        return response[key] as T;
+    for (const root of this.responseRoots(response)) {
+      for (const key of keys) {
+        if (root[key]) {
+          return root[key] as T;
+        }
+      }
+
+      if (root.item || root.production || root.artist) {
+        return (root.item || root.production || root.artist) as T;
       }
     }
 
-    return (response.item || response.production || response.data || null) as T | null;
+    return null;
   }
 
   eventId(event: PublicEvent | string | null | undefined): string {
@@ -196,5 +204,50 @@ export class PublicApiService {
     }
 
     return production.slug || '';
+  }
+
+  productionFromEvent(event: PublicEvent | null | undefined): PublicProduction | null {
+    if (!event?.production || typeof event.production === 'string') {
+      return null;
+    }
+
+    return event.production;
+  }
+
+  fallbackImage(index = 0): string {
+    const images = [
+      '/madlenianum/pluca_main.jpg',
+      '/madlenianum/CARMEN%20SUITE%20%26%20BOLERO_main.jpg',
+      '/madlenianum/gordost_i_predrasude_main.jpg',
+      '/madlenianum/STAKLENA%20MENA%C5%BDERIJA_main.jpg',
+      '/madlenianum/X%20%2B%20Y%20%3D%200_main.jpg',
+    ];
+
+    return images[Math.abs(index) % images.length];
+  }
+
+  typeLabel(type: string | undefined | null): string {
+    const labels: Record<string, string> = {
+      opera: 'Opera',
+      opereta: 'Opereta',
+      balet: 'Balet',
+      drama: 'Drama',
+      mjuzikl: 'Mjuzikl',
+      koncert: 'Koncert',
+      gostujuca_predstava: 'Gostujuca predstava',
+      ostalo: 'Scena',
+    };
+
+    return labels[type || ''] || 'Scena';
+  }
+
+  private responseRoots(response: any): any[] {
+    const roots = [response];
+
+    if (response?.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+      roots.push(response.data);
+    }
+
+    return roots;
   }
 }

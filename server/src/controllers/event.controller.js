@@ -479,7 +479,11 @@ const getEventTicketingSummary = asyncHandler(async (req, res) => {
     Order.countDocuments({
       event: event._id,
       status: "reserved",
-      expiresAt: { $gt: now },
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: null },
+        { expiresAt: { $gt: now } },
+      ],
     }),
     Order.countDocuments({
       event: event._id,

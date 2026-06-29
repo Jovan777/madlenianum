@@ -1,0 +1,220 @@
+<div class="admin-edit-page">
+  <a class="back" routerLink="/admin/productions">← Productions</a>
+
+  <header class="page-hero">
+    <div>
+      <p>Production editor</p>
+      <h1>{{ isEditMode ? 'Edit production' : 'Create production' }}</h1>
+      <span>Basic data, moderated text, media, artists, cast and creative team.</span>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading production...</p>
+
+  <form [formGroup]="form" (ngSubmit)="save()" class="edit-form">
+    <section class="panel">
+      <h2>Main data</h2>
+      <div class="form-grid">
+        <label>
+          Title
+          <input type="text" formControlName="title" />
+        </label>
+
+        <label>
+          Slug
+          <input type="text" formControlName="slug" placeholder="Generated from title if empty" />
+        </label>
+
+        <label>
+          Type
+          <select formControlName="type">
+            <option *ngFor="let item of productionTypes" [value]="item.value">{{ item.label }}</option>
+          </select>
+        </label>
+
+        <label>
+          Status
+          <select formControlName="status">
+            <option *ngFor="let item of statuses" [value]="item.value">{{ item.label }}</option>
+          </select>
+        </label>
+
+        <label>
+          Author / composer
+          <input type="text" formControlName="authorComposer" />
+        </label>
+
+        <label>
+          Original title
+          <input type="text" formControlName="originalTitle" />
+        </label>
+
+        <label>
+          Subtitle
+          <input type="text" formControlName="subtitle" />
+        </label>
+
+        <label>
+          Season
+          <input type="text" formControlName="season" />
+        </label>
+
+        <label>
+          Premiere date
+          <input type="date" formControlName="premiereDate" />
+        </label>
+
+        <label>
+          Venue
+          <select formControlName="venue">
+            <option value="">No default venue</option>
+            <option *ngFor="let item of venues" [value]="item._id">{{ item.name }}</option>
+          </select>
+        </label>
+
+        <label>
+          Duration minutes
+          <input type="number" formControlName="durationMinutes" min="0" />
+        </label>
+
+        <label>
+          Language
+          <input type="text" formControlName="performanceLanguage" />
+        </label>
+
+        <label>
+          Subtitles
+          <input type="text" formControlName="subtitles" />
+        </label>
+
+        <label>
+          Tags
+          <input type="text" formControlName="tagsText" placeholder="drama, premijera, velika scena" />
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" formControlName="isPremiere" />
+          <span>Premiere</span>
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" formControlName="isOnRepertoire" />
+          <span>On repertoire</span>
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" formControlName="isFeatured" />
+          <span>Featured</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Moderated content</h2>
+      <label>
+        Short description
+        <textarea rows="3" formControlName="shortDescription"></textarea>
+      </label>
+      <label>
+        Long description / body
+        <textarea rows="8" formControlName="description"></textarea>
+      </label>
+      <label>
+        Synopsis
+        <textarea rows="6" formControlName="synopsis"></textarea>
+      </label>
+    </section>
+
+    <section class="panel">
+      <h2>Media</h2>
+      <div class="form-grid">
+        <label>
+          Poster
+          <select formControlName="poster">
+            <option value="">No poster</option>
+            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
+          </select>
+        </label>
+
+        <label>
+          Gallery
+          <select formControlName="gallery" multiple size="8">
+            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
+          </select>
+        </label>
+      </div>
+      <small>Media upload stays in the media library; this form links existing images.</small>
+    </section>
+
+    <section class="panel">
+      <div class="section-row">
+        <h2>Creative team</h2>
+        <button type="button" (click)="addCreativeTeam()">Add credit</button>
+      </div>
+
+      <div class="repeat-list" formArrayName="creativeTeam">
+        <div class="repeat-row" *ngFor="let group of creativeTeamControls(); let index = index" [formGroupName]="index">
+          <label>
+            Role
+            <input type="text" formControlName="role" placeholder="Director, conductor..." />
+          </label>
+          <label>
+            Artist
+            <select formControlName="artist">
+              <option value="">No linked artist</option>
+              <option *ngFor="let artist of artists" [value]="artist._id">{{ artistLabel(artist) }}</option>
+            </select>
+          </label>
+          <label>
+            Name override
+            <input type="text" formControlName="name" placeholder="Shown if no linked artist is selected" />
+          </label>
+          <label>
+            Order
+            <input type="number" formControlName="order" />
+          </label>
+          <button type="button" class="danger" (click)="removeCreativeTeam(index)">Remove</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-row">
+        <h2>Cast</h2>
+        <button type="button" (click)="addCast()">Add cast row</button>
+      </div>
+
+      <div class="repeat-list" formArrayName="cast">
+        <div class="repeat-row" *ngFor="let group of castControls(); let index = index" [formGroupName]="index">
+          <label>
+            Character / contribution
+            <input type="text" formControlName="character" />
+          </label>
+          <label>
+            Linked artist
+            <select formControlName="artist">
+              <option value="">No linked artist</option>
+              <option *ngFor="let artist of artists" [value]="artist._id">{{ artistLabel(artist) }}</option>
+            </select>
+          </label>
+          <label>
+            Additional names
+            <input type="text" formControlName="namesText" placeholder="Comma separated names" />
+          </label>
+          <label>
+            Order
+            <input type="number" formControlName="order" />
+          </label>
+          <button type="button" class="danger" (click)="removeCast(index)">Remove</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="actions">
+      <a routerLink="/admin/productions">Cancel</a>
+      <button type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Saving...' : 'Save production' }}</button>
+    </footer>
+  </form>
+</div>

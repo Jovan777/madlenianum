@@ -121,13 +121,11 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-orderSchema.pre("validate", function (next) {
+orderSchema.pre("validate", function () {
   if (!this.orderCode) {
     const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
     this.orderCode = `MDL-${Date.now()}-${randomPart}`;
   }
-
-  next();
 });
 
 orderSchema.index({ customer: 1, createdAt: -1 });

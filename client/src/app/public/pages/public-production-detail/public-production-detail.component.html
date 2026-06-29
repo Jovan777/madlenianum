@@ -1,58 +1,67 @@
-<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="loading-state" *ngIf="isLoading()">Ucitavanje predstave...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <ng-container *ngIf="!isLoading() && production() as item">
   <section class="detail-hero">
-    <img *ngIf="image(item.poster)" [src]="image(item.poster)" [alt]="item.title">
+    <img [src]="image(item.poster)" [alt]="item.title" />
+
     <div class="hero-copy">
-      <p class="eyebrow">{{ item.type || 'Stage' }}</p>
+      <p class="eyebrow">{{ typeLabel(item) }}</p>
       <h1>{{ item.title }}</h1>
+      <p>{{ item.subtitle || item.shortDescription || item.authorComposer }}</p>
       <div class="hero-actions">
-        <a class="btn btn-gold" *ngIf="events().length" [routerLink]="['/kupovina', eventId(events()[0])]">Buy</a>
-        <a class="btn btn-light" routerLink="/repertoar">Dates</a>
+        <a class="btn btn-gold" *ngIf="events().length" [routerLink]="['/kupovina', eventId(events()[0])]">Kupi karte</a>
+        <a class="btn btn-light" routerLink="/repertoar">Termini</a>
       </div>
     </div>
   </section>
 
   <section class="story">
     <aside>
-      <span>{{ item.season || '2025/2026' }}</span>
-      <span>{{ item.authorComposer || 'Madlenianum' }}</span>
-      <span>{{ item.type || 'Stage' }}</span>
+      <span *ngFor="let meta of metaItems(item)">{{ meta }}</span>
+      <span>{{ typeLabel(item) }}</span>
     </aside>
 
     <article>
-      <h2>{{ item.subtitle || 'After silence.' }}</h2>
-      <p>{{ item.description || item.synopsis || item.shortDescription }}</p>
+      <h2>{{ item.subtitle || item.originalTitle || item.title }}</h2>
+      <p>{{ item.description || item.synopsis || item.shortDescription || 'Detaljan opis ce biti dodat uskoro.' }}</p>
     </article>
   </section>
 
   <section class="dates" *ngIf="events().length">
+    <div class="section-head">
+      <p class="eyebrow">Termini</p>
+      <h2 class="section-title">Kada se igra</h2>
+    </div>
+
     <article *ngFor="let event of events()">
-      <strong>{{ eventDate(event) }}</strong>
-      <a [routerLink]="['/kupovina', eventId(event)]">Buy</a>
+      <div>
+        <strong>{{ eventDate(event) }}</strong>
+        <span>{{ venueName(event) }}</span>
+      </div>
+      <a [routerLink]="['/kupovina', eventId(event)]">Kupi</a>
     </article>
   </section>
 
   <section class="people" *ngIf="item.creativeTeam?.length || item.cast?.length">
     <div *ngIf="item.creativeTeam?.length">
-      <h3>Team</h3>
+      <h3>Kreativni tim</h3>
       <p *ngFor="let member of item.creativeTeam">
-        <span>{{ member.role || 'Role' }}</span>
-        <strong>{{ member.name || member.artist?.displayName || '-' }}</strong>
+        <span>{{ member.role || 'Uloga' }}</span>
+        <strong>{{ creditName(member) }}</strong>
       </p>
     </div>
 
     <div *ngIf="item.cast?.length">
-      <h3>Cast</h3>
+      <h3>Podela</h3>
       <p *ngFor="let cast of item.cast">
-        <span>{{ cast.character || 'Role' }}</span>
+        <span>{{ cast.character || 'Uloga' }}</span>
         <strong>{{ castNames(cast) }}</strong>
       </p>
     </div>
   </section>
 
   <section class="gallery" *ngIf="gallery(item).length">
-    <img *ngFor="let media of gallery(item)" [src]="image(media)" [alt]="item.title">
+    <img *ngFor="let media of gallery(item); let index = index" [src]="image(media, index)" [alt]="item.title" />
   </section>
 </ng-container>

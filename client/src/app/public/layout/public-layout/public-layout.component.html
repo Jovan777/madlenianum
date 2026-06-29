@@ -1,46 +1,21 @@
 <div class="public-shell">
-  <header class="site-header">
-    <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Madlenianum">
-      <span>M</span>
-      <strong>Madlenianum</strong>
-    </a>
-
-    <nav class="desktop-nav" aria-label="Glavna navigacija">
-      <a routerLink="/repertoar" routerLinkActive="active">Program</a>
-      <a routerLink="/predstave" routerLinkActive="active">Scene</a>
-      <a routerLink="/umetnici" routerLinkActive="active">Artists</a>
-      <a routerLink="/strana/o-nama" routerLinkActive="active">About</a>
-    </nav>
-
-    <div class="header-actions">
-      <a class="plain" routerLink="/porudzbina">Tickets</a>
-      <a class="buy" routerLink="/repertoar">Buy</a>
-      <button class="menu-button" type="button" (click)="toggleMenu()" [class.open]="menuOpen()" aria-label="Menu">
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </header>
-
-  <div class="mobile-panel" *ngIf="menuOpen()">
-    <a routerLink="/repertoar" (click)="closeMenu()">Program</a>
-    <a routerLink="/predstave" (click)="closeMenu()">Scene</a>
-    <a routerLink="/umetnici" (click)="closeMenu()">Artists</a>
-    <a routerLink="/strana/o-nama" (click)="closeMenu()">About</a>
-    <a routerLink="/porudzbina" (click)="closeMenu()">Tickets</a>
-  </div>
+  <app-public-header />
 
   <main>
     <router-outlet></router-outlet>
   </main>
 
   <footer class="site-footer">
-    <div class="footer-mark">M</div>
     <div>
-      <span>Opera</span>
-      <span>Theatre</span>
-      <span>Belgrade</span>
+      <img src="/madlenianum/logo.png" alt="Madlenianum" />
+      <p>Opera, teatar i balet u Zemunu.</p>
     </div>
-    <a routerLink="/admin/login">Admin</a>
+
+    <nav aria-label="Footer navigation">
+      <a routerLink="/repertoar">Program</a>
+      <a routerLink="/predstave">Predstave</a>
+      <a routerLink="/porudzbina">Porudzbina</a>
+      <a routerLink="/admin/login">Admin</a>
+    </nav>
   </footer>
 </div>

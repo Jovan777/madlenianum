@@ -1,17 +1,22 @@
-<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="loading-state" *ngIf="isLoading()">Ucitavanje umetnika...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <section class="artists" *ngIf="!isLoading()">
   <header>
-    <p class="eyebrow">Artists</p>
-    <h1>Faces</h1>
+    <p class="eyebrow">Ansambl</p>
+    <h1>Umetnici</h1>
+    <p>Izvodjaci, autori i saradnici koji oblikuju repertoar Madlenianuma.</p>
   </header>
 
-  <div class="artist-grid">
-    <a *ngFor="let artist of artists()" [routerLink]="['/umetnici', artist.slug]">
-      <img *ngIf="image(artist)" [src]="image(artist)" [alt]="artist.displayName || artist.name">
-      <span *ngIf="!image(artist)">{{ (artist.displayName || artist.name || 'M').slice(0, 1) }}</span>
-      <strong>{{ artist.displayName || artist.name }}</strong>
+  <div class="empty-state" *ngIf="artists().length === 0">Umetnici jos nisu objavljeni.</div>
+
+  <div class="artist-grid" *ngIf="artists().length > 0">
+    <a *ngFor="let artist of artists(); let index = index" [routerLink]="['/umetnici', artist.slug]">
+      <img [src]="image(artist, index)" [alt]="name(artist)" />
+      <div>
+        <span>{{ professions(artist) }}</span>
+        <strong>{{ name(artist) }}</strong>
+      </div>
     </a>
   </div>
 </section>

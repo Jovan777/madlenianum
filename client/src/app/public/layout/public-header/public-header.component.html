@@ -1,0 +1,32 @@
+<header class="site-header">
+  <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Madlenianum home">
+    <img src="/madlenianum/logo.png" alt="Madlenianum" />
+  </a>
+
+  <nav class="desktop-nav" aria-label="Glavna navigacija">
+    <a
+      *ngFor="let item of navItems"
+      [routerLink]="item.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+    >
+      {{ item.label }}
+    </a>
+  </nav>
+
+  <div class="header-actions">
+    <a class="lookup" routerLink="/porudzbina">Porudzbina</a>
+    <a class="buy" routerLink="/repertoar">Kupi karte</a>
+    <button class="menu-button" type="button" (click)="toggleMenu()" [class.open]="menuOpen()" aria-label="Menu">
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-panel" *ngIf="menuOpen()" aria-label="Mobilna navigacija">
+  <a *ngFor="let item of navItems" [routerLink]="item.path" (click)="closeMenu()">
+    {{ item.label }}
+  </a>
+  <a routerLink="/porudzbina" (click)="closeMenu()">Porudzbina</a>
+</nav>

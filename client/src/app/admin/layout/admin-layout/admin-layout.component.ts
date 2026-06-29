@@ -14,16 +14,18 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class AdminLayoutComponent {
   readonly menuItems: AdminMenuItem[] = [
-    { label: 'Studio', path: '/admin', icon: '01' },
-    { label: 'Program', path: '/admin/productions', icon: '02' },
-    { label: 'Dates', path: '/admin/events', icon: '03' },
-    { label: 'Halls', path: '/admin/venues', icon: '04' },
-    { label: 'Maps', path: '/admin/seat-maps', icon: '05' },
-    { label: 'Prices', path: '/admin/price-plans', icon: '06' },
-    { label: 'Orders', path: '/admin/orders', icon: '07' },
-    { label: 'People', path: '/admin/artists', icon: '08' },
-    { label: 'News', path: '/admin/news', icon: '09' },
-    { label: 'System', path: '/admin/system', icon: '10' },
+    { label: 'Dashboard', path: '/admin', icon: 'D' },
+    { label: 'Repertoar / Events', path: '/admin/events', icon: 'R' },
+    { label: 'Predstave / Productions', path: '/admin/productions', icon: 'P' },
+    { label: 'Umetnici / Artists', path: '/admin/artists', icon: 'A' },
+    { label: 'Venues', path: '/admin/venues', icon: 'V' },
+    { label: 'Seat maps', path: '/admin/seat-maps', icon: 'M' },
+    { label: 'Price plans', path: '/admin/price-plans', icon: 'L' },
+    { label: 'Price categories', path: '/admin/price-categories', icon: 'C' },
+    { label: 'Orders', path: '/admin/orders', icon: 'O' },
+    { label: 'Pages / Content', path: '/admin/pages', icon: 'G' },
+    { label: 'News', path: '/admin/news', icon: 'N' },
+    { label: 'System', path: '/admin/system', icon: 'S' },
   ];
 
   constructor(readonly authService: AuthService) {}

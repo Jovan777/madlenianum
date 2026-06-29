@@ -1,17 +1,17 @@
-<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="loading-state" *ngIf="isLoading()">Ucitavanje programa...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <section class="home" *ngIf="!isLoading()">
   <section class="hero" [style.background-image]="heroBackground()">
-    <div class="hero-shade"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">Opera i teatar</p>
+      <h1>{{ heroTitle() }}</h1>
+      <p>{{ heroSubtitle() }}</p>
 
-    <div class="hero-copy" *ngIf="activeSlide() as slide">
-      <p class="eyebrow">Now</p>
-      <h1>{{ slide.title || 'Madlenianum' }}</h1>
-      <p>{{ slide.subtitle || 'Opera, ballet, theatre.' }}</p>
       <div class="hero-actions">
-        <a class="btn btn-gold" *ngIf="slideEventId(slide)" [routerLink]="['/kupovina', slideEventId(slide)]">Buy</a>
-        <a class="btn btn-light" *ngIf="slideProduction(slide) as production" [routerLink]="['/predstave', production.slug]">View</a>
+        <a class="btn btn-gold" *ngIf="heroEventId()" [routerLink]="['/kupovina', heroEventId()]">Kupi karte</a>
+        <a class="btn btn-light" *ngIf="heroProductionSlug()" [routerLink]="['/predstave', heroProductionSlug()]">Detalji</a>
+        <a class="btn btn-light" routerLink="/repertoar">Program</a>
       </div>
     </div>
 
@@ -27,29 +27,65 @@
     </div>
   </section>
 
-  <section class="program-strip" *ngIf="events().length > 0">
-    <a class="program-item" *ngFor="let event of events().slice(0, 4)" [routerLink]="['/kupovina', eventId(event)]">
-      <span>{{ productionDateLabel(event) }}</span>
-      <strong>{{ productionTitleFromEvent(event) }}</strong>
-      <small>{{ productionTypeFromEvent(event) }}</small>
-    </a>
-  </section>
-
-  <section class="editorial">
-    <div class="editorial-head">
-      <p class="eyebrow">Program</p>
-      <h2>Less noise. More stage.</h2>
-      <a routerLink="/repertoar">All dates</a>
+  <section class="programme" *ngIf="events().length > 0; else noProgramme">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Sledece</p>
+        <h2 class="section-title">Na programu</h2>
+      </div>
+      <a routerLink="/repertoar">Svi termini</a>
     </div>
 
-    <div class="poster-grid">
-      <a class="poster" *ngFor="let production of productions().slice(0, 5)" [routerLink]="['/predstave', production.slug]">
-        <img *ngIf="productionImage(production)" [src]="productionImage(production)" [alt]="production.title">
+    <div class="event-list">
+      <article class="event-row" *ngFor="let event of events().slice(0, 5)">
+        <div class="date">
+          <strong>{{ eventDate(event) }}</strong>
+          <span>{{ eventTime(event) }}</span>
+        </div>
+
         <div>
-          <span>{{ production.type || 'Stage' }}</span>
-          <strong>{{ production.title }}</strong>
+          <span>{{ eventType(event) }} / {{ venueName(event) }}</span>
+          <h3>{{ eventTitle(event) }}</h3>
+        </div>
+
+        <a [routerLink]="['/kupovina', eventId(event)]">Karte</a>
+      </article>
+    </div>
+  </section>
+
+  <ng-template #noProgramme>
+    <div class="empty-state">Program za naredni period jos nije objavljen.</div>
+  </ng-template>
+
+  <section class="productions-band" *ngIf="productions().length > 0">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Repertoar</p>
+        <h2 class="section-title">Predstave koje nose sezonu</h2>
+      </div>
+      <a routerLink="/predstave">Sve predstave</a>
+    </div>
+
+    <div class="production-grid">
+      <a
+        class="production-card"
+        *ngFor="let production of productions().slice(0, 6); let index = index"
+        [routerLink]="['/predstave', production.slug]"
+      >
+        <img [src]="productionImage(production, index)" [alt]="production.title" />
+        <div>
+          <span>{{ productionType(production) }}</span>
+          <h3>{{ production.title }}</h3>
+          <p>{{ production.shortDescription || production.subtitle || production.authorComposer }}</p>
         </div>
       </a>
     </div>
+  </section>
+
+  <section class="news-strip" *ngIf="news().length > 0">
+    <p class="eyebrow">Aktuelno</p>
+    <a *ngFor="let item of news().slice(0, 3)">
+      {{ newsTitle(item) }}
+    </a>
   </section>
 </section>

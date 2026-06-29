@@ -1,6 +1,7 @@
 .detail-page {
   display: grid;
   gap: 1.25rem;
+  color: var(--admin-ink);
 }
 
 .back {
@@ -16,9 +17,7 @@
   align-items: flex-end;
   border-radius: 30px;
   padding: 2rem;
-  background:
-    radial-gradient(circle at right top, rgba(225, 190, 92, 0.3), transparent 30rem),
-    linear-gradient(135deg, #17120c, #060503);
+  background: linear-gradient(135deg, #17120c, #163a49);
   color: #fff;
 
   span {
@@ -31,7 +30,7 @@
 
   h2 {
     margin: 0.35rem 0;
-    font-size: clamp(1.8rem, 3vw, 3rem);
+    font-size: 2.6rem;
   }
 
   p {
@@ -66,9 +65,11 @@ article,
   background: #fff;
   border: 1px solid rgba(42, 31, 17, 0.08);
   box-shadow: 0 14px 46px rgba(46, 32, 14, 0.06);
+  color: var(--admin-ink);
 
   h3 {
     margin: 0 0 1rem;
+    color: var(--admin-ink);
   }
 }
 
@@ -87,11 +88,12 @@ dl div {
 }
 
 dt {
-  color: #806a43;
+  color: var(--admin-muted);
 }
 
 dd {
   margin: 0;
+  color: var(--admin-ink);
   font-weight: 800;
   text-align: right;
 }

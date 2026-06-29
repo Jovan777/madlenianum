@@ -84,6 +84,26 @@ export class AdminEventFormComponent implements OnInit {
     return venueId ? items.filter((item) => this.getId(item.venue) === venueId) : items;
   }
 
+  selectedSeatMap(): any | null {
+    const id = this.form.controls.seatMap.value;
+    return this.seatMaps.find((item) => this.getId(item) === id) || null;
+  }
+
+  selectedPricePlan(): any | null {
+    const id = this.form.controls.pricePlan.value;
+    return this.pricePlans.find((item) => this.getId(item) === id) || null;
+  }
+
+  pricePlanRules(): any[] {
+    return this.selectedPricePlan()?.rules || [];
+  }
+
+  formatRule(rule: any): string {
+    const category = rule.priceCategory;
+    const categoryLabel = category?.code ? `${category.code} / ${category.name}` : 'Category';
+    return `${categoryLabel}: ${Number(rule.amount || 0).toLocaleString('sr-RS')} ${this.selectedPricePlan()?.currency || 'RSD'}`;
+  }
+
   get eventStatuses(): any[] {
     return this.options()['eventStatuses'] || [];
   }

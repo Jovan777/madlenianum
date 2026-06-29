@@ -52,9 +52,27 @@ export class AdminApiService {
     );
   }
 
+  getProductionFormOptions() {
+    return this.http.get<{ success: boolean; options: Record<string, any[]> }>(
+      `${this.apiUrl}/admin/form-options/production`
+    );
+  }
+
+  getArtistFormOptions() {
+    return this.http.get<{ success: boolean; options: Record<string, any[]> }>(
+      `${this.apiUrl}/admin/form-options/artist`
+    );
+  }
+
   getSeatMapFormOptions() {
     return this.http.get<{ success: boolean; options: Record<string, any[]> }>(
       `${this.apiUrl}/admin/form-options/seat-map`
+    );
+  }
+
+  getPricePlanFormOptions() {
+    return this.http.get<{ success: boolean; options: Record<string, any[]> }>(
+      `${this.apiUrl}/admin/form-options/price-plan`
     );
   }
 

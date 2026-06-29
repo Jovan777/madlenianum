@@ -1,33 +1,40 @@
 <section class="studio-dashboard">
-  <div class="dashboard-hero">
-    <span>CMS</span>
-    <h1>Studio</h1>
-    <a routerLink="/admin/events">Dates</a>
-  </div>
+  <header class="dashboard-hero">
+    <div>
+      <span>Overview</span>
+      <h1>Dashboard</h1>
+      <p>Public content, ticketing setup and current orders.</p>
+    </div>
+
+    <div class="hero-actions">
+      <a routerLink="/admin/events/new">New event</a>
+      <a routerLink="/admin/orders">Orders</a>
+    </div>
+  </header>
 
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
 
   <div class="quick-grid" *ngIf="!isLoading()">
     <a *ngFor="let card of cards()" [routerLink]="card.route">
-      <strong>{{ card.value }}</strong>
       <span>{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
     </a>
   </div>
 
   <section class="quiet-panel" *ngIf="warnings() as warningMap">
     <article>
-      <span>On sale</span>
+      <span>Events on sale</span>
       <strong>{{ warningMap['eventsOnSale'] || 0 }}</strong>
     </article>
     <article>
-      <span>No map</span>
+      <span>Missing seat map</span>
       <strong>{{ warningMap['eventsMissingSeatMap'] || 0 }}</strong>
     </article>
     <article>
-      <span>No price</span>
+      <span>Missing price plan</span>
       <strong>{{ warningMap['eventsMissingPricePlan'] || 0 }}</strong>
     </article>
   </section>
 
-  <p class="loading" *ngIf="isLoading()">Loading...</p>
+  <p class="loading" *ngIf="isLoading()">Loading dashboard...</p>
 </section>

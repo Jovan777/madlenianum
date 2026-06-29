@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 
 import { PublicEvent, PublicProduction } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
@@ -25,29 +24,11 @@ export class PublicProductionDetailComponent implements OnInit {
   ngOnInit(): void {
     const slug = this.route.snapshot.paramMap.get('slug') || '';
 
-    forkJoin({
-      production: this.publicApi.getProduction(slug),
-      repertoire: this.publicApi.getRepertoire(),
-    }).subscribe({
-      next: ({ production, repertoire }) => {
-        const item = this.publicApi.extractItem<PublicProduction>(production, ['production']);
+    this.publicApi.getProduction(slug).subscribe({
+      next: (response) => {
+        const item = this.publicApi.extractItem<PublicProduction>(response, ['production', 'item']);
         this.production.set(item);
-
-        const allEvents = this.publicApi.extractItems<PublicEvent>(repertoire, [
-          'events',
-          'repertoire',
-          'items',
-        ]);
-
-        this.events.set(
-          allEvents.filter((event) => {
-            if (!event.production || typeof event.production === 'string') {
-              return false;
-            }
-
-            return event.production.slug === slug;
-          })
-        );
+        this.events.set(this.publicApi.extractItems<PublicEvent>(response, ['upcomingEvents', 'events']));
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.message || 'Predstava trenutno nije dostupna.');
@@ -58,8 +39,8 @@ export class PublicProductionDetailComponent implements OnInit {
     });
   }
 
-  image(value: unknown): string {
-    return this.publicApi.mediaUrl(value);
+  image(value: unknown, fallbackIndex = 0): string {
+    return this.publicApi.mediaUrl(value) || this.publicApi.fallbackImage(fallbackIndex);
   }
 
   gallery(production: PublicProduction): unknown[] {
@@ -72,7 +53,7 @@ export class PublicProductionDetailComponent implements OnInit {
 
   eventDate(event: PublicEvent): string {
     if (!event.startsAt) {
-      return 'Termin će biti objavljen';
+      return 'Termin ce biti objavljen';
     }
 
     return new Date(event.startsAt).toLocaleString('sr-RS', {
@@ -85,6 +66,24 @@ export class PublicProductionDetailComponent implements OnInit {
     });
   }
 
+  venueName(event: PublicEvent): string {
+    return event.venue?.name || event.venue?.title || 'Madlenianum';
+  }
+
+  typeLabel(production: PublicProduction): string {
+    return this.publicApi.typeLabel(production.type);
+  }
+
+  metaItems(production: PublicProduction): string[] {
+    return [
+      production.authorComposer,
+      production.season,
+      production.durationMinutes ? `${production.durationMinutes} min` : '',
+      production.performanceLanguage,
+      production.subtitles ? `Titl: ${production.subtitles}` : '',
+    ].filter(Boolean) as string[];
+  }
+
   castNames(item: any): string {
     if (Array.isArray(item.names) && item.names.length > 0) {
       return item.names.join(', ');
@@ -95,5 +94,9 @@ export class PublicProductionDetailComponent implements OnInit {
     }
 
     return '-';
+  }
+
+  creditName(member: any): string {
+    return member.name || member.artist?.displayName || member.artist?.name || '-';
   }
 }

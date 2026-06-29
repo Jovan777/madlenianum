@@ -18,7 +18,7 @@ const getStaticPages = asyncHandler(async (req, res) => {
     .populate("image")
     .populate("gallery")
     .populate("attachments")
-    .sort("weight title");
+    .sort("title");
 
   res.json({
     success: true,

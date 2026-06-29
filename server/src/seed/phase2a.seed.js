@@ -30,7 +30,7 @@ const romanRows = [
   "XVI",
 ];
 
-const getOrCreatePriceCategory = async ({ code, name, description, weight }) => {
+const getOrCreatePriceCategory = async ({ code, name, description }) => {
   const normalizedCode = code.toUpperCase().trim();
 
   return PriceCategory.findOneAndUpdate(
@@ -39,11 +39,10 @@ const getOrCreatePriceCategory = async ({ code, name, description, weight }) => 
       code: normalizedCode,
       name,
       description,
-      weight,
       status: "active",
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -60,7 +59,7 @@ const getOrCreateVenue = async () => {
       capacity: 504,
       hasNumberedSeats: true,
       description:
-        "Velika scena Madlenianuma. Test podaci za plan sedišta i cenovnik.",
+        "Velika scena Madlenianuma. Osnovni podaci za plan sedišta i cenovnik.",
       sections: [
         {
           name: "Parter",
@@ -79,10 +78,9 @@ const getOrCreateVenue = async () => {
         },
       ],
       status: "published",
-      weight: 1,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -106,14 +104,13 @@ const getOrCreateSmallVenue = async () => {
           key: "mala-scena",
           capacity: 0,
           isNumbered: false,
-          description: "Test sekcija za Malu scenu.",
+          description: "Osnovna sekcija za Malu scenu.",
         },
       ],
       status: "published",
-      weight: 2,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -143,7 +140,7 @@ const createPricePlan = async ({
       validTo: new Date("2026-12-31T23:59:59.999Z"),
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -161,7 +158,7 @@ const getOrCreateSeatMap = async (venue) => {
       name: "Velika scena - sezona 2025/2026",
       slug: "velika-scena-2025-2026",
       description:
-        "Test plan sedišta za Veliku scenu na osnovu javno dostupnog rasporeda: Parter 442, Galerija 62.",
+        "Plan sedišta za Veliku scenu na osnovu javno dostupnog rasporeda: Parter 442, Galerija 62.",
       canvas: {
         width: 1400,
         height: 1000,
@@ -186,7 +183,7 @@ const getOrCreateSeatMap = async (venue) => {
       status: "active",
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -501,10 +498,9 @@ const getOrCreateGiulioCesareProduction = async (venue) => {
       },
       status: "published",
       isFeatured: true,
-      weight: 1,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -549,10 +545,10 @@ const getOrCreateGiulioCesareEvent = async ({
         currency: "RSD",
       },
       notes:
-        "Premijera opere Julije Cezar u Egiptu. Seed podaci za testiranje sedišta i cena.",
+        "Premijera opere Julije Cezar u Egiptu. Seed podaci za proveru sedišta i cena.",
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
@@ -574,28 +570,24 @@ const seedPhase2A = async () => {
       code: "I",
       name: "I kategorija",
       description: "I red loža / najbolja sedišta.",
-      weight: 1,
     });
 
     const categoryII = await getOrCreatePriceCategory({
       code: "II",
       name: "II kategorija",
       description: "Parter i II red loža.",
-      weight: 2,
     });
 
     const categoryIII = await getOrCreatePriceCategory({
       code: "III",
       name: "III kategorija",
       description: "Pomoćne stolice u ložama.",
-      weight: 3,
     });
 
     const categoryAll = await getOrCreatePriceCategory({
       code: "ALL",
       name: "Sva mesta",
       description: "Jedinstvena cena za sva mesta.",
-      weight: 10,
     });
 
     const operaRegularPlan = await createPricePlan({
@@ -839,7 +831,7 @@ const seedPhase2A = async () => {
     });
 
     console.log("");
-    console.log("Test endpoint:");
+    console.log("Verification endpoint:");
     console.log(
       `GET http://localhost:${process.env.PORT || 5000}/api/public/events/${event._id.toString()}/seats`
     );

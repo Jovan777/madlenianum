@@ -181,23 +181,16 @@ const productionSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // broj izvodjenja
-    weight: {
-      type: Number,
-      default: 0,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-productionSchema.pre("validate", function (next) {
+productionSchema.pre("validate", function () {
   if (!this.slug && this.title) {
     this.slug = slugify(this.title);
   }
-
-  next();
 });
 
 module.exports = mongoose.model("Production", productionSchema, "productions");

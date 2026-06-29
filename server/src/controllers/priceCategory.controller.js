@@ -16,7 +16,7 @@ const getPriceCategories = asyncHandler(async (req, res) => {
     ];
   }
 
-  const items = await PriceCategory.find(filter).sort("weight code");
+  const items = await PriceCategory.find(filter).sort("code");
 
   res.json({
     success: true,

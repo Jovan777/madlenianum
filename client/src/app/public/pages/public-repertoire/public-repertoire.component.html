@@ -1,11 +1,14 @@
-<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="loading-state" *ngIf="isLoading()">Ucitavanje repertoara...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <section class="repertoire" *ngIf="!isLoading()">
   <header class="page-head">
-    <p class="eyebrow">Dates</p>
-    <h1>Program</h1>
-    <div class="filters">
+    <div>
+      <p class="eyebrow">Program</p>
+      <h1>Repertoar</h1>
+    </div>
+
+    <div class="filters" *ngIf="events().length">
       <button
         *ngFor="let type of filters()"
         type="button"
@@ -17,10 +20,14 @@
     </div>
   </header>
 
-  <div class="date-list">
-    <article class="date-card" *ngFor="let event of filteredEvents()">
+  <div class="empty-state" *ngIf="filteredEvents().length === 0">
+    Nema objavljenih termina za izabrani filter.
+  </div>
+
+  <div class="date-list" *ngIf="filteredEvents().length > 0">
+    <article class="date-card" *ngFor="let event of filteredEvents(); let index = index">
       <a class="image" [routerLink]="['/predstave', productionSlug(event)]">
-        <img *ngIf="productionImage(event)" [src]="productionImage(event)" [alt]="productionTitle(event)">
+        <img [src]="productionImage(event, index)" [alt]="productionTitle(event)" />
       </a>
 
       <div class="date-mark">
@@ -29,13 +36,14 @@
       </div>
 
       <div class="date-copy">
-        <span>{{ timeLabel(event) }} · {{ venueName(event) }}</span>
+        <span>{{ dateFull(event) }} / {{ timeLabel(event) }} / {{ venueName(event) }}</span>
         <h2>{{ productionTitle(event) }}</h2>
+        <p>{{ productionTypeLabel(event) }}</p>
       </div>
 
       <div class="date-actions">
-        <a [routerLink]="['/predstave', productionSlug(event)]">Info</a>
-        <a class="buy" [routerLink]="['/kupovina', eventId(event)]">Buy</a>
+        <a [routerLink]="['/predstave', productionSlug(event)]">Detalji</a>
+        <a class="buy" *ngIf="canBuy(event)" [routerLink]="['/kupovina', eventId(event)]">Kupi</a>
       </div>
     </article>
   </div>

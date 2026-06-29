@@ -4,24 +4,36 @@
 
 :root {
   color-scheme: light;
-  --void: #070707;
-  --ink: #15130f;
-  --ink-2: #4f4638;
-  --paper: #f8f3e8;
-  --paper-2: #efe5d3;
-  --clay: #c75b3d;
-  --clay-dark: #8f3327;
-  --gold: #c69a45;
-  --gold-2: #efd394;
-  --night: #101826;
-  --blue: #172b4d;
-  --mist: rgba(248, 243, 232, 0.72);
-  --line: rgba(21, 19, 15, 0.12);
-  --line-dark: rgba(248, 243, 232, 0.14);
-  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.12);
-  --shadow-hard: 0 34px 120px rgba(0, 0, 0, 0.34);
+  --ink: #14110f;
+  --muted: #4f463f;
+  --soft: #6b5f53;
+  --paper: #f6f0e8;
+  --surface: #fffaf3;
+  --surface-2: #e8ded2;
+  --night: #101112;
+  --red: #9f3328;
+  --red-2: #c84b3d;
+  --brass: #7a5418;
+  --gold: #e7c46d;
+  --gold-text: #6f4b13;
+  --blue: #24576a;
+  --green: #526b58;
+  --line: rgba(20, 17, 15, 0.2);
+  --line-invert: rgba(246, 240, 232, 0.28);
+  --shadow: 0 22px 60px rgba(20, 17, 15, 0.14);
   --container: min(1240px, calc(100vw - 40px));
-  --radius: 34px;
+  --text-on-dark: #fffaf3;
+  --muted-on-dark: #ded3c4;
+  --admin-ink: #171311;
+  --admin-muted: #4f463f;
+  --admin-soft: #6b5f53;
+  --admin-surface: #fffaf4;
+  --admin-surface-strong: #ffffff;
+  --admin-border: rgba(33, 25, 15, 0.18);
+  --admin-accent: #8d2b23;
+  --admin-gold: #e7c46d;
+  --admin-gold-text: #6f4b13;
+  --admin-shadow: 0 16px 40px rgba(33, 25, 15, 0.1);
 }
 
 html {
@@ -32,10 +44,7 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 0% 0%, rgba(198, 154, 69, 0.18), transparent 30%),
-    radial-gradient(circle at 100% 16%, rgba(199, 91, 61, 0.16), transparent 34%),
-    linear-gradient(135deg, #fbf7ee 0%, #efe4d0 48%, #f7efe1 100%);
+  background: var(--paper);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow-x: hidden;
 }
@@ -44,26 +53,13 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(21, 19, 15, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(21, 19, 15, 0.03) 1px, transparent 1px);
-  background-size: 88px 88px;
-  mask-image: linear-gradient(to bottom, black, transparent 70%);
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.32;
-  background-image:
-    radial-gradient(circle at 30% 20%, rgba(0, 0, 0, 0.08) 0 1px, transparent 1px),
-    radial-gradient(circle at 80% 40%, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px);
-  background-size: 18px 18px, 22px 22px;
+  background:
+    linear-gradient(90deg, rgba(20, 17, 15, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(20, 17, 15, 0.03) 1px, transparent 1px);
+  background-size: 96px 96px;
+  opacity: 0.55;
 }
 
 button,
@@ -103,45 +99,42 @@ img {
   align-items: center;
   gap: 10px;
   margin: 0;
-  color: var(--clay-dark);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
+  color: var(--red);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .eyebrow::before {
   content: '';
-  width: 24px;
+  width: 28px;
   height: 1px;
   background: currentColor;
 }
 
-.display-title {
+.display-title,
+.section-title {
   margin: 0;
-  color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(4rem, 13vw, 14rem);
   font-weight: 400;
-  letter-spacing: -0.105em;
-  line-height: 0.78;
+  letter-spacing: 0;
+  line-height: 0.92;
+}
+
+.display-title {
+  font-size: 8.5rem;
 }
 
 .section-title {
-  margin: 0;
-  color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.8rem, 7vw, 7.2rem);
-  font-weight: 400;
-  letter-spacing: -0.085em;
-  line-height: 0.84;
+  font-size: 5.5rem;
 }
 
 .section-copy {
-  max-width: 620px;
+  max-width: 660px;
   margin: 0;
-  color: rgba(21, 19, 15, 0.68);
-  font-size: clamp(1rem, 1.6vw, 1.18rem);
+  color: var(--muted);
+  font-size: 1.08rem;
   line-height: 1.7;
 }
 
@@ -155,8 +148,8 @@ img {
   border-radius: 999px;
   padding: 13px 18px;
   font-size: 0.76rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
+  font-weight: 850;
+  letter-spacing: 0;
   text-transform: uppercase;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
@@ -167,61 +160,78 @@ img {
 
 .btn-primary {
   color: var(--paper);
-  background: var(--void);
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.22);
+  background: var(--night);
+  box-shadow: 0 16px 38px rgba(20, 17, 15, 0.22);
 }
 
 .btn-gold {
   color: var(--ink);
-  background: linear-gradient(135deg, var(--gold-2), var(--gold));
-  box-shadow: 0 16px 38px rgba(198, 154, 69, 0.28);
+  background: #e7c46d;
+  box-shadow: 0 16px 38px rgba(184, 139, 62, 0.28);
 }
 
 .btn-ghost {
   border: 1px solid var(--line);
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 250, 243, 0.58);
 }
 
 .btn-light {
-  border: 1px solid var(--line-dark);
-  color: var(--paper);
-  background: rgba(248, 243, 232, 0.08);
+  border: 1px solid var(--line-invert);
+  color: var(--text-on-dark);
+  background: rgba(246, 240, 232, 0.16);
 }
 
 .loading-state,
 .error-state,
-.empty-state {
+.empty-state,
+.success-state {
   width: var(--container);
   margin: 120px auto;
   border: 1px solid var(--line);
-  border-radius: 32px;
-  padding: 28px;
-  background: rgba(255, 255, 255, 0.52);
-  box-shadow: var(--shadow-soft);
-  color: rgba(21, 19, 15, 0.72);
+  border-radius: 8px;
+  padding: 24px;
+  background: rgba(255, 250, 243, 0.8);
+  box-shadow: var(--shadow);
+  color: var(--muted);
 }
 
 .error-state {
-  color: var(--clay-dark);
+  color: var(--red);
+}
+
+.success-state {
+  color: #24513a;
+  border-color: rgba(82, 107, 88, 0.28);
+  background: rgba(82, 107, 88, 0.12);
 }
 
 ::selection {
   color: var(--paper);
-  background: var(--clay-dark);
+  background: var(--red);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 980px) {
+  .display-title {
+    font-size: 5.5rem;
+  }
+
+  .section-title {
+    font-size: 3.8rem;
+  }
+}
+
+@media (max-width: 640px) {
   :root {
     --container: min(100vw - 24px, 1240px);
   }
 
   .display-title {
-    font-size: clamp(3.4rem, 19vw, 6rem);
+    font-size: 3.6rem;
   }
 
   .section-title {
-    font-size: clamp(2.7rem, 14vw, 5rem);
+    font-size: 2.9rem;
   }
 
   .btn {

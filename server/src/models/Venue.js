@@ -78,23 +78,16 @@ const venueSchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "published",
     },
-    // izbaciti
-    weight: {
-      type: Number,
-      default: 0,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-venueSchema.pre("validate", function (next) {
+venueSchema.pre("validate", function () {
   if (!this.slug && this.name) {
     this.slug = slugify(this.name);
   }
-
-  next();
 });
 
 module.exports = mongoose.model("Venue", venueSchema, "venues");

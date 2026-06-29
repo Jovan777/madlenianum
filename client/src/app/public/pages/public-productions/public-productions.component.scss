@@ -1,57 +1,68 @@
 .productions {
   width: var(--container);
   margin: 0 auto;
-  padding: 140px 0 40px;
+  padding: 142px 0 44px;
+}
+
+.page-head {
+  max-width: 860px;
 }
 
 .page-head h1 {
-  margin: 12px 0 0;
+  margin: 12px 0 14px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(6rem, 16vw, 17rem);
+  font-size: 7.2rem;
   font-weight: 400;
-  letter-spacing: -0.12em;
-  line-height: 0.72;
+  letter-spacing: 0;
+  line-height: 0.92;
+}
+
+.page-head p:last-child {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.65;
 }
 
 .type-row {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin: 26px 0;
+  margin: 28px 0;
 }
 
 .type-row a {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 11px 14px;
-  color: rgba(21, 19, 15, 0.68);
-  background: rgba(255, 255, 255, 0.32);
-  font-size: 0.7rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
+  color: var(--ink);
+  background: rgba(255, 250, 243, 0.86);
+  font-size: 0.76rem;
+  font-weight: 850;
   text-transform: uppercase;
 }
 
 .type-row a.active {
   color: var(--paper);
-  background: var(--void);
+  background: var(--night);
 }
 
 .work-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .work-card {
   position: relative;
-  min-height: 520px;
+  min-height: 510px;
   grid-column: span 4;
-  border-radius: 38px;
+  border-radius: 8px;
   overflow: hidden;
   color: var(--paper);
-  background: var(--void);
-  box-shadow: var(--shadow-soft);
+  background: var(--night);
+  box-shadow: var(--shadow);
 }
 
 .work-card:nth-child(5n + 1),
@@ -62,22 +73,22 @@
 .work-card img {
   width: 100%;
   height: 100%;
-  min-height: 520px;
+  min-height: 510px;
   object-fit: cover;
-  opacity: 0.78;
-  transition: transform 0.45s ease, opacity 0.45s ease;
+  opacity: 0.82;
+  transition: transform 0.35s ease, opacity 0.35s ease;
 }
 
 .work-card:hover img {
-  transform: scale(1.045);
-  opacity: 0.94;
+  transform: scale(1.035);
+  opacity: 0.96;
 }
 
 .work-card::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(7, 7, 7, 0.86), transparent 62%);
+  background: linear-gradient(to top, rgba(16, 17, 18, 0.95), rgba(16, 17, 18, 0.32));
 }
 
 .work-copy {
@@ -87,21 +98,27 @@
 }
 
 .work-copy span {
-  color: var(--gold-2);
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.14em;
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 850;
   text-transform: uppercase;
 }
 
 .work-copy h2 {
   max-width: 720px;
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(3rem, 6vw, 7rem);
+  font-size: 4.2rem;
   font-weight: 400;
-  letter-spacing: -0.105em;
-  line-height: 0.75;
+  letter-spacing: 0;
+  line-height: 0.9;
+}
+
+.work-copy p {
+  max-width: 520px;
+  margin: 12px 0 0;
+  color: var(--muted-on-dark);
+  line-height: 1.55;
 }
 
 @media (max-width: 980px) {
@@ -110,6 +127,10 @@
   .work-card:nth-child(5n + 4) {
     grid-column: span 6;
   }
+
+  .page-head h1 {
+    font-size: 5rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -117,5 +138,14 @@
   .work-card:nth-child(5n + 1),
   .work-card:nth-child(5n + 4) {
     grid-column: span 12;
+  }
+
+  .work-card,
+  .work-card img {
+    min-height: 420px;
+  }
+
+  .work-copy h2 {
+    font-size: 2.8rem;
   }
 }

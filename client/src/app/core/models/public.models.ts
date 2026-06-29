@@ -2,7 +2,9 @@ export interface PublicMedia {
   _id?: string;
   id?: string;
   title?: string;
+  alt?: string;
   altText?: string;
+  caption?: string;
   url?: string;
   path?: string;
 }
@@ -14,6 +16,7 @@ export interface PublicProduction {
   slug: string;
   type?: string;
   authorComposer?: string;
+  originalTitle?: string;
   subtitle?: string;
   shortDescription?: string;
   description?: string;
@@ -22,7 +25,12 @@ export interface PublicProduction {
   gallery?: Array<PublicMedia | string>;
   creativeTeam?: any[];
   cast?: any[];
+  venue?: any;
   season?: string;
+  durationMinutes?: number;
+  performanceLanguage?: string;
+  subtitles?: string;
+  premiereDate?: string;
   tags?: string[];
   isFeatured?: boolean;
   status?: string;
@@ -50,10 +58,13 @@ export interface PublicPromoSlide {
   id?: string;
   title?: string;
   subtitle?: string;
+  description?: string;
   image?: PublicMedia | string;
   production?: PublicProduction | string;
+  relatedProduction?: PublicProduction | string;
   event?: PublicEvent | string;
   linkUrl?: string;
+  linkLabel?: string;
   buttonLabel?: string;
 }
 

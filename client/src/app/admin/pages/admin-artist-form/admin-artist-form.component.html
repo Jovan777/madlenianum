@@ -1,0 +1,118 @@
+<div class="artist-form-page">
+  <a class="back" routerLink="/admin/artists">Back to artists</a>
+
+  <header class="page-hero">
+    <div>
+      <p>{{ isEditMode ? 'Edit artist' : 'New artist' }}</p>
+      <h1>{{ isEditMode ? 'Edit artist' : 'Create artist' }}</h1>
+      <span>Biography, professions, image and public links.</span>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="loading" *ngIf="isLoading()">Loading artist...</p>
+
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!isLoading()">
+    <section class="panel">
+      <div>
+        <p class="eyebrow">Main data</p>
+        <h2>Artist profile</h2>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Display name
+          <input type="text" formControlName="displayName" />
+        </label>
+
+        <label>
+          Slug
+          <input type="text" formControlName="slug" placeholder="auto-generated if empty" />
+        </label>
+
+        <label>
+          Professions
+          <input type="text" formControlName="professionsText" placeholder="soprano, conductor, actor" />
+          <small>Comma separated values.</small>
+        </label>
+
+        <label>
+          Status
+          <select formControlName="status">
+            <option *ngFor="let status of statuses" [value]="status.value">{{ status.label }}</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div>
+        <p class="eyebrow">Moderated text</p>
+        <h2>Biography</h2>
+      </div>
+
+      <label>
+        Biography
+        <textarea rows="12" formControlName="biography"></textarea>
+      </label>
+    </section>
+
+    <section class="panel">
+      <div>
+        <p class="eyebrow">Media</p>
+        <h2>Images</h2>
+        <small>Media upload remains in the media library; this form links existing images.</small>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Main image
+          <select formControlName="image">
+            <option value="">No image</option>
+            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
+          </select>
+        </label>
+
+        <label>
+          Gallery
+          <select formControlName="gallery" multiple size="8">
+            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel" formArrayName="links">
+      <div>
+        <p class="eyebrow">Links</p>
+        <h2>Public links</h2>
+      </div>
+
+      <div class="rows">
+        <div class="inline-row" *ngFor="let group of links.controls; let index = index" [formGroupName]="index">
+          <label>
+            Label
+            <input type="text" formControlName="label" placeholder="Website, Instagram..." />
+          </label>
+
+          <label>
+            URL
+            <input type="url" formControlName="url" placeholder="https://..." />
+          </label>
+
+          <button type="button" class="ghost danger" (click)="removeLink(index)">Remove</button>
+        </div>
+      </div>
+
+      <button type="button" class="ghost" (click)="addLink()">Add link</button>
+    </section>
+
+    <footer class="actions">
+      <button type="button" class="ghost" routerLink="/admin/artists">Cancel</button>
+      <button type="submit" class="primary" [disabled]="isSaving()">
+        {{ isSaving() ? 'Saving...' : 'Save artist' }}
+      </button>
+    </footer>
+  </form>
+</div>

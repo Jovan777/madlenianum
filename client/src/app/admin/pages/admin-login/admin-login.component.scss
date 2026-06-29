@@ -3,10 +3,7 @@
   display: grid;
   place-items: center;
   padding: 2rem;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.78)),
-    radial-gradient(circle at 20% 10%, rgba(210, 174, 86, 0.35), transparent 32rem),
-    #090806;
+  background: linear-gradient(135deg, #101112, #163a49);
 }
 
 .login-card {
@@ -33,7 +30,7 @@
 
   p {
     margin: 0;
-    color: rgba(245, 230, 187, 0.76);
+    color: var(--muted-on-dark);
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-size: 0.75rem;
@@ -44,7 +41,7 @@
   margin-bottom: 1.5rem;
 
   span {
-    color: #d7b45f;
+    color: var(--gold);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -58,7 +55,7 @@
 
   p {
     margin: 0;
-    color: rgba(255, 255, 255, 0.68);
+    color: var(--muted-on-dark);
     line-height: 1.5;
   }
 }
@@ -73,23 +70,23 @@ label {
   gap: 0.45rem;
 
   span {
-    color: rgba(255, 255, 255, 0.78);
+    color: var(--muted-on-dark);
     font-size: 0.9rem;
   }
 }
 
 input {
   width: 100%;
-  border: 1px solid rgba(218, 185, 103, 0.24);
+  border: 1px solid rgba(218, 185, 103, 0.4);
   border-radius: 16px;
   padding: 0.95rem 1rem;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.12);
   color: #fff;
   outline: none;
 }
 
 input:focus {
-  border-color: #d7b45f;
+  border-color: var(--gold);
 }
 
 button {

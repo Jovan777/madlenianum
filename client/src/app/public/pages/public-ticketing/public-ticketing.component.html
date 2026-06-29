@@ -1,24 +1,27 @@
-<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="loading-state" *ngIf="isLoading()">Ucitavanje sale...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 <div class="success-state" *ngIf="successMessage()">{{ successMessage() }}</div>
 
 <section class="ticket-page" *ngIf="!isLoading()">
   <header class="ticket-head">
-    <a routerLink="/repertoar">Program</a>
-    <p class="eyebrow">Tickets</p>
+    <a routerLink="/repertoar">Nazad na program</a>
+    <p class="eyebrow">{{ productionType() }}</p>
     <h1>{{ productionTitle() }}</h1>
-    <span>{{ eventDate() }} · {{ venueName() }}</span>
+    <span>{{ eventDate() }} / {{ venueName() }}</span>
   </header>
 
   <div class="ticket-grid">
     <section class="map-panel">
       <div class="map-top">
-        <strong>Stage</strong>
-        <button type="button" (click)="refresh()">Sync</button>
+        <div>
+          <strong>Izaberite sedista</strong>
+          <span>{{ availabilityCount('available') }} dostupno</span>
+        </div>
+        <button type="button" (click)="refresh()">Osvezi</button>
       </div>
 
       <div class="section-tabs">
-        <button type="button" [class.active]="mapSection() === 'all'" (click)="setSection('all')">All</button>
+        <button type="button" [class.active]="mapSection() === 'all'" (click)="setSection('all')">Cela sala</button>
         <button
           *ngFor="let section of sections()"
           type="button"
@@ -29,7 +32,18 @@
         </button>
       </div>
 
-      <div class="seat-canvas" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()">
+      <div class="legend">
+        <span *ngFor="let item of statusLegend" [class]="'legend-' + item.status">
+          <i></i>{{ item.label }}
+        </span>
+      </div>
+
+      <div class="empty-map" *ngIf="visibleSeats().length === 0">
+        Za ovaj deo sale nema sedista.
+      </div>
+
+      <div class="seat-canvas" *ngIf="visibleSeats().length > 0" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()">
+        <div class="stage">Scena</div>
         <button
           *ngFor="let seat of visibleSeats()"
           type="button"
@@ -37,65 +51,76 @@
           [ngClass]="seatClass(seat)"
           [style.left.%]="seatLeft(seat)"
           [style.top.%]="seatTop(seat)"
-          [title]="seat.label"
+          [style.width.px]="seatWidth(seat)"
+          [style.height.px]="seatHeight(seat)"
+          [title]="seatTitle(seat)"
           (click)="toggleSeat(seat)"
         >
-          {{ seat.label }}
+          {{ seat.number || '' }}
         </button>
       </div>
     </section>
 
     <aside class="checkout">
-      <div class="score">
-        <article>
-          <span>Free</span>
-          <strong>{{ availabilityCount('available') }}</strong>
-        </article>
-        <article>
-          <span>Sold</span>
-          <strong>{{ availabilityCount('sold') + availabilityCount('reserved') }}</strong>
-        </article>
-      </div>
-
       <section class="selection">
-        <h2>{{ selectedSeats().length || lockedSeatIds().length }}</h2>
-        <span>selected</span>
+        <p class="eyebrow">Korpa</p>
+        <h2>{{ selectedSeats().length }}</h2>
+        <span>izabrane karte</span>
+
+        <div class="hold-info" *ngIf="lockedSeatIds().length">
+          <strong>Rezervacija traje {{ holdExpiresLabel() }}</strong>
+          <small>Sedišta su zaključana za ovu sesiju. Dugme Kupi potvrđuje rezervaciju bez plaćanja.</small>
+        </div>
 
         <div class="seat-line" *ngFor="let seat of selectedSeats()">
           <strong>{{ seat.label }}</strong>
-          <small>{{ seat.price?.amount || 0 | number }} RSD</small>
+          <span>{{ seat.priceCategory?.name || seat.priceCategory?.code || 'Karta' }}</span>
+          <small>
+            Red {{ seat.row || '-' }} / broj {{ seat.number || '-' }} /
+            {{ seat.price?.amount || 0 | number }} {{ seat.price?.currency || 'RSD' }}
+          </small>
+        </div>
+
+        <div class="empty-selection" *ngIf="selectedSeats().length === 0">
+          Kliknite slobodna sedista na planu sale.
         </div>
 
         <div class="total">
-          <span>Total</span>
-          <strong>{{ selectedTotal() | number }} RSD</strong>
+          <span>Ukupno</span>
+          <strong>{{ selectedTotal() | number }} {{ selectedCurrency() }}</strong>
         </div>
 
-        <button class="btn btn-primary" type="button" [disabled]="isWorking() || selectedSeatIds().length === 0" (click)="lockSelectedSeats()">
-          Hold
-        </button>
+        <div class="selection-actions">
+          <button class="btn btn-primary" type="button" [disabled]="isWorking() || selectedSeatIds().length === 0 || lockedSeatIds().length > 0" (click)="lockSelectedSeats()">
+            Zadrzi sedista
+          </button>
+          <button class="btn btn-ghost" type="button" [disabled]="isWorking() || (selectedSeatIds().length === 0 && lockedSeatIds().length === 0)" (click)="releaseHeldSeats()">
+            Ponisti izbor
+          </button>
+        </div>
       </section>
 
       <form class="guest" (ngSubmit)="createOrder()">
-        <input placeholder="Name" [ngModel]="guestForm().fullName" name="fullName" (ngModelChange)="updateGuestField('fullName', $event)">
-        <input placeholder="Email" [ngModel]="guestForm().email" name="email" (ngModelChange)="updateGuestField('email', $event)">
-        <input placeholder="Phone" [ngModel]="guestForm().phone" name="phone" (ngModelChange)="updateGuestField('phone', $event)">
-        <input placeholder="Address" [ngModel]="guestForm().address" name="address" (ngModelChange)="updateGuestField('address', $event)">
+        <h3>Podaci za porudzbinu</h3>
+        <input placeholder="Ime i prezime" [ngModel]="guestForm().fullName" name="fullName" (ngModelChange)="updateGuestField('fullName', $event)">
+        <input placeholder="Email" [ngModel]="guestForm().email" name="email" type="email" (ngModelChange)="updateGuestField('email', $event)">
+        <input placeholder="Telefon" [ngModel]="guestForm().phone" name="phone" (ngModelChange)="updateGuestField('phone', $event)">
+        <input placeholder="Adresa" [ngModel]="guestForm().address" name="address" (ngModelChange)="updateGuestField('address', $event)">
         <div>
-          <input placeholder="City" [ngModel]="guestForm().city" name="city" (ngModelChange)="updateGuestField('city', $event)">
-          <input placeholder="ZIP" [ngModel]="guestForm().postalCode" name="postalCode" (ngModelChange)="updateGuestField('postalCode', $event)">
+          <input placeholder="Grad" [ngModel]="guestForm().city" name="city" (ngModelChange)="updateGuestField('city', $event)">
+          <input placeholder="Postanski broj" [ngModel]="guestForm().postalCode" name="postalCode" (ngModelChange)="updateGuestField('postalCode', $event)">
         </div>
-        <input placeholder="Country" [ngModel]="guestForm().country" name="country" (ngModelChange)="updateGuestField('country', $event)">
+        <input placeholder="Drzava" [ngModel]="guestForm().country" name="country" (ngModelChange)="updateGuestField('country', $event)">
 
         <button class="btn btn-gold" type="submit" [disabled]="isWorking() || lockedSeatIds().length === 0">
-          Order
+          Kupi
         </button>
       </form>
 
       <article class="created" *ngIf="order() as created">
-        <span>Order</span>
+        <span>Porudzbina</span>
         <strong>{{ created.orderCode || created._id }}</strong>
-        <a [routerLink]="['/porudzbina', created.orderCode || created._id]">Open</a>
+        <a [routerLink]="['/porudzbina', created.orderCode || created._id]">Otvori detalje</a>
       </article>
     </aside>
   </div>

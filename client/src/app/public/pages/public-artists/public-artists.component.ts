@@ -20,7 +20,7 @@ export class PublicArtistsComponent implements OnInit {
   ngOnInit(): void {
     this.publicApi.getArtists().subscribe({
       next: (response) => {
-        this.artists.set(this.publicApi.extractItems<any>(response, ['artists']));
+        this.artists.set(this.publicApi.extractItems<any>(response, ['artists', 'items']));
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.message || 'Umetnici trenutno nisu dostupni.');
@@ -31,7 +31,27 @@ export class PublicArtistsComponent implements OnInit {
     });
   }
 
-  image(artist: any): string {
-    return this.publicApi.mediaUrl(artist.image);
+  image(artist: any, index: number): string {
+    return this.publicApi.mediaUrl(artist.image) || this.artistFallback(index);
+  }
+
+  name(artist: any): string {
+    return artist.displayName || artist.name || 'Umetnik';
+  }
+
+  professions(artist: any): string {
+    return Array.isArray(artist.professions) && artist.professions.length
+      ? artist.professions.join(', ')
+      : 'Ansambl';
+  }
+
+  private artistFallback(index: number): string {
+    const images = [
+      '/madlenianum/umetnici/nikola_rakocevic.jpg',
+      '/madlenianum/umetnici/Tamara_Aleksic.jpg',
+      '/madlenianum/umetnici/ivan_vukovic.jpg',
+    ];
+
+    return images[Math.abs(index) % images.length];
   }
 }

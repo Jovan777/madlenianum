@@ -1,5 +1,5 @@
 <div class="order-page">
-  <a class="back" routerLink="/admin/orders">← Orders</a>
+  <a class="back" routerLink="/admin/orders">Back to orders</a>
 
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
   <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
@@ -10,7 +10,7 @@
       <div>
         <span>{{ item.status }}</span>
         <h2>{{ item.orderCode }}</h2>
-        <p>{{ item.customerSnapshot?.fullName }} · {{ item.customerSnapshot?.email }}</p>
+        <p>{{ item.customerSnapshot?.fullName }} / {{ item.customerSnapshot?.email }}</p>
       </div>
 
       <strong>{{ item.totalAmount | number }} {{ item.currency }}</strong>
@@ -19,7 +19,7 @@
     <section class="status-card">
       <div>
         <h3>Manual status update</h3>
-        <p>Ovo je testing kontrola dok payment/legacy PHP bridge nije povezan.</p>
+        <p>Use this control while payment and legacy integrations are handled manually.</p>
       </div>
 
       <div class="status-actions">

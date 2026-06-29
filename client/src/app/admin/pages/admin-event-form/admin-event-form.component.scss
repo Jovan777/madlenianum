@@ -1,6 +1,7 @@
 .event-form-page {
   display: grid;
   gap: 1.25rem;
+  color: var(--admin-ink);
 }
 
 .back,
@@ -37,6 +38,7 @@
 
 .page-hero h1 {
   margin: 0;
+  color: var(--admin-ink);
   font-size: 2rem;
 }
 
@@ -57,6 +59,12 @@
 
 .card h2 {
   margin: 0 0 1rem;
+  color: var(--admin-ink);
+}
+
+.hint {
+  margin: -0.4rem 0 1rem;
+  color: #7c6e59;
 }
 
 .form-grid,
@@ -84,6 +92,40 @@ label.wide {
   grid-column: 1 / -1;
 }
 
+.setup-summary {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid rgba(33, 25, 15, 0.1);
+  border-radius: 16px;
+  padding: 0.85rem;
+  background: #fffdf8;
+}
+
+.setup-summary strong {
+  color: #5d4a29;
+}
+
+.setup-summary span,
+.setup-summary small {
+  color: #7c6e59;
+}
+
+.setup-summary ul {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.4rem 0;
+  padding-left: 1.1rem;
+}
+
+.setup-summary a {
+  color: #9b742e;
+  font-weight: 900;
+}
+
+.setup-summary.muted {
+  background: #f7f0e5;
+}
+
 input,
 select,
 textarea {
@@ -91,6 +133,7 @@ textarea {
   border: 1px solid rgba(33, 25, 15, 0.14);
   border-radius: 16px;
   padding: 0.78rem 0.9rem;
+  color: var(--admin-ink);
   background: #fffdf8;
   outline: none;
 }

@@ -32,7 +32,7 @@ const getProductions = asyncHandler(async (req, res) => {
     .populate("venue")
     .populate("creativeTeam.artist")
     .populate("cast.artists")
-    .sort("weight title")
+    .sort("-isFeatured title")
     .skip(skip)
     .limit(limit);
 

@@ -73,12 +73,10 @@ const seatMapSchema = new mongoose.Schema(
   }
 );
 
-seatMapSchema.pre("validate", function (next) {
+seatMapSchema.pre("validate", function () {
   if (!this.slug && this.name) {
     this.slug = slugify(this.name);
   }
-
-  next();
 });
 
 seatMapSchema.index({ venue: 1, slug: 1 }, { unique: true });

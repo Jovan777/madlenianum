@@ -1,16 +1,38 @@
-<div class="loading-state" *ngIf="isLoading()">Loading...</div>
+<div class="loading-state" *ngIf="isLoading()">Ucitavanje umetnika...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
-<section class="artist-detail" *ngIf="!isLoading() && artist() as item">
-  <div class="portrait">
-    <img *ngIf="image(item)" [src]="image(item)" [alt]="item.displayName || item.name">
-    <span *ngIf="!image(item)">{{ (item.displayName || item.name || 'M').slice(0, 1) }}</span>
-  </div>
+<ng-container *ngIf="!isLoading() && artist() as item">
+  <section class="artist-detail">
+    <div class="portrait">
+      <img [src]="image(item)" [alt]="name(item)" />
+    </div>
 
-  <article>
-    <a routerLink="/umetnici">Artists</a>
-    <p class="eyebrow">{{ item.professions?.join(', ') || 'Artist' }}</p>
-    <h1>{{ item.displayName || item.name }}</h1>
-    <p>{{ item.biography || 'Biography will be added.' }}</p>
-  </article>
-</section>
+    <article>
+      <a routerLink="/umetnici">Svi umetnici</a>
+      <p class="eyebrow">{{ professions(item) }}</p>
+      <h1>{{ name(item) }}</h1>
+      <p>{{ item.biography || 'Biografija ce biti dodata uskoro.' }}</p>
+
+      <div class="artist-links" *ngIf="links(item).length">
+        <a *ngFor="let link of links(item)" [href]="link.url" target="_blank" rel="noopener">
+          {{ link.label || link.url }}
+        </a>
+      </div>
+    </article>
+  </section>
+
+  <section class="artist-productions" *ngIf="productions().length > 0">
+    <div class="section-head">
+      <p class="eyebrow">Na sceni</p>
+      <h2 class="section-title">Povezane predstave</h2>
+    </div>
+
+    <div class="production-links">
+      <a *ngFor="let production of productions(); let index = index" [routerLink]="['/predstave', production.slug]">
+        <img [src]="productionImage(production, index)" [alt]="production.title" />
+        <span>{{ publicApi.typeLabel(production.type) }}</span>
+        <strong>{{ production.title }}</strong>
+      </a>
+    </div>
+  </section>
+</ng-container>

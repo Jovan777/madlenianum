@@ -12,11 +12,10 @@ import { PublicApiService } from '../../../core/services/public-api.service';
   styleUrl: './public-static-page.component.scss',
 })
 export class PublicStaticPageComponent implements OnInit {
-  private readonly publicApi = inject(PublicApiService);
+  readonly publicApi = inject(PublicApiService);
   private readonly route = inject(ActivatedRoute);
 
   readonly isLoading = signal(true);
-  readonly errorMessage = signal('');
   readonly page = signal<any | null>(null);
 
   ngOnInit(): void {
@@ -28,30 +27,41 @@ export class PublicStaticPageComponent implements OnInit {
 
   loadPage(slug: string): void {
     this.isLoading.set(true);
-    this.errorMessage.set('');
 
     this.publicApi.getPage(slug).subscribe({
       next: (response) => {
-        this.page.set(response.page || response.item || response.data || null);
+        this.page.set(this.publicApi.extractItem<any>(response, ['page', 'item']));
+        this.isLoading.set(false);
       },
       error: () => {
         this.page.set({
           title: this.fallbackTitle(slug),
           body: this.fallbackBody(slug),
+          slug,
         });
-      },
-      complete: () => {
         this.isLoading.set(false);
       },
     });
+  }
+
+  image(page: any): string {
+    return this.publicApi.mediaUrl(page?.image) || this.publicApi.fallbackImage(2);
+  }
+
+  content(page: any): string {
+    return page.content || page.body || page.excerpt || '';
+  }
+
+  isContact(page: any): boolean {
+    return page.slug === 'kontakt' || page.pageType === 'contact';
   }
 
   fallbackTitle(slug: string): string {
     const titles: Record<string, string> = {
       'o-nama': 'O nama',
       kontakt: 'Kontakt',
-      'plan-sedista-i-cene-karata': 'Plan sedišta i cene karata',
-      'knjiga-utisaka': 'Online knjiga utisaka',
+      'plan-sedista-i-cene-karata': 'Plan sedista i cene karata',
+      'knjiga-utisaka': 'Knjiga utisaka',
     };
 
     return titles[slug] || 'Madlenianum';
@@ -59,13 +69,13 @@ export class PublicStaticPageComponent implements OnInit {
 
   fallbackBody(slug: string): string {
     if (slug === 'kontakt') {
-      return 'Kontakt forma i podaci o blagajni biće povezani sa backend kontakt porukama. Ova strana trenutno služi za testiranje public layout-a.';
+      return 'Blagajna i kontakt forma bice dopunjeni kroz CMS. Za sada program i kupovina koriste javni ticketing tok.';
     }
 
     if (slug === 'plan-sedista-i-cene-karata') {
-      return 'Plan sedišta, cenovne kategorije i ticketing logika već postoje u backend-u. Detaljan prikaz cenovnika može se dopuniti kroz CMS.';
+      return 'Planovi sala, cenovne kategorije i rezervacije su povezani sa internim ticketing modulom.';
     }
 
-    return 'Opera i teatar Madlenianum osnovan je kao jedinstvena kuća umetnosti. Ovaj tekst je privremeni prikaz dok se ne unese kompletan CMS sadržaj.';
+    return 'Madlenianum okuplja operu, teatar, balet i koncertni program u prostoru koji spaja scensku umetnost i publiku.';
   }
 }

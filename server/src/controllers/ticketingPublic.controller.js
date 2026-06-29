@@ -105,7 +105,11 @@ const getActiveOrderSeatStatuses = async (eventId) => {
       },
       {
         status: "reserved",
-        expiresAt: { $gt: now },
+        $or: [
+          { expiresAt: { $exists: false } },
+          { expiresAt: null },
+          { expiresAt: { $gt: now } },
+        ],
       },
     ],
   }).select("_id status");
@@ -609,9 +613,6 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error("All selected seats must be locked before creating order.");
   }
 
-  const lockExpiresAtValues = activeLocks.map((lock) => lock.expiresAt.getTime());
-  const orderExpiresAt = new Date(Math.min(...lockExpiresAtValues));
-
   let subtotalAmount = 0;
 
   const order = await Order.create({
@@ -626,7 +627,7 @@ const createOrder = asyncHandler(async (req, res) => {
     status: "reserved",
     paymentStatus: "unpaid",
     paymentProvider: "none",
-    expiresAt: orderExpiresAt,
+    expiresAt: undefined,
     notes: notes || "",
   });
 

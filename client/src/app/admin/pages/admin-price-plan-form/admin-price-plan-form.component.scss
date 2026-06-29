@@ -1,0 +1,161 @@
+:host {
+  display: block;
+}
+
+.admin-edit-page,
+.edit-form,
+.panel {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-edit-page {
+  color: var(--admin-ink);
+}
+
+.back,
+.actions a {
+  color: #64594f;
+  font-weight: 800;
+}
+
+.page-hero,
+.panel,
+.actions {
+  border: 1px solid #e8dfd5;
+  border-radius: 8px;
+  background: #fffaf4;
+}
+
+.page-hero,
+.panel {
+  padding: 18px;
+}
+
+.page-hero p,
+.page-hero span {
+  color: #7d7064;
+}
+
+.page-hero h1,
+.panel h2,
+.section-row h2,
+.type-grid span {
+  color: var(--admin-ink);
+}
+
+.form-grid,
+.repeat-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.repeat-row {
+  grid-template-columns: 1.2fr 160px 1fr auto;
+  align-items: end;
+  border-top: 1px solid #eadfd4;
+  padding-top: 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: var(--admin-muted);
+  font-weight: 800;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #d8cdc1;
+  border-radius: 6px;
+  padding: 11px 12px;
+  color: var(--admin-ink);
+  background: #fff;
+  font: inherit;
+}
+
+.check-row,
+.type-grid label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.check-row input,
+.type-grid input {
+  width: auto;
+}
+
+.type-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  border: 1px solid #eadfd4;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.type-grid span {
+  width: 100%;
+  font-weight: 900;
+}
+
+.section-row,
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  padding: 11px 14px;
+  color: var(--admin-ink);
+  background: #e7c46d;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.danger {
+  color: #8e241d;
+  background: #f7ded9;
+}
+
+.actions {
+  justify-content: flex-end;
+  padding: 14px;
+}
+
+.error,
+.success,
+.loading {
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.error {
+  color: #8e241d;
+  background: #f7ded9;
+}
+
+.success {
+  color: #225c38;
+  background: #dff3e5;
+}
+
+.loading {
+  color: #5f5449;
+  background: #f3ece3;
+}
+
+@media (max-width: 860px) {
+  .form-grid,
+  .repeat-row {
+    grid-template-columns: 1fr;
+  }
+}

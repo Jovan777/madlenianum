@@ -1,13 +1,14 @@
 <section class="resource-page">
   <header class="resource-hero">
     <div>
-      <span>{{ total() }}</span>
+      <span>{{ total() }} records</span>
       <h1>{{ config().title }}</h1>
+      <p>{{ config().subtitle }}</p>
     </div>
 
     <div class="hero-actions">
       <a *ngIf="newLink() as link" [routerLink]="link">New</a>
-      <button type="button" (click)="loadData()">Sync</button>
+      <button type="button" (click)="loadData()">Refresh</button>
     </div>
   </header>
 
@@ -15,10 +16,10 @@
   <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
 
   <section class="seat-note" *ngIf="pageKey() === 'seats'">
-    <span>504</span>
-    <h2>No table.</h2>
-    <p>Sedišta se ne uređuju kao Excel lista. Koristi mapu sale.</p>
-    <a routerLink="/admin/seat-maps">Open maps</a>
+    <span>Seat editing</span>
+    <h2>Use the visual map.</h2>
+    <p>Seats are easier to inspect and maintain through the seat-map designer.</p>
+    <a routerLink="/admin/seat-maps">Open seat maps</a>
   </section>
 
   <section class="card-grid" *ngIf="pageKey() !== 'seats'">
@@ -43,7 +44,7 @@
       </div>
     </article>
 
-    <article class="empty-card" *ngIf="!isLoading() && items().length === 0">Empty.</article>
-    <article class="empty-card" *ngIf="isLoading()">Loading...</article>
+    <article class="empty-card" *ngIf="!isLoading() && items().length === 0">No records yet.</article>
+    <article class="empty-card" *ngIf="isLoading()">Loading records...</article>
   </section>
 </section>

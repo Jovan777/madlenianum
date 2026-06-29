@@ -11,6 +11,9 @@ import { AdminEventDetailComponent } from './admin/pages/admin-event-detail/admi
 import { AdminEventFormComponent } from './admin/pages/admin-event-form/admin-event-form.component';
 import { AdminOrderDetailComponent } from './admin/pages/admin-order-detail/admin-order-detail.component';
 import { AdminSeatMapDesignerComponent } from './admin/pages/admin-seat-map-designer/admin-seat-map-designer.component';
+import { AdminProductionFormComponent } from './admin/pages/admin-production-form/admin-production-form.component';
+import { AdminPricePlanFormComponent } from './admin/pages/admin-price-plan-form/admin-price-plan-form.component';
+import { AdminArtistFormComponent } from './admin/pages/admin-artist-form/admin-artist-form.component';
 
 import { PublicLayoutComponent } from './public/layout/public-layout/public-layout.component';
 import { PublicHomeComponent } from './public/pages/public-home/public-home.component';
@@ -52,6 +55,30 @@ export const routes: Routes = [
       {
         path: 'events/:id',
         component: AdminEventDetailComponent,
+      },
+      {
+        path: 'productions/new',
+        component: AdminProductionFormComponent,
+      },
+      {
+        path: 'productions/:id/edit',
+        component: AdminProductionFormComponent,
+      },
+      {
+        path: 'artists/new',
+        component: AdminArtistFormComponent,
+      },
+      {
+        path: 'artists/:id/edit',
+        component: AdminArtistFormComponent,
+      },
+      {
+        path: 'price-plans/new',
+        component: AdminPricePlanFormComponent,
+      },
+      {
+        path: 'price-plans/:id/edit',
+        component: AdminPricePlanFormComponent,
       },
       {
         path: 'orders/:id',

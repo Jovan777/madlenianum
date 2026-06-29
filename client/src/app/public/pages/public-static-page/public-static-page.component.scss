@@ -1,35 +1,104 @@
 .static-page {
-  width: min(980px, calc(100vw - 40px));
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 48px;
+  width: var(--container);
   margin: 0 auto;
   padding: 150px 0 70px;
 }
 
-h1 {
-  margin: 14px 0 38px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(5rem, 14vw, 14rem);
-  font-weight: 400;
-  letter-spacing: -0.12em;
-  line-height: 0.72;
+.page-image {
+  min-height: 620px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--night);
+  box-shadow: var(--shadow);
+}
+
+.page-image img {
+  width: 100%;
+  height: 100%;
+  min-height: 620px;
+  object-fit: cover;
 }
 
 article {
-  border-left: 2px solid var(--ink);
-  padding-left: 28px;
-  color: rgba(21, 19, 15, 0.74);
-  font-size: clamp(1.1rem, 2vw, 1.55rem);
-  line-height: 1.72;
+  align-self: center;
 }
 
-a {
-  display: inline-flex;
-  margin-top: 32px;
-  border-radius: 999px;
-  padding: 13px 18px;
-  color: var(--paper);
-  background: var(--void);
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
+h1 {
+  margin: 14px 0 32px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 6.4rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 0.92;
+}
+
+.body {
+  color: var(--muted);
+  font-size: 1.12rem;
+  line-height: 1.78;
+}
+
+.contact-strip {
+  display: grid;
+  gap: 8px;
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 250, 243, 0.72);
+}
+
+.contact-strip span {
+  color: var(--red);
+  font-size: 0.78rem;
+  font-weight: 850;
   text-transform: uppercase;
+}
+
+.contact-strip strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+}
+
+.contact-strip a,
+.cta {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+  border-radius: 999px;
+  padding: 12px 16px;
+  color: var(--paper);
+  background: var(--night);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.cta {
+  margin-top: 28px;
+}
+
+@media (max-width: 900px) {
+  .static-page {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: 4.4rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .page-image,
+  .page-image img {
+    min-height: 380px;
+  }
+
+  h1 {
+    font-size: 3.2rem;
+  }
 }

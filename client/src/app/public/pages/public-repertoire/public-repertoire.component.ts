@@ -23,11 +23,7 @@ export class PublicRepertoireComponent implements OnInit {
   ngOnInit(): void {
     this.publicApi.getRepertoire().subscribe({
       next: (response) => {
-        const events = this.publicApi.extractItems<PublicEvent>(response, [
-          'events',
-          'repertoire',
-          'items',
-        ]);
+        const events = this.publicApi.extractItems<PublicEvent>(response, ['events', 'repertoire', 'items']);
 
         this.events.set(
           events.sort((a, b) => {
@@ -48,8 +44,8 @@ export class PublicRepertoireComponent implements OnInit {
 
   filters(): string[] {
     const values = this.events()
-      .map((event) => this.productionType(event))
-      .filter((value) => !!value);
+      .map((event) => this.productionTypeValue(event))
+      .filter(Boolean);
 
     return ['all', ...Array.from(new Set(values))];
   }
@@ -65,43 +61,35 @@ export class PublicRepertoireComponent implements OnInit {
       return this.events();
     }
 
-    return this.events().filter((event) => this.productionType(event) === type);
+    return this.events().filter((event) => this.productionTypeValue(event) === type);
   }
 
   eventId(event: PublicEvent): string {
     return this.publicApi.eventId(event);
   }
 
-  productionTitle(event: PublicEvent): string {
-    if (!event.production || typeof event.production === 'string') {
-      return 'Događaj';
-    }
+  production(event: PublicEvent) {
+    return this.publicApi.productionFromEvent(event);
+  }
 
-    return event.production.title;
+  productionTitle(event: PublicEvent): string {
+    return this.production(event)?.title || 'Dogadjaj';
   }
 
   productionSlug(event: PublicEvent): string {
-    if (!event.production || typeof event.production === 'string') {
-      return '';
-    }
-
-    return event.production.slug;
+    return this.production(event)?.slug || '';
   }
 
-  productionType(event: PublicEvent): string {
-    if (!event.production || typeof event.production === 'string') {
-      return '';
-    }
-
-    return event.production.type || '';
+  productionTypeValue(event: PublicEvent): string {
+    return this.production(event)?.type || '';
   }
 
-  productionImage(event: PublicEvent): string {
-    if (!event.production || typeof event.production === 'string') {
-      return '';
-    }
+  productionTypeLabel(event: PublicEvent): string {
+    return this.publicApi.typeLabel(this.production(event)?.type);
+  }
 
-    return this.publicApi.mediaUrl(event.production.poster);
+  productionImage(event: PublicEvent, index: number): string {
+    return this.publicApi.mediaUrl(this.production(event)?.poster) || this.publicApi.fallbackImage(index);
   }
 
   dateDay(event: PublicEvent): string {
@@ -122,7 +110,7 @@ export class PublicRepertoireComponent implements OnInit {
 
   dateFull(event: PublicEvent): string {
     if (!event.startsAt) {
-      return 'Termin će biti objavljen';
+      return 'Termin ce biti objavljen';
     }
 
     return new Date(event.startsAt).toLocaleDateString('sr-RS', {
@@ -149,7 +137,10 @@ export class PublicRepertoireComponent implements OnInit {
   }
 
   filterLabel(type: string): string {
-    if (type === 'all') return 'Sve';
-    return type.charAt(0).toUpperCase() + type.slice(1);
+    return type === 'all' ? 'Sve' : this.publicApi.typeLabel(type);
+  }
+
+  canBuy(event: PublicEvent): boolean {
+    return Boolean(this.eventId(event)) && event.saleStatus !== 'sales_closed' && event.saleStatus !== 'sold_out';
   }
 }

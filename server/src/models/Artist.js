@@ -59,22 +59,16 @@ const artistSchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "published",
     },
-    weight: { // izbaciti
-      type: Number,
-      default: 0,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-artistSchema.pre("validate", function (next) {
+artistSchema.pre("validate", function () {
   if (!this.slug && this.displayName) {
     this.slug = slugify(this.displayName);
   }
-
-  next();
 });
 
 module.exports = mongoose.model("Artist", artistSchema, "artists");

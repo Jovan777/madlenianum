@@ -21,7 +21,7 @@ const getVenues = asyncHandler(async (req, res) => {
 
   const venues = await Venue.find(filter)
     .populate("images")
-    .sort("weight name");
+    .sort("name");
 
   res.json({
     success: true,

@@ -21,16 +21,6 @@ export class PublicProductionsComponent implements OnInit {
   readonly productions = signal<PublicProduction[]>([]);
   readonly activeType = signal('all');
 
-  readonly types = [
-    { value: 'all', label: 'Sve' },
-    { value: 'opera', label: 'Opera' },
-    { value: 'opereta', label: 'Opereta' },
-    { value: 'balet', label: 'Balet' },
-    { value: 'drama', label: 'Drama' },
-    { value: 'mjuzikl', label: 'Mjuzikl' },
-    { value: 'koncert', label: 'Koncerti' },
-  ];
-
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
       this.activeType.set(params.get('type') || 'all');
@@ -38,7 +28,7 @@ export class PublicProductionsComponent implements OnInit {
 
     this.publicApi.getProductions().subscribe({
       next: (response) => {
-        this.productions.set(this.publicApi.extractItems<PublicProduction>(response, ['productions']));
+        this.productions.set(this.publicApi.extractItems<PublicProduction>(response, ['productions', 'items']));
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.message || 'Predstave trenutno nisu dostupne.');
@@ -47,6 +37,14 @@ export class PublicProductionsComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  types(): string[] {
+    const values = this.productions()
+      .map((production) => production.type || '')
+      .filter(Boolean);
+
+    return ['all', ...Array.from(new Set(values))];
   }
 
   filteredProductions(): PublicProduction[] {
@@ -59,7 +57,19 @@ export class PublicProductionsComponent implements OnInit {
     return this.productions().filter((production) => production.type === type);
   }
 
-  image(production: PublicProduction): string {
-    return this.publicApi.mediaUrl(production.poster);
+  image(production: PublicProduction, index: number): string {
+    return this.publicApi.mediaUrl(production.poster) || this.publicApi.fallbackImage(index);
+  }
+
+  typeLabel(type: string | undefined): string {
+    return this.publicApi.typeLabel(type);
+  }
+
+  filterLabel(type: string): string {
+    return type === 'all' ? 'Sve' : this.publicApi.typeLabel(type);
+  }
+
+  description(production: PublicProduction): string {
+    return production.shortDescription || production.subtitle || production.authorComposer || 'Detalji predstave.';
   }
 }

@@ -25,7 +25,7 @@ const getArtists = asyncHandler(async (req, res) => {
   const artists = await Artist.find(filter)
     .populate("image")
     .populate("gallery")
-    .sort("weight displayName")
+    .sort("displayName")
     .skip(skip)
     .limit(limit);
 

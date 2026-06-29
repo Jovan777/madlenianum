@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { PublicApiService } from '../../../core/services/public-api.service';
 
 @Component({
   selector: 'app-public-order-lookup',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './public-order-lookup.component.html',
   styleUrl: './public-order-lookup.component.scss',
 })
@@ -34,7 +34,7 @@ export class PublicOrderLookupComponent implements OnInit {
     const value = this.identifier().trim();
 
     if (!value) {
-      this.errorMessage.set('Unesite broj porudžbine.');
+      this.errorMessage.set('Unesite broj porudzbine.');
       return;
     }
 
@@ -47,7 +47,7 @@ export class PublicOrderLookupComponent implements OnInit {
         this.order.set(response.order || response.item || null);
       },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Porudžbina nije pronađena.');
+        this.errorMessage.set(error?.error?.message || 'Porudzbina nije pronadjena.');
       },
       complete: () => {
         this.isLoading.set(false);
@@ -56,7 +56,7 @@ export class PublicOrderLookupComponent implements OnInit {
   }
 
   eventTitle(order: any): string {
-    return order?.event?.production?.title || 'Događaj';
+    return order?.event?.production?.title || 'Dogadjaj';
   }
 
   eventDate(order: any): string {
@@ -66,6 +66,21 @@ export class PublicOrderLookupComponent implements OnInit {
       return '-';
     }
 
-    return new Date(value).toLocaleString('sr-RS');
+    return new Date(value).toLocaleString('sr-RS', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  venueName(order: any): string {
+    return order?.event?.venue?.name || order?.event?.venue?.title || 'Madlenianum';
+  }
+
+  tickets(order: any): any[] {
+    return Array.isArray(order?.items) ? order.items : [];
   }
 }

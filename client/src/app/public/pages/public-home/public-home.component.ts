@@ -26,29 +26,26 @@ export class PublicHomeComponent implements OnInit {
   ngOnInit(): void {
     this.publicApi.getHome().subscribe({
       next: (response) => {
-        const slides = this.publicApi.extractItems<PublicPromoSlide>(response, [
-          'slides',
-          'promoSlides',
-          'promos',
-        ]);
-        const productions = this.publicApi.extractItems<PublicProduction>(response, [
-          'productions',
-          'featuredProductions',
-        ]);
-        const events = this.publicApi.extractItems<PublicEvent>(response, [
-          'events',
-          'repertoire',
-          'upcomingEvents',
-        ]);
-        const news = this.publicApi.extractItems<any>(response, ['news', 'latestNews', 'articles']);
-
-        this.slides.set(slides);
-        this.productions.set(productions);
-        this.events.set(events);
-        this.news.set(news);
+        this.slides.set(
+          this.publicApi.extractItems<PublicPromoSlide>(response, ['slides', 'promoSlides', 'promos'])
+        );
+        this.productions.set(
+          this.publicApi.extractItems<PublicProduction>(response, [
+            'featuredProductions',
+            'productions',
+          ])
+        );
+        this.events.set(
+          this.publicApi.extractItems<PublicEvent>(response, [
+            'upcomingEvents',
+            'events',
+            'repertoire',
+          ])
+        );
+        this.news.set(this.publicApi.extractItems<any>(response, ['featuredNews', 'news', 'articles']));
       },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Početna strana trenutno nije dostupna.');
+        this.errorMessage.set(error?.error?.message || 'Pocetna strana trenutno nije dostupna.');
       },
       complete: () => {
         this.isLoading.set(false);
@@ -64,37 +61,80 @@ export class PublicHomeComponent implements OnInit {
     this.activeSlideIndex.set(index);
   }
 
-  slideImage(slide: PublicPromoSlide | null): string {
-    return this.publicApi.mediaUrl(slide?.image);
+  heroTitle(): string {
+    return this.activeSlide()?.title || this.productions()[0]?.title || 'Madlenianum';
+  }
+
+  heroSubtitle(): string {
+    return (
+      this.activeSlide()?.description ||
+      this.activeSlide()?.subtitle ||
+      this.productions()[0]?.shortDescription ||
+      'Opera, teatar i balet sa jasnim putem od programa do karte.'
+    );
+  }
+
+  heroImage(): string {
+    const slide = this.activeSlide();
+    const production = this.slideProduction(slide) || this.productions()[0];
+
+    return (
+      this.publicApi.mediaUrl(slide?.image) ||
+      this.publicApi.mediaUrl(production?.poster) ||
+      this.publicApi.fallbackImage(0)
+    );
   }
 
   heroBackground(): string {
-    const image = this.slideImage(this.activeSlide());
-
-    if (!image) {
-      return '';
-    }
-
-    return `url("${image}")`;
+    return `url("${this.heroImage()}")`;
   }
 
   slideProduction(slide: PublicPromoSlide | null): PublicProduction | null {
-    if (!slide || !slide.production || typeof slide.production === 'string') {
+    const value = slide?.relatedProduction || slide?.production;
+
+    if (!value || typeof value === 'string') {
       return null;
     }
 
-    return slide.production;
+    return value;
   }
 
-  slideEventId(slide: PublicPromoSlide | null): string {
-    return this.publicApi.eventId(slide?.event as PublicEvent | string | null | undefined);
+  heroProductionSlug(): string {
+    return this.slideProduction(this.activeSlide())?.slug || this.productions()[0]?.slug || '';
   }
 
-  productionImage(production: PublicProduction): string {
-    return this.publicApi.mediaUrl(production.poster);
+  heroEventId(): string {
+    const slideEvent = this.publicApi.eventId(this.activeSlide()?.event as PublicEvent | string | null | undefined);
+
+    if (slideEvent) {
+      return slideEvent;
+    }
+
+    const productionSlug = this.heroProductionSlug();
+    const matchingEvent = this.events().find((event) => {
+      return this.publicApi.productionFromEvent(event)?.slug === productionSlug;
+    });
+
+    return this.publicApi.eventId(matchingEvent || this.events()[0]);
   }
 
-  productionDateLabel(event: PublicEvent): string {
+  eventId(event: PublicEvent): string {
+    return this.publicApi.eventId(event);
+  }
+
+  eventProduction(event: PublicEvent): PublicProduction | null {
+    return this.publicApi.productionFromEvent(event);
+  }
+
+  eventTitle(event: PublicEvent): string {
+    return this.eventProduction(event)?.title || 'Dogadjaj';
+  }
+
+  eventType(event: PublicEvent): string {
+    return this.publicApi.typeLabel(this.eventProduction(event)?.type);
+  }
+
+  eventDate(event: PublicEvent): string {
     if (!event.startsAt) {
       return 'Uskoro';
     }
@@ -105,31 +145,30 @@ export class PublicHomeComponent implements OnInit {
     });
   }
 
-  productionTitleFromEvent(event: PublicEvent): string {
-    if (!event.production || typeof event.production === 'string') {
-      return 'Događaj';
-    }
-
-    return event.production.title;
-  }
-
-  productionTypeFromEvent(event: PublicEvent): string {
-    if (!event.production || typeof event.production === 'string') {
+  eventTime(event: PublicEvent): string {
+    if (!event.startsAt) {
       return '';
     }
 
-    return event.production.type || '';
+    return new Date(event.startsAt).toLocaleTimeString('sr-RS', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
-  eventId(event: PublicEvent): string {
-    return this.publicApi.eventId(event);
+  venueName(event: PublicEvent): string {
+    return event.venue?.name || event.venue?.title || 'Madlenianum';
   }
 
-  eventProductionSlug(event: PublicEvent): string {
-    if (!event.production || typeof event.production === 'string') {
-      return '';
-    }
+  productionImage(production: PublicProduction, index: number): string {
+    return this.publicApi.mediaUrl(production.poster) || this.publicApi.fallbackImage(index);
+  }
 
-    return event.production.slug;
+  productionType(production: PublicProduction): string {
+    return this.publicApi.typeLabel(production.type);
+  }
+
+  newsTitle(item: any): string {
+    return item.title || item.headline || 'Vest';
   }
 }

@@ -1,7 +1,7 @@
 <div class="admin-shell">
   <aside class="side-rail">
     <a class="admin-brand" routerLink="/admin" aria-label="Admin home">
-      <span>M</span>
+      <img src="/madlenianum/logo.png" alt="Madlenianum" />
     </a>
 
     <nav aria-label="Admin navigation">
@@ -16,17 +16,17 @@
       </a>
     </nav>
 
-    <button class="logout" type="button" (click)="logout()">Exit</button>
+    <button class="logout" type="button" (click)="logout()">Logout</button>
   </aside>
 
   <main class="admin-main">
     <header class="admin-top">
       <div>
-        <span>Atelier CMS</span>
-        <strong>Madlenianum</strong>
+        <span>Madlenianum CMS</span>
+        <strong>{{ authService.admin()?.email || 'Admin' }}</strong>
       </div>
 
-      <a class="view-site" routerLink="/">View site</a>
+      <a class="view-site" routerLink="/">View public site</a>
     </header>
 
     <router-outlet />

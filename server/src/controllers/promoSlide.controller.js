@@ -10,7 +10,7 @@ const getPromoSlides = asyncHandler(async (req, res) => {
   const slides = await PromoSlide.find(filter)
     .populate("image")
     .populate("relatedProduction")
-    .sort("weight -createdAt");
+    .sort("-createdAt");
 
   res.json({
     success: true,

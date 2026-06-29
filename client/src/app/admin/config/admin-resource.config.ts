@@ -80,7 +80,6 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'tags', label: 'Tags', type: 'array', helper: 'Comma separated values.' },
       { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
       { key: 'isFeatured', label: 'Featured', type: 'checkbox' },
-      { key: 'weight', label: 'Weight', type: 'number' },
     ],
   },
   events: {
@@ -127,7 +126,6 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'hasNumberedSeats', label: 'Has numbered seats', type: 'checkbox' },
       { key: 'description', label: 'Description', type: 'textarea' },
       { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
-      { key: 'weight', label: 'Weight', type: 'number' },
     ],
   },
   'seat-maps': {
@@ -182,23 +180,21 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
     columns: [
       { key: 'code', label: 'Code' },
       { key: 'name', label: 'Name' },
-      { key: 'weight', label: 'Weight' },
       { key: 'status', label: 'Status', type: 'status' },
     ],
     formFields: [
       { key: 'code', label: 'Code', type: 'text', required: true },
       { key: 'name', label: 'Name', type: 'text', required: true },
       { key: 'description', label: 'Description', type: 'textarea' },
-      { key: 'weight', label: 'Weight', type: 'number' },
       { key: 'status', label: 'Status', type: 'select', options: ACTIVE_STATUSES },
     ],
   },
   'price-plans': {
     title: 'Price Plans',
-    subtitle: 'Cenovnici po tipu predstave, sceni i premijeri. Pravila cena se za sada menjaju kroz backend/Postman.',
+    subtitle: 'Cenovnici po tipu predstave, sceni i premijeri.',
     resource: 'price-plans',
-    canCreate: false,
-    canEdit: false,
+    canCreate: true,
+    canEdit: true,
     canDelete: false,
     columns: [
       { key: 'name', label: 'Name' },
@@ -206,6 +202,33 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'isPremiere', label: 'Premiere' },
       { key: 'status', label: 'Status', type: 'status' },
       { key: 'currency', label: 'Currency' },
+    ],
+  },
+  pages: {
+    title: 'Pages',
+    subtitle: 'Statične i informativne stranice javnog sajta.',
+    resource: 'pages',
+    canCreate: true,
+    canEdit: true,
+    canDelete: true,
+    columns: [
+      { key: 'title', label: 'Title' },
+      { key: 'pageType', label: 'Type', type: 'status' },
+      { key: 'status', label: 'Status', type: 'status' },
+    ],
+    formFields: [
+      { key: 'title', label: 'Title', type: 'text', required: true },
+      { key: 'slug', label: 'Slug', type: 'text' },
+      { key: 'pageType', label: 'Page type', type: 'select', options: [
+        { value: 'about', label: 'About' },
+        { value: 'contact', label: 'Contact' },
+        { value: 'ticket_terms', label: 'Ticket terms' },
+        { value: 'how_to_buy', label: 'How to buy' },
+        { value: 'press', label: 'Press' },
+        { value: 'custom', label: 'Custom' },
+      ] },
+      { key: 'body', label: 'Body', type: 'textarea' },
+      { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
     ],
   },
   orders: {
@@ -264,7 +287,6 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'displayName', label: 'Name' },
       { key: 'professions', label: 'Professions' },
       { key: 'status', label: 'Status', type: 'status' },
-      { key: 'weight', label: 'Weight' },
     ],
     formFields: [
       { key: 'displayName', label: 'Display name', type: 'text', required: true },
@@ -272,7 +294,6 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'professions', label: 'Professions', type: 'array', helper: 'Comma separated values.' },
       { key: 'biography', label: 'Biography', type: 'textarea' },
       { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
-      { key: 'weight', label: 'Weight', type: 'number' },
     ],
   },
   news: {
@@ -297,7 +318,6 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'publishedAt', label: 'Published at', type: 'date' },
       { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
       { key: 'isFeatured', label: 'Featured', type: 'checkbox' },
-      { key: 'weight', label: 'Weight', type: 'number' },
     ],
   },
 };
