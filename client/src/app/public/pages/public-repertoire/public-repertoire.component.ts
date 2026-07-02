@@ -141,6 +141,9 @@ export class PublicRepertoireComponent implements OnInit {
   }
 
   canBuy(event: PublicEvent): boolean {
-    return Boolean(this.eventId(event)) && event.saleStatus !== 'sales_closed' && event.saleStatus !== 'sold_out';
+    const isOnSale = event.saleStatus === 'on_sale' || event.saleStatus === 'free';
+    const hasTicketing = event.ticketing?.enabled !== false;
+
+    return Boolean(this.eventId(event)) && isOnSale && hasTicketing;
   }
 }

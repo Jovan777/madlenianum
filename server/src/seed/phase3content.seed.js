@@ -11,6 +11,7 @@ const Artist = require("../models/Artist");
 const Production = require("../models/Production");
 const PromoSlide = require("../models/PromoSlide");
 const Event = require("../models/Event");
+const StaticPage = require("../models/StaticPage");
 const Venue = require("../models/Venue");
 const SeatMap = require("../models/SeatMap");
 const Seat = require("../models/Seat");
@@ -22,6 +23,32 @@ const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
 
 const UPLOAD_ROOT = path.join(__dirname, "../../uploads/madlenianum");
+
+const startOfToday = () => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const futurePerformance = ({ daysFromNow, hour, minute, durationMinutes }) => {
+  const startsAt = startOfToday();
+  startsAt.setDate(startsAt.getDate() + daysFromNow);
+  startsAt.setHours(hour, minute, 0, 0);
+
+  const endsAt = new Date(startsAt.getTime() + durationMinutes * 60 * 1000);
+
+  return {
+    startsAt,
+    endsAt,
+  };
+};
+
+const eventBadge = (startsAt) => {
+  return startsAt.toLocaleDateString("sr-RS", {
+    day: "2-digit",
+    month: "short",
+  });
+};
 
 const IMAGE_PATHS = {
   main: {
@@ -281,10 +308,13 @@ const upsertEvent = async ({
   badge,
   notes,
 }) => {
-  return Event.findOneAndUpdate(
+  const saleStartsAt = startOfToday();
+  const saleEndsAt = new Date(startsAt.getTime() - 30 * 60 * 1000);
+
+  const event = await Event.findOneAndUpdate(
     {
       production: production._id,
-      startsAt,
+      notes,
     },
     {
       production: production._id,
@@ -297,8 +327,8 @@ const upsertEvent = async ({
       saleStatus: "on_sale",
       seatMap: seatMap._id,
       pricePlan: pricePlan._id,
-      saleStartsAt: new Date("2026-06-01T08:00:00.000Z"),
-      saleEndsAt: new Date(startsAt.getTime() - 30 * 60 * 1000),
+      saleStartsAt,
+      saleEndsAt,
       maxTicketsPerOrder: 4,
       lockDurationMinutes: 15,
       ticketing: {
@@ -319,7 +349,15 @@ const upsertEvent = async ({
       upsert: true,
       runValidators: true,
     }
-  )
+  );
+
+  await Event.deleteMany({
+    production: production._id,
+    notes,
+    _id: { $ne: event._id },
+  });
+
+  return Event.findById(event._id)
     .populate("production")
     .populate("venue")
     .populate("seatMap")
@@ -349,6 +387,39 @@ const upsertPromoSlide = async ({
       linkUrl: production ? `/predstave/${production.slug}` : "",
       relatedProduction: production?._id,
       language: "sr",
+      status: "published",
+    },
+    {
+      returnDocument: "after",
+      upsert: true,
+      runValidators: true,
+    }
+  );
+};
+
+const upsertStaticPage = async ({
+  title,
+  slug,
+  body,
+  pageType,
+  image,
+}) => {
+  return StaticPage.findOneAndUpdate(
+    { slug },
+    {
+      title,
+      slug,
+      body,
+      pageType,
+      image: image?._id,
+      gallery: [],
+      attachments: [],
+      translations: {},
+      seo: {
+        title: `${title} | Madlenianum`,
+        description: body.slice(0, 150),
+        keywords: ["Madlenianum", title],
+      },
       status: "published",
     },
     {
@@ -885,15 +956,42 @@ const seedPhase3Content = async () => {
       isFeatured: false,
     });
 
+    const schedule = {
+      staklena: futurePerformance({
+        daysFromNow: 7,
+        hour: 17,
+        minute: 30,
+        durationMinutes: 120,
+      }),
+      gordost: futurePerformance({
+        daysFromNow: 10,
+        hour: 17,
+        minute: 30,
+        durationMinutes: 120,
+      }),
+      carmen: futurePerformance({
+        daysFromNow: 14,
+        hour: 17,
+        minute: 30,
+        durationMinutes: 120,
+      }),
+      pluca: futurePerformance({
+        daysFromNow: 21,
+        hour: 18,
+        minute: 0,
+        durationMinutes: 90,
+      }),
+    };
+
     const events = {
       staklena: await upsertEvent({
         production: staklena,
         venue,
         seatMap,
         pricePlan: dramaRegularPlan,
-        startsAt: new Date("2026-06-19T17:30:00.000Z"),
-        endsAt: new Date("2026-06-19T19:30:00.000Z"),
-        badge: "19. jun",
+        startsAt: schedule.staklena.startsAt,
+        endsAt: schedule.staklena.endsAt,
+        badge: eventBadge(schedule.staklena.startsAt),
         notes: "Seeded event for Staklena menažerija on Velika scena.",
       }),
       gordost: await upsertEvent({
@@ -901,8 +999,8 @@ const seedPhase3Content = async () => {
         venue,
         seatMap,
         pricePlan: dramaRegularPlan,
-        startsAt: new Date("2026-06-10T17:30:00.000Z"),
-        endsAt: new Date("2026-06-10T19:30:00.000Z"),
+        startsAt: schedule.gordost.startsAt,
+        endsAt: schedule.gordost.endsAt,
         badge: "Klasik u novom ruhu",
         notes: "Seeded event for Gordost i predrasude.",
       }),
@@ -911,9 +1009,9 @@ const seedPhase3Content = async () => {
         venue,
         seatMap,
         pricePlan: balletRegularPlan,
-        startsAt: new Date("2026-06-24T17:30:00.000Z"),
-        endsAt: new Date("2026-06-24T19:30:00.000Z"),
-        badge: "24. jun",
+        startsAt: schedule.carmen.startsAt,
+        endsAt: schedule.carmen.endsAt,
+        badge: eventBadge(schedule.carmen.startsAt),
         notes: "Seeded event for Carmen Suite & Bolero.",
       }),
       pluca: await upsertEvent({
@@ -921,9 +1019,9 @@ const seedPhase3Content = async () => {
         venue,
         seatMap,
         pricePlan: dramaRegularPlan,
-        startsAt: new Date("2026-06-23T18:00:00.000Z"),
-        endsAt: new Date("2026-06-23T19:30:00.000Z"),
-        badge: "23. jun",
+        startsAt: schedule.pluca.startsAt,
+        endsAt: schedule.pluca.endsAt,
+        badge: eventBadge(schedule.pluca.startsAt),
         notes: "Seeded event for Pluća on Velika scena.",
       }),
     };
@@ -963,6 +1061,25 @@ const seedPhase3Content = async () => {
       production: staklena,
       event: events.staklena,
     });
+
+    const staticPages = {
+      about: await upsertStaticPage({
+        title: "O nama",
+        slug: "o-nama",
+        pageType: "about",
+        image: media.main.staklena,
+        body:
+          "Madlenianum je scena posvecena operi, baletu, drami, mjuziklu i koncertnom programu. Ova demo stranica se kreira kroz seed kako bi javni sajt uvek imao osnovni institucionalni sadrzaj za lokalno testiranje.",
+      }),
+      contact: await upsertStaticPage({
+        title: "Kontakt",
+        slug: "kontakt",
+        pageType: "contact",
+        image: media.main.gordost,
+        body:
+          "Madlenianum, Glavna 32, Zemun. Za informacije o programu, ulaznicama i saradnji koristite kontakt podatke koji ce biti uredjeni kroz admin panel.",
+      }),
+    };
 
     const customers = {
       milica: await upsertCustomer({
@@ -1033,10 +1150,39 @@ const seedPhase3Content = async () => {
     console.log("");
     console.log("Events:");
     console.log({
-      staklena: events.staklena._id.toString(),
-      gordost: events.gordost._id.toString(),
-      carmen: events.carmen._id.toString(),
-      pluca: events.pluca._id.toString(),
+      staklena: {
+        id: events.staklena._id.toString(),
+        startsAt: events.staklena.startsAt,
+        saleEndsAt: events.staklena.saleEndsAt,
+      },
+      gordost: {
+        id: events.gordost._id.toString(),
+        startsAt: events.gordost.startsAt,
+        saleEndsAt: events.gordost.saleEndsAt,
+      },
+      carmen: {
+        id: events.carmen._id.toString(),
+        startsAt: events.carmen.startsAt,
+        saleEndsAt: events.carmen.saleEndsAt,
+      },
+      pluca: {
+        id: events.pluca._id.toString(),
+        startsAt: events.pluca.startsAt,
+        saleEndsAt: events.pluca.saleEndsAt,
+      },
+    });
+
+    console.log("");
+    console.log("Static pages:");
+    console.log({
+      about: {
+        id: staticPages.about._id.toString(),
+        slug: staticPages.about.slug,
+      },
+      contact: {
+        id: staticPages.contact._id.toString(),
+        slug: staticPages.contact.slug,
+      },
     });
 
     console.log("");
@@ -1057,7 +1203,10 @@ const seedPhase3Content = async () => {
     console.log("");
     console.log("Useful verification endpoints:");
     console.log(`GET http://localhost:${process.env.PORT || 5000}/api/public/home`);
+    console.log(`GET http://localhost:${process.env.PORT || 5000}/api/public/repertoire`);
     console.log(`GET http://localhost:${process.env.PORT || 5000}/api/public/productions`);
+    console.log(`GET http://localhost:${process.env.PORT || 5000}/api/public/pages/o-nama`);
+    console.log(`GET http://localhost:${process.env.PORT || 5000}/api/public/pages/kontakt`);
     console.log(
       `GET http://localhost:${process.env.PORT || 5000}/api/public/events/${events.carmen._id.toString()}/seats`
     );

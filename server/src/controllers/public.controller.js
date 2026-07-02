@@ -67,12 +67,21 @@ const getHome = asyncHandler(async (req, res) => {
 
 const getRepertoire = asyncHandler(async (req, res) => {
   const now = new Date();
+  const hasExplicitMonth = req.query.month !== undefined || req.query.year !== undefined;
 
-  const month = Number(req.query.month) || now.getMonth() + 1;
-  const year = Number(req.query.year) || now.getFullYear();
+  const month = hasExplicitMonth
+    ? Number(req.query.month) || now.getMonth() + 1
+    : now.getMonth() + 1;
+  const year = hasExplicitMonth
+    ? Number(req.query.year) || now.getFullYear()
+    : now.getFullYear();
 
-  const from = new Date(year, month - 1, 1, 0, 0, 0);
-  const to = new Date(year, month, 1, 0, 0, 0);
+  const from = hasExplicitMonth
+    ? new Date(year, month - 1, 1, 0, 0, 0)
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const to = hasExplicitMonth
+    ? new Date(year, month, 1, 0, 0, 0)
+    : new Date(from.getTime() + 120 * 24 * 60 * 60 * 1000);
 
   const events = await Event.find({
     status: "scheduled",
