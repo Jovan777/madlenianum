@@ -4,11 +4,13 @@ import { ReactiveFormsModule, UntypedFormArray, UntypedFormBuilder, Validators }
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AdminApiService } from '../../../core/services/admin-api.service';
+import { MediaSelectionResult, MediaSelectionValue } from '../../../core/models/media.models';
+import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
 
 @Component({
   selector: 'app-admin-artist-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent],
   templateUrl: './admin-artist-form.component.html',
   styleUrl: './admin-artist-form.component.scss',
 })
@@ -20,6 +22,8 @@ export class AdminArtistFormComponent implements OnInit {
 
   readonly itemId = signal<string | null>(null);
   readonly options = signal<Record<string, any[]>>({});
+  readonly imageSelection = signal<MediaSelectionValue[]>([]);
+  readonly gallerySelection = signal<MediaSelectionValue[]>([]);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly errorMessage = signal('');
@@ -50,10 +54,6 @@ export class AdminArtistFormComponent implements OnInit {
 
   get isEditMode(): boolean {
     return Boolean(this.itemId());
-  }
-
-  get media(): any[] {
-    return this.options()['media'] || [];
   }
 
   get statuses(): any[] {
@@ -109,6 +109,9 @@ export class AdminArtistFormComponent implements OnInit {
       gallery: Array.isArray(item.gallery) ? item.gallery.map((media: any) => this.getId(media)).filter(Boolean) : [],
       status: item.status || 'published',
     });
+
+    this.imageSelection.set(item.image ? [item.image] : []);
+    this.gallerySelection.set(Array.isArray(item.gallery) ? item.gallery : []);
   }
 
   addLink(entry: any = {}): void {
@@ -160,6 +163,16 @@ export class AdminArtistFormComponent implements OnInit {
     });
   }
 
+  updateImage(selection: MediaSelectionResult): void {
+    this.imageSelection.set(selection.items.length ? selection.items : selection.ids);
+    this.form.patchValue({ image: selection.ids[0] || '' });
+  }
+
+  updateGallery(selection: MediaSelectionResult): void {
+    this.gallerySelection.set(selection.items.length ? selection.items : selection.ids);
+    this.form.patchValue({ gallery: selection.ids });
+  }
+
   buildPayload(): Record<string, unknown> {
     const raw = this.form.getRawValue();
 
@@ -171,7 +184,7 @@ export class AdminArtistFormComponent implements OnInit {
         .map((item: string) => item.trim())
         .filter(Boolean),
       biography: raw.biography || '',
-      image: raw.image || undefined,
+      image: raw.image || null,
       gallery: Array.isArray(raw.gallery) ? raw.gallery.filter(Boolean) : [],
       status: raw.status || 'published',
       links: (raw.links || [])
@@ -181,10 +194,6 @@ export class AdminArtistFormComponent implements OnInit {
         }))
         .filter((entry: any) => entry.label || entry.url),
     };
-  }
-
-  mediaLabel(item: any): string {
-    return item.title || item.originalName || item.filename || item.url || item._id;
   }
 
   private createLinkGroup(entry: any = {}) {

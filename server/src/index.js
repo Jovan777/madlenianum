@@ -1,11 +1,11 @@
 require("dotenv").config();
 
-const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const customerRoutes = require("./routes/customer.routes");
+const mediaConfig = require("./config/media.config");
 
 const connectDB = require("./config/db");
 
@@ -35,8 +35,8 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), process.env.UPLOAD_DIR || "uploads"))
+  mediaConfig.publicBasePath,
+  express.static(mediaConfig.uploadRoot)
 );
 
 app.get("/", (req, res) => {

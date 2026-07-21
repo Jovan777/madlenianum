@@ -4,11 +4,13 @@ import { ReactiveFormsModule, UntypedFormArray, UntypedFormBuilder, Validators }
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AdminApiService } from '../../../core/services/admin-api.service';
+import { MediaSelectionResult, MediaSelectionValue } from '../../../core/models/media.models';
+import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
 
 @Component({
   selector: 'app-admin-production-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent],
   templateUrl: './admin-production-form.component.html',
   styleUrl: './admin-production-form.component.scss',
 })
@@ -24,6 +26,8 @@ export class AdminProductionFormComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly options = signal<Record<string, any[]>>({});
+  readonly posterSelection = signal<MediaSelectionValue[]>([]);
+  readonly gallerySelection = signal<MediaSelectionValue[]>([]);
 
   readonly form = this.fb.group({
     title: ['', Validators.required],
@@ -76,10 +80,6 @@ export class AdminProductionFormComponent implements OnInit {
 
   get artists(): any[] {
     return this.options()['artists'] || [];
-  }
-
-  get media(): any[] {
-    return this.options()['media'] || [];
   }
 
   get venues(): any[] {
@@ -156,6 +156,9 @@ export class AdminProductionFormComponent implements OnInit {
       isFeatured: Boolean(item.isFeatured),
     });
 
+    this.posterSelection.set(item.poster ? [item.poster] : []);
+    this.gallerySelection.set(Array.isArray(item.gallery) ? item.gallery : []);
+
     this.creativeTeam.clear();
     (item.creativeTeam || []).forEach((entry: any) => this.addCreativeTeam(entry));
 
@@ -225,6 +228,16 @@ export class AdminProductionFormComponent implements OnInit {
     });
   }
 
+  updatePoster(selection: MediaSelectionResult): void {
+    this.posterSelection.set(selection.items.length ? selection.items : selection.ids);
+    this.form.patchValue({ poster: selection.ids[0] || '' });
+  }
+
+  updateGallery(selection: MediaSelectionResult): void {
+    this.gallerySelection.set(selection.items.length ? selection.items : selection.ids);
+    this.form.patchValue({ gallery: selection.ids });
+  }
+
   buildPayload(): Record<string, unknown> {
     const raw = this.form.getRawValue();
 
@@ -245,7 +258,7 @@ export class AdminProductionFormComponent implements OnInit {
       durationMinutes: raw.durationMinutes ? Number(raw.durationMinutes) : undefined,
       performanceLanguage: raw.performanceLanguage,
       subtitles: raw.subtitles,
-      poster: raw.poster || undefined,
+      poster: raw.poster || null,
       gallery: Array.isArray(raw.gallery) ? raw.gallery.filter(Boolean) : [],
       season: raw.season,
       tags: String(raw.tagsText || '')
@@ -274,10 +287,6 @@ export class AdminProductionFormComponent implements OnInit {
         }))
         .filter((entry: any) => entry.character || entry.artists.length || entry.names.length),
     });
-  }
-
-  mediaLabel(item: any): string {
-    return item.title || item.originalName || item.filename || item.url || this.getId(item);
   }
 
   artistLabel(item: any): string {

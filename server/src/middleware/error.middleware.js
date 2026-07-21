@@ -26,6 +26,13 @@ const errorHandler = (err, req, res, next) => {
     message = `Vrednost za polje "${field}" već postoji.`;
   }
 
+  if (err.name === "MulterError") {
+    statusCode = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+    message = err.code === "LIMIT_FILE_SIZE"
+      ? "The uploaded file exceeds the configured size limit."
+      : `Upload failed: ${err.message}`;
+  }
+
   res.status(statusCode).json({
     success: false,
     message,

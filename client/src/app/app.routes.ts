@@ -14,6 +14,7 @@ import { AdminSeatMapDesignerComponent } from './admin/pages/admin-seat-map-desi
 import { AdminProductionFormComponent } from './admin/pages/admin-production-form/admin-production-form.component';
 import { AdminPricePlanFormComponent } from './admin/pages/admin-price-plan-form/admin-price-plan-form.component';
 import { AdminArtistFormComponent } from './admin/pages/admin-artist-form/admin-artist-form.component';
+import { AdminMediaLibraryComponent } from './admin/pages/admin-media-library/admin-media-library.component';
 
 import { PublicLayoutComponent } from './public/layout/public-layout/public-layout.component';
 import { PublicHomeComponent } from './public/pages/public-home/public-home.component';
@@ -87,6 +88,10 @@ export const routes: Routes = [
       {
         path: 'seat-maps/:id/map',
         component: AdminSeatMapDesignerComponent,
+      },
+      {
+        path: 'media',
+        component: AdminMediaLibraryComponent,
       },
       {
         path: ':resource/new',

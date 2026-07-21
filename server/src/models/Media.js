@@ -22,16 +22,29 @@ const mediaSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    storagePath: {
+      type: String,
+      default: "",
+    },
     fileType: {
       type: String,
       enum: ["image", "document", "video", "other"],
       default: "other",
+    },
+    title: {
+      type: String,
+      default: "",
+      trim: true,
     },
     alt: {
       type: String,
       default: "",
     },
     caption: {
+      type: String,
+      default: "",
+    },
+    credit: {
       type: String,
       default: "",
     },
@@ -44,5 +57,19 @@ const mediaSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+mediaSchema.virtual("altText")
+  .get(function () {
+    return this.alt || "";
+  })
+  .set(function (value) {
+    this.alt = value || "";
+  });
+
+mediaSchema.set("toJSON", { virtuals: true });
+mediaSchema.set("toObject", { virtuals: true });
+
+mediaSchema.index({ fileType: 1, createdAt: -1 });
+mediaSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Media", mediaSchema, "media");

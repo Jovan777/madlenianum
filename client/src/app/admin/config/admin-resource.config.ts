@@ -7,11 +7,21 @@ export interface ResourceColumn {
 export interface ResourceFormField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'date' | 'array';
+  type:
+    | 'text'
+    | 'textarea'
+    | 'number'
+    | 'select'
+    | 'checkbox'
+    | 'date'
+    | 'array'
+    | 'media-single'
+    | 'media-multiple';
   required?: boolean;
   placeholder?: string;
   options?: Array<{ value: string | number | boolean; label: string }>;
   helper?: string;
+  mediaKind?: 'image' | 'document' | 'all';
 }
 
 export interface ResourceConfig {
@@ -125,6 +135,7 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'capacity', label: 'Capacity', type: 'number' },
       { key: 'hasNumberedSeats', label: 'Has numbered seats', type: 'checkbox' },
       { key: 'description', label: 'Description', type: 'textarea' },
+      { key: 'images', label: 'Venue images', type: 'media-multiple', mediaKind: 'image' },
       { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
     ],
   },
@@ -228,6 +239,9 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
         { value: 'custom', label: 'Custom' },
       ] },
       { key: 'body', label: 'Body', type: 'textarea' },
+      { key: 'image', label: 'Main image', type: 'media-single', mediaKind: 'image' },
+      { key: 'gallery', label: 'Image gallery', type: 'media-multiple', mediaKind: 'image' },
+      { key: 'attachments', label: 'PDF attachments', type: 'media-multiple', mediaKind: 'document' },
       { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
     ],
   },
@@ -312,12 +326,50 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
     formFields: [
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'slug', label: 'Slug', type: 'text' },
-      { key: 'category', label: 'Category', type: 'text' },
-      { key: 'excerpt', label: 'Excerpt', type: 'textarea' },
+      { key: 'subtitle', label: 'Subtitle', type: 'text' },
+      { key: 'category', label: 'Category', type: 'select', options: [
+        { value: 'vest', label: 'Vest' },
+        { value: 'kritika', label: 'Kritika' },
+        { value: 'press', label: 'Press' },
+        { value: 'akcija', label: 'Akcija' },
+        { value: 'premijera', label: 'Premijera' },
+        { value: 'ostalo', label: 'Ostalo' },
+      ] },
       { key: 'body', label: 'Body', type: 'textarea' },
+      { key: 'image', label: 'Main image', type: 'media-single', mediaKind: 'image' },
+      { key: 'gallery', label: 'Image gallery', type: 'media-multiple', mediaKind: 'image' },
+      { key: 'attachment', label: 'PDF attachment', type: 'media-single', mediaKind: 'document' },
       { key: 'publishedAt', label: 'Published at', type: 'date' },
       { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
       { key: 'isFeatured', label: 'Featured', type: 'checkbox' },
+    ],
+  },
+  'promo-slides': {
+    title: 'Promo slides',
+    subtitle: 'Slajdovi i glavne vizuelne poruke javnog sajta.',
+    resource: 'promo-slides',
+    canCreate: true,
+    canEdit: true,
+    canDelete: true,
+    columns: [
+      { key: 'title', label: 'Title' },
+      { key: 'language', label: 'Language', type: 'status' },
+      { key: 'status', label: 'Status', type: 'status' },
+      { key: 'createdAt', label: 'Created', type: 'date' },
+    ],
+    formFields: [
+      { key: 'title', label: 'Title', type: 'text', required: true },
+      { key: 'slug', label: 'Slug', type: 'text' },
+      { key: 'description', label: 'Description', type: 'textarea' },
+      { key: 'image', label: 'Slide image', type: 'media-single', mediaKind: 'image' },
+      { key: 'linkLabel', label: 'Link label', type: 'text' },
+      { key: 'linkUrl', label: 'Link URL', type: 'text' },
+      { key: 'language', label: 'Language', type: 'select', options: [
+        { value: 'sr', label: 'Serbian' },
+        { value: 'en', label: 'English' },
+        { value: 'und', label: 'Not specified' },
+      ] },
+      { key: 'status', label: 'Status', type: 'select', options: PUBLISH_STATUSES },
     ],
   },
 };

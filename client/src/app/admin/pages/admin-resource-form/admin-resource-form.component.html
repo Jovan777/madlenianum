@@ -24,8 +24,26 @@
 
   <section class="form-card" *ngIf="fields.length; else noForm">
     <form [formGroup]="form" (ngSubmit)="submit()">
-      <div class="field" *ngFor="let field of fields" [class.wide]="field.type === 'textarea'">
-        <label [for]="field.key">{{ field.label }}</label>
+      <div
+        class="field"
+        *ngFor="let field of fields"
+        [class.wide]="field.type === 'textarea' || field.type === 'media-single' || field.type === 'media-multiple'"
+      >
+        <label
+          *ngIf="field.type !== 'media-single' && field.type !== 'media-multiple'"
+          [for]="field.key"
+        >
+          {{ field.label }}
+        </label>
+
+        <app-media-picker
+          *ngIf="field.type === 'media-single' || field.type === 'media-multiple'"
+          [label]="field.label"
+          [mode]="field.type === 'media-multiple' ? 'multiple' : 'single'"
+          [mediaKind]="field.mediaKind || 'all'"
+          [value]="mediaValue(field.key)"
+          (selectionChange)="updateMediaField(field, $event)"
+        />
 
         <input
           *ngIf="field.type === 'text'"

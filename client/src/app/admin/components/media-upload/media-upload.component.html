@@ -1,0 +1,32 @@
+<section class="upload-panel" [class.compact]="compact">
+  <label
+    class="drop-zone"
+    [class.dragging]="isDragging()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+    <input type="file" multiple [accept]="accept" (change)="onFileInput($event)" />
+    <strong>Choose files or drop them here</strong>
+    <span>JPG, PNG, WEBP, GIF or PDF. Maximum {{ maxFileSizeMb }} MB per file.</span>
+  </label>
+
+  <div class="selected-files" *ngIf="selectedFiles().length">
+    <div *ngFor="let file of selectedFiles(); let index = index">
+      <span>{{ file.name }}</span>
+      <small>{{ (file.size / 1024 / 1024).toFixed(2) }} MB</small>
+      <button type="button" aria-label="Remove selected file" (click)="removeFile(index)">&times;</button>
+    </div>
+  </div>
+
+  <p class="upload-error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+  <button
+    class="upload-action"
+    type="button"
+    [disabled]="!selectedFiles().length || isUploading()"
+    (click)="upload()"
+  >
+    {{ isUploading() ? 'Uploading...' : 'Upload selected' }}
+  </button>
+</section>

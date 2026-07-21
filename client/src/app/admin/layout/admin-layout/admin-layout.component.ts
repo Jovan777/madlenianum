@@ -4,11 +4,12 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AdminMenuItem } from '../../../core/models/admin.models';
 import { AuthService } from '../../../core/services/auth.service';
+import { AdminNotificationsComponent } from '../../components/admin-notifications/admin-notifications.component';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, AdminNotificationsComponent],
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.scss',
 })
@@ -23,8 +24,10 @@ export class AdminLayoutComponent {
     { label: 'Price plans', path: '/admin/price-plans', icon: 'L' },
     { label: 'Price categories', path: '/admin/price-categories', icon: 'C' },
     { label: 'Orders', path: '/admin/orders', icon: 'O' },
+    { label: 'Media Library', path: '/admin/media', icon: 'I' },
     { label: 'Pages / Content', path: '/admin/pages', icon: 'G' },
     { label: 'News', path: '/admin/news', icon: 'N' },
+    { label: 'Promo slides', path: '/admin/promo-slides', icon: 'B' },
     { label: 'System', path: '/admin/system', icon: 'S' },
   ];
 

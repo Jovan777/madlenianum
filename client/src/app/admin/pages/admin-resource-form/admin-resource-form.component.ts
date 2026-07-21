@@ -4,12 +4,17 @@ import { ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/fo
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AdminApiService } from '../../../core/services/admin-api.service';
+import {
+  MediaSelectionResult,
+  MediaSelectionValue,
+} from '../../../core/models/media.models';
+import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
 import { ADMIN_RESOURCE_CONFIGS, ResourceConfig, ResourceFormField } from '../../config/admin-resource.config';
 
 @Component({
   selector: 'app-admin-resource-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent],
   templateUrl: './admin-resource-form.component.html',
   styleUrl: './admin-resource-form.component.scss',
 })
@@ -26,6 +31,7 @@ export class AdminResourceFormComponent implements OnInit {
   readonly resource = signal('');
   readonly itemId = signal<string | null>(null);
   readonly item = signal<Record<string, any> | null>(null);
+  readonly mediaValues = signal<Record<string, MediaSelectionValue[]>>({});
 
   readonly form = this.fb.group({});
 
@@ -62,7 +68,11 @@ export class AdminResourceFormComponent implements OnInit {
   buildForm(): void {
     this.fields.forEach((field) => {
       const validators = field.required ? [Validators.required] : [];
-      const defaultValue = field.type === 'checkbox' ? false : '';
+      const defaultValue = field.type === 'checkbox'
+        ? false
+        : field.type === 'media-multiple'
+          ? []
+          : '';
       this.form.addControl(field.key, this.fb.control(defaultValue, validators));
     });
   }
@@ -98,6 +108,17 @@ export class AdminResourceFormComponent implements OnInit {
 
       if (field.type === 'date') {
         payload[field.key] = this.toDateTimeLocal(rawValue);
+        return;
+      }
+
+      if (field.type === 'media-single' || field.type === 'media-multiple') {
+        const values = field.type === 'media-multiple'
+          ? (Array.isArray(rawValue) ? rawValue : [])
+          : (rawValue ? [rawValue] : []);
+        this.mediaValues.update((current) => ({ ...current, [field.key]: values }));
+        payload[field.key] = field.type === 'media-multiple'
+          ? values.map((value) => this.getMediaId(value)).filter(Boolean)
+          : this.getMediaId(values[0]);
         return;
       }
 
@@ -147,6 +168,21 @@ export class AdminResourceFormComponent implements OnInit {
     });
   }
 
+  mediaValue(fieldKey: string): MediaSelectionValue[] {
+    return this.mediaValues()[fieldKey] || [];
+  }
+
+  updateMediaField(field: ResourceFormField, selection: MediaSelectionResult): void {
+    this.mediaValues.update((current) => ({
+      ...current,
+      [field.key]: selection.items.length ? selection.items : selection.ids,
+    }));
+    this.form.get(field.key)?.setValue(
+      field.type === 'media-multiple' ? selection.ids : selection.ids[0] || ''
+    );
+    this.form.get(field.key)?.markAsDirty();
+  }
+
   buildPayload(): Record<string, unknown> {
     const raw = this.form.getRawValue() as Record<string, unknown>;
     const payload: Record<string, unknown> = {};
@@ -174,6 +210,16 @@ export class AdminResourceFormComponent implements OnInit {
 
       if (field.type === 'date') {
         payload[field.key] = value ? new Date(String(value)).toISOString() : undefined;
+        return;
+      }
+
+      if (field.type === 'media-single') {
+        payload[field.key] = value || null;
+        return;
+      }
+
+      if (field.type === 'media-multiple') {
+        payload[field.key] = Array.isArray(value) ? value.filter(Boolean) : [];
         return;
       }
 
@@ -225,5 +271,11 @@ export class AdminResourceFormComponent implements OnInit {
 
     const offset = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  }
+
+  private getMediaId(value: MediaSelectionValue | undefined): string {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    return String(value._id || value.id || '');
   }
 }

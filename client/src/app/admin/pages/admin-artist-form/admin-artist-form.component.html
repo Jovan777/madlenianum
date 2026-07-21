@@ -62,25 +62,21 @@
       <div>
         <p class="eyebrow">Media</p>
         <h2>Images</h2>
-        <small>Media upload remains in the media library; this form links existing images.</small>
       </div>
-
-      <div class="form-grid">
-        <label>
-          Main image
-          <select formControlName="image">
-            <option value="">No image</option>
-            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
-          </select>
-        </label>
-
-        <label>
-          Gallery
-          <select formControlName="gallery" multiple size="8">
-            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
-          </select>
-        </label>
-      </div>
+      <app-media-picker
+        label="Artist main image"
+        mode="single"
+        mediaKind="image"
+        [value]="imageSelection()"
+        (selectionChange)="updateImage($event)"
+      />
+      <app-media-picker
+        label="Artist gallery"
+        mode="multiple"
+        mediaKind="image"
+        [value]="gallerySelection()"
+        (selectionChange)="updateGallery($event)"
+      />
     </section>
 
     <section class="panel" formArrayName="links">

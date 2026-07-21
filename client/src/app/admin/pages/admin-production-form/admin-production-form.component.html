@@ -129,23 +129,20 @@
 
     <section class="panel">
       <h2>Media</h2>
-      <div class="form-grid">
-        <label>
-          Poster
-          <select formControlName="poster">
-            <option value="">No poster</option>
-            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
-          </select>
-        </label>
-
-        <label>
-          Gallery
-          <select formControlName="gallery" multiple size="8">
-            <option *ngFor="let item of media" [value]="item._id">{{ mediaLabel(item) }}</option>
-          </select>
-        </label>
-      </div>
-      <small>Media upload stays in the media library; this form links existing images.</small>
+      <app-media-picker
+        label="Poster / main image"
+        mode="single"
+        mediaKind="image"
+        [value]="posterSelection()"
+        (selectionChange)="updatePoster($event)"
+      />
+      <app-media-picker
+        label="Production gallery"
+        mode="multiple"
+        mediaKind="image"
+        [value]="gallerySelection()"
+        (selectionChange)="updateGallery($event)"
+      />
     </section>
 
     <section class="panel">

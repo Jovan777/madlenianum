@@ -1,0 +1,32 @@
+<div class="media-grid">
+  <article
+    class="media-card"
+    *ngFor="let item of items; trackBy: trackById"
+    [class.selected]="isSelected(item)"
+  >
+    <button class="thumbnail" type="button" (click)="toggle(item)">
+      <img
+        *ngIf="isImage(item) && !brokenImages().has(item._id); else documentPreview"
+        [src]="mediaUrl(item)"
+        [alt]="item.altText || item.alt || itemName(item)"
+        (error)="markBroken(item)"
+      />
+      <ng-template #documentPreview>
+        <span class="document-preview">{{ isImage(item) ? 'Missing image' : 'PDF' }}</span>
+      </ng-template>
+      <span class="selected-mark" *ngIf="isSelected(item)">Selected</span>
+    </button>
+
+    <div class="media-info">
+      <strong [title]="itemName(item)">{{ itemName(item) }}</strong>
+      <span>{{ item.mimeType || item.fileType }}</span>
+      <small>{{ formatSize(item.size) }} &middot; {{ formatDate(item.createdAt) }}</small>
+    </div>
+
+    <div class="media-actions" *ngIf="showManagementActions">
+      <button type="button" (click)="preview.emit(item)">Preview</button>
+      <button type="button" (click)="edit.emit(item)">Edit</button>
+      <button class="danger" type="button" (click)="remove.emit(item)">Delete</button>
+    </div>
+  </article>
+</div>

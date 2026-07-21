@@ -1,0 +1,15 @@
+<div class="notification-stack" aria-live="polite" aria-atomic="false">
+  <div
+    class="notification"
+    *ngFor="let item of notifications.messages()"
+    [class.success]="item.type === 'success'"
+    [class.error]="item.type === 'error'"
+    [class.info]="item.type === 'info'"
+    role="status"
+  >
+    <span>{{ item.message }}</span>
+    <button type="button" aria-label="Dismiss notification" (click)="notifications.dismiss(item.id)">
+      &times;
+    </button>
+  </div>
+</div>

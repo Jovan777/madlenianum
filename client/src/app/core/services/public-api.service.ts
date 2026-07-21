@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
+import { MediaUrlService } from './media-url.service';
 import {
   EventSeatsResponse,
   PublicEvent,
@@ -16,9 +17,11 @@ const PUBLIC_SESSION_KEY = 'madlenianum_public_session_id';
 })
 export class PublicApiService {
   private readonly apiUrl = environment.apiUrl;
-  private readonly backendUrl = environment.apiUrl.replace(/\/api\/?$/, '');
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly mediaUrls: MediaUrlService
+  ) {}
 
   getHome() {
     return this.http.get<any>(`${this.apiUrl}/public/home`);
@@ -114,32 +117,7 @@ export class PublicApiService {
   }
 
   mediaUrl(value: unknown): string {
-    if (!value) {
-      return '';
-    }
-
-    let url = '';
-
-    if (typeof value === 'string') {
-      url = value;
-    } else if (typeof value === 'object') {
-      const item = value as any;
-      url = item.url || item.path || '';
-    }
-
-    if (!url) {
-      return '';
-    }
-
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-      return url;
-    }
-
-    if (url.startsWith('/')) {
-      return `${this.backendUrl}${url}`;
-    }
-
-    return `${this.backendUrl}/${url}`;
+    return this.mediaUrls.resolve(value);
   }
 
   extractItems<T>(response: any, keys: string[] = []): T[] {

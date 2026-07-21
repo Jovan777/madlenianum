@@ -1,55 +1,49 @@
-const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 
-const allowedMimeTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "text/plain",
-  "video/mp4",
-];
+const mediaConfig = require("../config/media.config");
+const mediaStorage = require("../services/localMediaStorage.service");
+
+const getMediaType = (mimeType) => (mimeType.startsWith("image/") ? "image" : "document");
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = process.env.UPLOAD_DIR || "uploads";
-    const subfolder = file.mimetype.startsWith("image/") ? "images" : "documents";
-    const destination = path.join(process.cwd(), uploadDir, subfolder);
-
-    fs.mkdirSync(destination, { recursive: true });
-
-    cb(null, destination);
+  destination: (_req, file, callback) => {
+    try {
+      callback(null, mediaStorage.ensureUploadDirectory(getMediaType(file.mimetype)));
+    } catch (error) {
+      callback(error);
+    }
   },
-  filename: (req, file, cb) => {
-    const safeOriginalName = file.originalname
-      .replace(/\s+/g, "-")
-      .replace(/[^a-zA-Z0-9.\-_]/g, "");
-
-    cb(null, `${Date.now()}-${safeOriginalName}`);
+  filename: (_req, file, callback) => {
+    callback(null, mediaStorage.generateStoredFilename(file.originalname));
   },
 });
 
-const fileFilter = (req, file, cb) => {
-  if (!allowedMimeTypes.includes(file.mimetype)) {
-    return cb(new Error("Tip fajla nije dozvoljen."), false);
+const fileFilter = (_req, file, callback) => {
+  const allowedExtensions = mediaConfig.allowedMimeExtensions[file.mimetype];
+  const extension = path.extname(file.originalname).toLowerCase();
+
+  if (!allowedExtensions) {
+    const error = new Error("Unsupported file type. Allowed types are JPG, PNG, WEBP, GIF and PDF.");
+    error.statusCode = 400;
+    return callback(error, false);
   }
 
-  cb(null, true);
+  if (!allowedExtensions.includes(extension)) {
+    const error = new Error("The file extension does not match the uploaded MIME type.");
+    error.statusCode = 400;
+    return callback(error, false);
+  }
+
+  callback(null, true);
 };
 
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 200 * 1024 * 1024,
+    fileSize: mediaConfig.maximumFileSizeBytes,
+    files: mediaConfig.maximumFilesPerUpload,
   },
 });
 

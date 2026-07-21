@@ -1,0 +1,103 @@
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.media-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-ink);
+  background: #fff;
+}
+
+.media-card.selected {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 2px rgba(141, 43, 35, 0.16);
+}
+
+.thumbnail {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  color: var(--admin-ink);
+  background: #e8ded2;
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.document-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #5b4e43;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.selected-mark {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border-radius: 4px;
+  padding: 5px 7px;
+  color: #fff;
+  background: var(--admin-accent);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.media-info {
+  display: grid;
+  gap: 4px;
+  padding: 11px;
+}
+
+.media-info strong,
+.media-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-info span,
+.media-info small {
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+}
+
+.media-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--admin-border);
+}
+
+.media-actions button {
+  min-width: 0;
+  border: 0;
+  border-right: 1px solid var(--admin-border);
+  padding: 8px 4px;
+  color: #4f463f;
+  background: #fffaf4;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.media-actions button:last-child {
+  border-right: 0;
+}
+
+.media-actions .danger {
+  color: #8e241d;
+}
