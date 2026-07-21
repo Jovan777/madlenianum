@@ -1,0 +1,2 @@
+@use '../admin-artist-form/admin-artist-form.component.scss';
+.repeat-head{display:flex;justify-content:space-between;align-items:center}.repeat-head button{padding:.6rem .75rem;background:#171512;color:#fff}.contact-row{display:grid;grid-template-columns:1fr 1fr .7fr 1fr auto;gap:.65rem;align-items:end;margin-top:.7rem;padding:.8rem;border:1px solid #c7c0b4;background:#fff}.contact-row>div{display:flex;gap:.3rem}.contact-row button{padding:.45rem;border:1px solid #5d574e}.danger{color:#6b2020}@media(max-width:950px){.contact-row{grid-template-columns:1fr}}

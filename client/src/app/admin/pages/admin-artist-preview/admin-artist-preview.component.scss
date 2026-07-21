@@ -1,0 +1,2 @@
+@use '../admin-production-preview/admin-production-preview.component.scss';
+.portrait{width:min(22rem,100%);aspect-ratio:4/5;object-fit:cover;float:right;margin:0 0 1.5rem 2rem}@media(max-width:700px){.portrait{float:none;margin:0}}

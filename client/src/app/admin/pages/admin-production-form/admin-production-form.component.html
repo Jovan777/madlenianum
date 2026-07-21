@@ -1,217 +1,55 @@
-<div class="admin-edit-page">
-  <a class="back" routerLink="/admin/productions">← Productions</a>
+<div class="cms-form-page">
+  <a class="back" routerLink="/admin/productions">Nazad na predstave</a>
+  <header class="cms-form-hero"><div><p>Predstave</p><h1>{{ isEditMode ? 'Uredi predstavu' : 'Nova predstava' }}</h1><span>Predstava je urednicki sadrzaj. Konkretni termini i prodaja uredjuju se u Repertoaru.</span></div><span class="status-badge">{{ statusLabel(form.controls.status.value) }}</span></header>
+  <p class="cms-alert error" *ngIf="errorMessage()">{{ errorMessage() }} <button type="button" (click)="itemId() ? loadProduction(itemId() || '') : loadOptions()">Pokusaj ponovo</button></p>
+  <p class="cms-loading" *ngIf="isLoading()">Ucitavanje predstave...</p>
 
-  <header class="page-hero">
-    <div>
-      <p>Production editor</p>
-      <h1>{{ isEditMode ? 'Edit production' : 'Create production' }}</h1>
-      <span>Basic data, moderated text, media, artists, cast and creative team.</span>
-    </div>
-  </header>
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!isLoading()" class="cms-long-form">
+    <section class="cms-panel"><header><div><span>1</span><h2>Osnovni podaci</h2></div><p>Naziv, vrsta i prakticne informacije o predstavi.</p></header><div class="cms-grid">
+      <label class="wide">Naslov *<input formControlName="title" /><small class="error" *ngIf="form.controls.title.touched&&form.controls.title.invalid">Naslov je obavezan.</small></label>
+      <label>Slug<input formControlName="slug" placeholder="automatski iz naslova" /><small>Menjajte rucno samo kada je potrebno.</small></label>
+      <label>Vrsta *<select formControlName="type"><option *ngFor="let option of productionTypes()" [value]="option.value">{{ option.label }}</option></select></label>
+      <label>Autor / kompozitor<input formControlName="authorComposer" /></label><label>Originalni naslov<input formControlName="originalTitle" /></label><label class="wide">Podnaslov<input formControlName="subtitle" /></label>
+      <label>Sezona<input formControlName="season" placeholder="2026/2027" /></label><label>Datum premijere<input type="date" formControlName="premiereDate" /></label>
+      <label>Podrazumevana scena<select formControlName="venue"><option value="">Bez podrazumevane scene</option><option *ngFor="let venue of venueOptions()" [value]="venue.id">{{ venue.label }}</option></select><small>Ovo je samo predlog za nove termine.</small></label>
+      <label>Trajanje u minutima<input type="number" min="0" formControlName="durationMinutes" /></label><label>Jezik izvodjenja<input formControlName="performanceLanguage" /></label><label>Titlovi<input formControlName="subtitles" /></label>
+      <app-tag-editor class="wide" label="Oznake" formControlName="tags" />
+    </div></section>
 
-  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Loading production...</p>
+    <section class="cms-panel"><header><div><span>2</span><h2>Objavljivanje</h2></div><p>Novi sadrzaj ostaje nacrt dok ga administrator izricito ne objavi.</p></header><div class="cms-grid">
+      <label>Status<select formControlName="status"><option *ngFor="let option of statuses()" [value]="option.value">{{ option.label }}</option></select><small>Arhivirani sadrzaj ostaje u CMS-u, ali nije javno vidljiv.</small></label>
+      <label>Datum objave<input type="datetime-local" formControlName="publishedAt" /><small>Buduci datum odlaze javnu objavu.</small></label>
+      <label class="check"><input type="checkbox" formControlName="isPremiere" /><span>Premijera</span></label><label class="check"><input type="checkbox" formControlName="isOnRepertoire" /><span>Na repertoaru</span></label><label class="check"><input type="checkbox" formControlName="isFeatured" /><span>Izdvojena predstava</span></label>
+    </div></section>
 
-  <form [formGroup]="form" (ngSubmit)="save()" class="edit-form">
-    <section class="panel">
-      <h2>Main data</h2>
-      <div class="form-grid">
-        <label>
-          Title
-          <input type="text" formControlName="title" />
-        </label>
-
-        <label>
-          Slug
-          <input type="text" formControlName="slug" placeholder="Generated from title if empty" />
-        </label>
-
-        <label>
-          Type
-          <select formControlName="type">
-            <option *ngFor="let item of productionTypes" [value]="item.value">{{ item.label }}</option>
-          </select>
-        </label>
-
-        <label>
-          Status
-          <select formControlName="status">
-            <option *ngFor="let item of statuses" [value]="item.value">{{ item.label }}</option>
-          </select>
-        </label>
-
-        <label>
-          Author / composer
-          <input type="text" formControlName="authorComposer" />
-        </label>
-
-        <label>
-          Original title
-          <input type="text" formControlName="originalTitle" />
-        </label>
-
-        <label>
-          Subtitle
-          <input type="text" formControlName="subtitle" />
-        </label>
-
-        <label>
-          Season
-          <input type="text" formControlName="season" />
-        </label>
-
-        <label>
-          Premiere date
-          <input type="date" formControlName="premiereDate" />
-        </label>
-
-        <label>
-          Venue
-          <select formControlName="venue">
-            <option value="">No default venue</option>
-            <option *ngFor="let item of venues" [value]="item._id">{{ item.name }}</option>
-          </select>
-        </label>
-
-        <label>
-          Duration minutes
-          <input type="number" formControlName="durationMinutes" min="0" />
-        </label>
-
-        <label>
-          Language
-          <input type="text" formControlName="performanceLanguage" />
-        </label>
-
-        <label>
-          Subtitles
-          <input type="text" formControlName="subtitles" />
-        </label>
-
-        <label>
-          Tags
-          <input type="text" formControlName="tagsText" placeholder="drama, premijera, velika scena" />
-        </label>
-
-        <label class="check-row">
-          <input type="checkbox" formControlName="isPremiere" />
-          <span>Premiere</span>
-        </label>
-
-        <label class="check-row">
-          <input type="checkbox" formControlName="isOnRepertoire" />
-          <span>On repertoire</span>
-        </label>
-
-        <label class="check-row">
-          <input type="checkbox" formControlName="isFeatured" />
-          <span>Featured</span>
-        </label>
-      </div>
+    <section class="cms-panel"><header><div><span>3</span><h2>Opis i sinopsis</h2></div><p>Urednicki tekst koji se prikazuje na javnoj stranici predstave.</p></header>
+      <label>Kratak opis<textarea rows="3" formControlName="shortDescription"></textarea></label>
+      <app-rich-text-editor label="Dugi opis" formControlName="description" />
+      <app-rich-text-editor label="Sinopsis" formControlName="synopsis" />
     </section>
 
-    <section class="panel">
-      <h2>Moderated content</h2>
-      <label>
-        Short description
-        <textarea rows="3" formControlName="shortDescription"></textarea>
-      </label>
-      <label>
-        Long description / body
-        <textarea rows="8" formControlName="description"></textarea>
-      </label>
-      <label>
-        Synopsis
-        <textarea rows="6" formControlName="synopsis"></textarea>
-      </label>
+    <section class="cms-panel"><header><div><span>4</span><h2>Poster i galerija</h2></div><p>Slike se biraju iz postojece Media Library.</p></header>
+      <app-media-picker label="Poster / glavna slika" mode="single" mediaKind="image" [value]="posterSelection()" (selectionChange)="updatePoster($event)" />
+      <app-structured-gallery-editor formControlName="galleryItems" />
     </section>
 
-    <section class="panel">
-      <h2>Media</h2>
-      <app-media-picker
-        label="Poster / main image"
-        mode="single"
-        mediaKind="image"
-        [value]="posterSelection()"
-        (selectionChange)="updatePoster($event)"
-      />
-      <app-media-picker
-        label="Production gallery"
-        mode="multiple"
-        mediaKind="image"
-        [value]="gallerySelection()"
-        (selectionChange)="updateGallery($event)"
-      />
-    </section>
+    <section class="cms-panel"><header><div><span>5</span><h2>Video i trejler</h2></div><p>Dozvoljeni su strukturirani YouTube, Vimeo i odobreni spoljni linkovi.</p></header><app-video-links-editor [array]="videos" [providers]="videoProviders()" /></section>
+    <section class="cms-panel"><header><div><span>6</span><h2>Kreativni tim</h2></div><p>Normalizovana uloga omogucava javnom sajtu da pouzdano prikaze glavne autore.</p></header><app-creative-team-editor [array]="creativeTeam" [artists]="artistOptions()" [roles]="creativeRoles()" /></section>
+    <section class="cms-panel"><header><div><span>7</span><h2>Podela</h2></div><p>Dodajte po jedan red za svakog izvodjaca, ukljucujuci alternacije iste uloge.</p></header><app-cast-editor [array]="cast" [artists]="artistOptions()" /></section>
+    <section class="cms-panel"><header><div><span>8</span><h2>Kritike</h2></div><p>CMS cuva samo podatke i link do izvornog teksta.</p></header><app-review-links-editor [array]="reviews" /></section>
+    <section class="cms-panel"><header><div><span>9</span><h2>Preporucene predstave</h2></div><p>Rucni izbor je stabilan i ne dozvoljava duplikate ili vezu ka istoj predstavi.</p></header><app-recommended-productions-picker [options]="productionOptions()" formControlName="recommendedProductions" /></section>
 
-    <section class="panel">
-      <div class="section-row">
-        <h2>Creative team</h2>
-        <button type="button" (click)="addCreativeTeam()">Add credit</button>
-      </div>
+    <section class="cms-panel" formGroupName="announcement"><header><div><span>10</span><h2>Najava</h2></div><p>Predstava moze biti najavljena i pre nego sto dobije konkretan termin.</p></header><div class="cms-grid">
+      <label class="check wide"><input type="checkbox" formControlName="isAnnounced" /><span>Prikazi kao najavu</span></label><label>Mesec<input type="number" min="1" max="12" formControlName="month" /></label><label>Godina<input type="number" min="2000" max="2200" formControlName="year" /></label><label>Pocetak prikaza<input type="datetime-local" formControlName="startsAt" /></label><label>Kraj prikaza<input type="datetime-local" formControlName="endsAt" /></label><label class="wide">Tekst najave<textarea rows="3" formControlName="text"></textarea></label>
+      <app-media-picker class="wide" label="Slika najave" mode="single" mediaKind="image" [value]="announcementSelection()" (selectionChange)="updateAnnouncementImage($event)" />
+    </div></section>
+    <section class="cms-panel"><header><div><span>11</span><h2>SEO</h2></div><p>Naslov i opis za pretrazivace mogu se razlikovati od javnog naslova.</p></header><app-seo-fields [group]="seo" /></section>
 
-      <div class="repeat-list" formArrayName="creativeTeam">
-        <div class="repeat-row" *ngFor="let group of creativeTeamControls(); let index = index" [formGroupName]="index">
-          <label>
-            Role
-            <input type="text" formControlName="role" placeholder="Director, conductor..." />
-          </label>
-          <label>
-            Artist
-            <select formControlName="artist">
-              <option value="">No linked artist</option>
-              <option *ngFor="let artist of artists" [value]="artist._id">{{ artistLabel(artist) }}</option>
-            </select>
-          </label>
-          <label>
-            Name override
-            <input type="text" formControlName="name" placeholder="Shown if no linked artist is selected" />
-          </label>
-          <label>
-            Order
-            <input type="number" formControlName="order" />
-          </label>
-          <button type="button" class="danger" (click)="removeCreativeTeam(index)">Remove</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="section-row">
-        <h2>Cast</h2>
-        <button type="button" (click)="addCast()">Add cast row</button>
-      </div>
-
-      <div class="repeat-list" formArrayName="cast">
-        <div class="repeat-row" *ngFor="let group of castControls(); let index = index" [formGroupName]="index">
-          <label>
-            Character / contribution
-            <input type="text" formControlName="character" />
-          </label>
-          <label>
-            Linked artist
-            <select formControlName="artist">
-              <option value="">No linked artist</option>
-              <option *ngFor="let artist of artists" [value]="artist._id">{{ artistLabel(artist) }}</option>
-            </select>
-          </label>
-          <label>
-            Additional names
-            <input type="text" formControlName="namesText" placeholder="Comma separated names" />
-          </label>
-          <label>
-            Order
-            <input type="number" formControlName="order" />
-          </label>
-          <button type="button" class="danger" (click)="removeCast(index)">Remove</button>
-        </div>
-      </div>
-    </section>
-
-    <footer class="actions">
-      <a routerLink="/admin/productions">Cancel</a>
-      <button type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Saving...' : 'Save production' }}</button>
+    <footer class="cms-action-bar">
+      <a routerLink="/admin/productions">Odustani</a>
+      <button type="button" class="secondary" (click)="preview()">Pregled sacuvane verzije</button>
+      <button type="button" class="secondary" (click)="save('draft')" [disabled]="isSaving()">Sacuvaj kao nacrt</button>
+      <button type="button" class="primary" (click)="save('published')" [disabled]="isSaving()">{{ isSaving() ? 'Cuvanje...' : 'Objavi' }}</button>
     </footer>
   </form>
 </div>

@@ -1,213 +1,39 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, UntypedFormArray, UntypedFormBuilder, Validators } from '@angular/forms';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { AdminApiService } from '../../../core/services/admin-api.service';
+import { GalleryItemInput } from '../../../core/models/cms.models';
+import { contentStatusLabel } from '../../../core/models/cms-labels';
 import { MediaSelectionResult, MediaSelectionValue } from '../../../core/models/media.models';
+import { CmsAdminService } from '../../../core/services/cms-admin.service';
+import { AdminNotificationService } from '../../../core/services/admin-notification.service';
+import { ExternalLinksEditorComponent } from '../../components/external-links-editor/external-links-editor.component';
 import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
+import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
+import { SeoFieldsComponent } from '../../components/seo-fields/seo-fields.component';
+import { StructuredGalleryEditorComponent } from '../../components/structured-gallery-editor/structured-gallery-editor.component';
+import { TagEditorComponent } from '../../components/tag-editor/tag-editor.component';
 
-@Component({
-  selector: 'app-admin-artist-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent],
-  templateUrl: './admin-artist-form.component.html',
-  styleUrl: './admin-artist-form.component.scss',
-})
-export class AdminArtistFormComponent implements OnInit {
-  private readonly fb = inject(UntypedFormBuilder);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly api = inject(AdminApiService);
-
-  readonly itemId = signal<string | null>(null);
-  readonly options = signal<Record<string, any[]>>({});
-  readonly imageSelection = signal<MediaSelectionValue[]>([]);
-  readonly gallerySelection = signal<MediaSelectionValue[]>([]);
-  readonly isLoading = signal(false);
-  readonly isSaving = signal(false);
-  readonly errorMessage = signal('');
-  readonly successMessage = signal('');
-
-  readonly form = this.fb.group({
-    displayName: ['', Validators.required],
-    slug: [''],
-    professionsText: [''],
-    biography: [''],
-    image: [''],
-    gallery: [[]],
-    status: ['published', Validators.required],
-    links: this.fb.array([]),
-  });
-
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    this.itemId.set(id);
-    this.loadOptions();
-
-    if (id) {
-      this.loadItem(id);
-    } else {
-      this.addLink();
-    }
-  }
-
-  get isEditMode(): boolean {
-    return Boolean(this.itemId());
-  }
-
-  get statuses(): any[] {
-    return this.options()['statuses'] || [];
-  }
-
-  get links(): UntypedFormArray {
-    return this.form.get('links') as UntypedFormArray;
-  }
-
-  loadOptions(): void {
-    this.api.getArtistFormOptions().subscribe({
-      next: (response) => this.options.set(response.options || {}),
-      error: () => {
-        this.options.set({});
-      },
-    });
-  }
-
-  loadItem(id: string): void {
-    this.isLoading.set(true);
-    this.errorMessage.set('');
-
-    this.api.getItem<any>('artists', id).subscribe({
-      next: (response) => {
-        this.patchForm(response.item || {});
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Artist could not be loaded.');
-      },
-      complete: () => {
-        this.isLoading.set(false);
-      },
-    });
-  }
-
-  patchForm(item: any): void {
-    this.links.clear();
-
-    const links = Array.isArray(item.links) ? item.links : [];
-    links.forEach((entry: any) => this.links.push(this.createLinkGroup(entry)));
-
-    if (!links.length) {
-      this.addLink();
-    }
-
-    this.form.patchValue({
-      displayName: item.displayName || '',
-      slug: item.slug || '',
-      professionsText: Array.isArray(item.professions) ? item.professions.join(', ') : '',
-      biography: item.biography || '',
-      image: this.getId(item.image),
-      gallery: Array.isArray(item.gallery) ? item.gallery.map((media: any) => this.getId(media)).filter(Boolean) : [],
-      status: item.status || 'published',
-    });
-
-    this.imageSelection.set(item.image ? [item.image] : []);
-    this.gallerySelection.set(Array.isArray(item.gallery) ? item.gallery : []);
-  }
-
-  addLink(entry: any = {}): void {
-    this.links.push(this.createLinkGroup(entry));
-  }
-
-  removeLink(index: number): void {
-    this.links.removeAt(index);
-
-    if (!this.links.length) {
-      this.addLink();
-    }
-  }
-
-  save(): void {
-    if (this.form.invalid || this.isSaving()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    const id = this.itemId();
-    const payload = this.buildPayload();
-    const request = id
-      ? this.api.update('artists', id, payload)
-      : this.api.create('artists', payload);
-
-    this.isSaving.set(true);
-    this.errorMessage.set('');
-    this.successMessage.set('');
-
-    request.subscribe({
-      next: (response) => {
-        this.successMessage.set(id ? 'Artist saved.' : 'Artist created.');
-
-        if (!id) {
-          const newId = String((response.item as any)?._id || '');
-
-          if (newId) {
-            this.router.navigate(['/admin/artists', newId, 'edit']);
-          }
-        }
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Artist could not be saved.');
-      },
-      complete: () => {
-        this.isSaving.set(false);
-      },
-    });
-  }
-
-  updateImage(selection: MediaSelectionResult): void {
-    this.imageSelection.set(selection.items.length ? selection.items : selection.ids);
-    this.form.patchValue({ image: selection.ids[0] || '' });
-  }
-
-  updateGallery(selection: MediaSelectionResult): void {
-    this.gallerySelection.set(selection.items.length ? selection.items : selection.ids);
-    this.form.patchValue({ gallery: selection.ids });
-  }
-
-  buildPayload(): Record<string, unknown> {
-    const raw = this.form.getRawValue();
-
-    return {
-      displayName: raw.displayName,
-      slug: raw.slug || undefined,
-      professions: String(raw.professionsText || '')
-        .split(',')
-        .map((item: string) => item.trim())
-        .filter(Boolean),
-      biography: raw.biography || '',
-      image: raw.image || null,
-      gallery: Array.isArray(raw.gallery) ? raw.gallery.filter(Boolean) : [],
-      status: raw.status || 'published',
-      links: (raw.links || [])
-        .map((entry: any) => ({
-          label: entry.label,
-          url: entry.url,
-        }))
-        .filter((entry: any) => entry.label || entry.url),
-    };
-  }
-
-  private createLinkGroup(entry: any = {}) {
-    return this.fb.group({
-      label: [entry.label || ''],
-      url: [entry.url || ''],
-    });
-  }
-
-  private getId(value: any): string {
-    if (!value) {
-      return '';
-    }
-
-    return String(value._id || value.id || value);
-  }
+@Component({ selector:'app-admin-artist-form',standalone:true,imports:[CommonModule,ReactiveFormsModule,RouterLink,MediaPickerComponent,RichTextEditorComponent,StructuredGalleryEditorComponent,TagEditorComponent,ExternalLinksEditorComponent,SeoFieldsComponent],templateUrl:'./admin-artist-form.component.html',styleUrl:'./admin-artist-form.component.scss' })
+export class AdminArtistFormComponent implements OnInit{
+  private readonly fb=inject(FormBuilder);private readonly route=inject(ActivatedRoute);private readonly router=inject(Router);private readonly cms=inject(CmsAdminService);private readonly notifications=inject(AdminNotificationService);
+  readonly itemId=signal<string|null>(null);readonly isLoading=signal(false);readonly isSaving=signal(false);readonly errorMessage=signal('');readonly imageSelection=signal<MediaSelectionValue[]>([]);readonly statuses=signal<Array<{value:string;label:string}>>([]);readonly linkTypes=signal<Array<{value:string;label:string}>>([]);
+  private originalSlug='';private originalStatus='draft';
+  readonly form=this.fb.group({displayName:['',Validators.required],slug:[''],professions:this.fb.control<string[]>([]),biography:[''],image:[''],galleryItems:this.fb.control<GalleryItemInput[]>([]),status:['draft',Validators.required],publishedAt:[''],links:this.fb.array<FormGroup>([]),seo:this.fb.group({title:[''],description:[''],keywords:this.fb.control<string[]>([]),canonicalUrl:[''],noIndex:[false]})});
+  ngOnInit():void{const id=this.route.snapshot.paramMap.get('id');this.itemId.set(id);this.loadOptions();if(id)this.loadArtist(id);}
+  statusLabel(value:string|undefined|null):string{return contentStatusLabel(value||undefined);}
+  get isEditMode():boolean{return Boolean(this.itemId());}get links():FormArray{return this.form.controls.links;}get seo():FormGroup{return this.form.controls.seo;}
+  hasUnsavedChanges():boolean{return this.form.dirty&&!this.isSaving();}@HostListener('window:beforeunload',['$event']) beforeUnload(event:BeforeUnloadEvent):void{if(this.hasUnsavedChanges())event.preventDefault();}
+  loadOptions():void{this.cms.formOptions('artist').subscribe({next:({options})=>{this.statuses.set(this.pairs(options['statuses']));this.linkTypes.set(this.pairs(options['linkTypes']));},error:()=>this.errorMessage.set('Opcije forme nisu ucitane.')});}
+  loadArtist(id:string):void{this.isLoading.set(true);this.errorMessage.set('');this.cms.get<Record<string,unknown>>('artists',id).subscribe({next:({item})=>this.patchArtist(item),error:(error)=>this.errorMessage.set(error?.error?.message||'Umetnik nije ucitan.'),complete:()=>this.isLoading.set(false)});}
+  patchArtist(item:Record<string,unknown>):void{this.originalSlug=String(item['slug']||'');this.originalStatus=String(item['status']||'draft');const seo=this.object(item['seo']);this.form.patchValue({displayName:String(item['displayName']||''),slug:this.originalSlug,professions:this.strings(item['professions']),biography:String(item['biography']||''),image:this.idOf(item['image']),galleryItems:this.galleryValue(item),status:this.originalStatus,publishedAt:this.dateTime(item['publishedAt']),seo:{title:String(seo['title']||''),description:String(seo['description']||''),keywords:this.strings(seo['keywords']),canonicalUrl:String(seo['canonicalUrl']||''),noIndex:Boolean(seo['noIndex'])}});this.imageSelection.set(item['image']?[item['image'] as MediaSelectionValue]:[]);this.links.clear();this.array(item['links']).forEach((entry,index)=>this.links.push(this.linkGroup(entry,index)));this.form.markAsPristine();}
+  save(status?:'draft'|'published'):void{if(status)this.form.controls.status.setValue(status);if(this.form.invalid||this.isSaving()){this.form.markAllAsTouched();this.errorMessage.set('Proverite obavezna polja i linkove.');return;}const slug=this.form.controls.slug.value||'';if(this.originalStatus==='published'&&this.originalSlug&&slug&&slug!==this.originalSlug&&!window.confirm('Promena sluga moze prekinuti postojece linkove. Nastaviti?'))return;this.isSaving.set(true);this.errorMessage.set('');const id=this.itemId();const request=id?this.cms.update<Record<string,unknown>>('artists',id,this.payload()):this.cms.create<Record<string,unknown>>('artists',this.payload());request.subscribe({next:({item})=>{this.notifications.success('Profil umetnika je sacuvan.');this.form.markAsPristine();const savedId=this.idOf(item);if(!id&&savedId)this.router.navigate(['/admin/artists',savedId,'edit']);else this.patchArtist(item);},error:(error)=>{const message=error?.error?.message||'Cuvanje nije uspelo.';this.errorMessage.set(message);this.notifications.error(message);},complete:()=>this.isSaving.set(false)});}
+  preview():void{const id=this.itemId();if(!id){this.notifications.info('Prvo sacuvajte nacrt.');return;}window.open(`/admin/artists/${id}/preview`,'_blank','noopener');}
+  updateImage(selection:MediaSelectionResult):void{this.imageSelection.set(selection.items.length?selection.items:selection.ids);this.form.controls.image.setValue(selection.ids[0]||'');this.form.controls.image.markAsDirty();}
+  payload():Record<string,unknown>{const raw=this.form.getRawValue();return{...raw,image:raw.image||null,publishedAt:raw.publishedAt?new Date(raw.publishedAt).toISOString():undefined,galleryItems:(raw.galleryItems||[]).map((item,index)=>({...item,media:this.idOf(item.media),displayOrder:index})),links:this.array(raw.links).filter((item)=>item['label']&&item['url']).map((item,index)=>({...item,displayOrder:index}))};}
+  private linkGroup(value:Record<string,unknown>,index:number){return this.fb.group({label:[String(value['label']||''),Validators.required],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],type:[String(value['type']||'other')],displayOrder:[index]});}
+  private galleryValue(item:Record<string,unknown>):GalleryItemInput[]{const structured=this.array(item['galleryItems']);if(structured.length)return structured.map((entry,index)=>({media:entry['media'] as unknown as MediaSelectionValue,caption:String(entry['caption']||''),credit:String(entry['credit']||''),altText:String(entry['altText']||''),displayOrder:Number(entry['displayOrder']??index)}));return this.array(item['gallery']).map((media,index)=>({media:media as unknown as MediaSelectionValue,caption:'',credit:'',altText:'',displayOrder:index}));}
+  private pairs(value:unknown):Array<{value:string;label:string}>{return this.array(value).map((item)=>({value:String(item['value']||''),label:String(item['label']||item['value']||'')}));}
+  private idOf(value:unknown):string{if(!value)return'';if(typeof value==='string')return value;const item=this.object(value);return String(item['_id']||item['id']||'');}private object(value:unknown):Record<string,unknown>{return value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};}private array(value:unknown):Record<string,unknown>[]{return Array.isArray(value)?value.map((item)=>this.object(item)):[];}private strings(value:unknown):string[]{return Array.isArray(value)?value.map(String):[];}private dateTime(value:unknown):string{if(!value)return'';const date=new Date(String(value));const offset=date.getTimezoneOffset()*60000;return new Date(date.getTime()-offset).toISOString().slice(0,16);}
 }

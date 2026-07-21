@@ -1,0 +1,13 @@
+<div class="editor-head"><div><h3>Kreativni tim</h3><p>Povezite umetnika ili unesite ime saradnika koji nema profil.</p></div><button type="button" (click)="add()">Dodaj kredit</button></div>
+<p class="empty" *ngIf="!array.length">Kreativni tim jos nije dodat.</p>
+<div class="credit-row" *ngFor="let group of groups(); let index = index" [formGroup]="group">
+  <header><strong>Kredit {{ index + 1 }}</strong><div><button type="button" (click)="move(index,-1)" [disabled]="index===0">Gore</button><button type="button" (click)="move(index,1)" [disabled]="index===array.length-1">Dole</button><button type="button" class="danger" (click)="remove(index)">Ukloni</button></div></header>
+  <div class="grid">
+    <label>Vrsta uloge<select formControlName="roleKey"><option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option></select></label>
+    <label>Javni naziv uloge<input formControlName="label" placeholder="Reditelj, dirigent..." /></label>
+    <app-search-picker label="Umetnik" [options]="artists" formControlName="artist" />
+    <label>Ime bez profila<input formControlName="name" placeholder="Koristi se ako umetnik nije izabran" /></label>
+    <label class="wide">Napomena<input formControlName="note" /></label>
+  </div>
+  <small class="error" *ngIf="missingPerson(group)">Izaberite umetnika ili unesite ime.</small>
+</div>

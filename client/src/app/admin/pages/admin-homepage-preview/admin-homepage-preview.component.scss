@@ -1,0 +1,2 @@
+@use '../admin-production-preview/admin-production-preview.component.scss';
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}.cards article{display:grid;gap:.5rem}.cards img{width:100%;aspect-ratio:4/3;object-fit:cover}@media(max-width:700px){.cards{grid-template-columns:1fr}}

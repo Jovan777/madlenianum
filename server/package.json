@@ -10,7 +10,9 @@
     "seed:phase2a": "node src/seed/phase2a.seed.js",
     "seed:content": "node src/seed/phase3content.seed.js",
     "seed:phase3a": "node src/seed/phase3content.seed.js",
-    "seed:remove-weight": "node src/seed/removeWeightFields.seed.js"
+    "seed:remove-weight": "node src/seed/removeWeightFields.seed.js",
+    "migrate:structured-content": "node src/migration/migrateStructuredContent.js",
+    "test:cms": "node src/tests/cms.smoke.js"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +27,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.0",
     "morgan": "^1.11.0",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "sanitize-html": "^2.17.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

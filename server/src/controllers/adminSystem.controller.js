@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 
 const Production = require("../models/Production");
+const Artist = require("../models/Artist");
 const Event = require("../models/Event");
 const Venue = require("../models/Venue");
 const SeatMap = require("../models/SeatMap");
@@ -17,6 +18,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
 
   const [
     productionsCount,
+    artistsCount,
     eventsCount,
     venuesCount,
     seatMapsCount,
@@ -32,6 +34,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     eventsOnSale,
   ] = await Promise.all([
     Production.countDocuments(),
+    Artist.countDocuments(),
     Event.countDocuments(),
     Venue.countDocuments(),
     SeatMap.countDocuments(),
@@ -63,6 +66,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     status: "ok",
     counts: {
       productions: productionsCount,
+      artists: artistsCount,
       events: eventsCount,
       venues: venuesCount,
       seatMaps: seatMapsCount,

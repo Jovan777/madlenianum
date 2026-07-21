@@ -1,0 +1,23 @@
+<div class="rich-editor">
+  <label>{{ label }}</label>
+  <div class="toolbar" role="toolbar" aria-label="Formatiranje teksta">
+    <button type="button" title="Podebljano" aria-label="Podebljano" (click)="format('bold')"><strong>B</strong></button>
+    <button type="button" title="Kurziv" aria-label="Kurziv" (click)="format('italic')"><em>I</em></button>
+    <button type="button" title="Naslov" (click)="format('formatBlock', 'h2')">H2</button>
+    <button type="button" title="Lista" (click)="format('insertUnorderedList')">Lista</button>
+    <button type="button" title="Citat" (click)="format('formatBlock', 'blockquote')">Citat</button>
+    <button type="button" title="Link" (click)="addLink()">Link</button>
+    <button type="button" title="Ukloni formatiranje" (click)="format('removeFormat')">Ocisti</button>
+  </div>
+  <div
+    #editor
+    class="editor"
+    [class.disabled]="disabled"
+    [attr.contenteditable]="disabled ? 'false' : 'true'"
+    role="textbox"
+    aria-multiline="true"
+    (input)="capture()"
+    (blur)="touch()"
+  ></div>
+  <small>{{ help }}</small>
+</div>

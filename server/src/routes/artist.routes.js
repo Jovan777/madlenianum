@@ -6,6 +6,8 @@ const {
   createArtist,
   updateArtist,
   deleteArtist,
+  archiveArtist,
+  previewArtist,
 } = require("../controllers/artist.controller");
 
 const router = express.Router();
@@ -13,6 +15,8 @@ const router = express.Router();
 router.get("/", getArtists);
 router.post("/", createArtist);
 
+router.get("/:id/preview", previewArtist);
+router.patch("/:id/archive", archiveArtist);
 router.get("/:id", getArtistById);
 router.patch("/:id", updateArtist);
 router.put("/:id", updateArtist);

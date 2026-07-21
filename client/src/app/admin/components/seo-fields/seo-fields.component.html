@@ -1,0 +1,7 @@
+<div class="seo-grid" [formGroup]="group">
+  <label>SEO naslov<input type="text" formControlName="title" maxlength="70" /></label>
+  <label class="wide">SEO opis<textarea rows="3" formControlName="description" maxlength="180"></textarea><small>Kratak opis za pretrazivace i deljenje linka.</small></label>
+  <app-tag-editor class="wide" label="SEO kljucne reci" formControlName="keywords" />
+  <label class="wide">Canonical URL<input type="url" formControlName="canonicalUrl" placeholder="https://..." /></label>
+  <label class="check"><input type="checkbox" formControlName="noIndex" /><span>Ne indeksiraj ovu stranicu</span></label>
+</div>

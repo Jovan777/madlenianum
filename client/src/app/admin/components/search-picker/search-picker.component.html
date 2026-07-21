@@ -1,0 +1,21 @@
+<div class="picker">
+  <label>{{ label }}</label>
+  <button class="picker-toggle" type="button" (click)="toggle()" [disabled]="disabled">
+    {{ selected().length ? selected().length + (mode === 'single' ? ' izabrano' : ' izabrano') : 'Pretrazi i izaberi' }}
+  </button>
+  <div class="selected" *ngIf="selected().length">
+    <span *ngFor="let option of selected()">
+      <strong>{{ option.label }}</strong><small *ngIf="option.meta">{{ option.meta }}</small>
+      <button type="button" [attr.aria-label]="'Ukloni ' + option.label" (click)="remove(option.id)">x</button>
+    </span>
+  </div>
+  <div class="panel" *ngIf="open()">
+    <input [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Pretraga po nazivu..." aria-label="Pretraga" />
+    <button type="button" *ngFor="let option of filtered()" (click)="choose(option)" [class.active]="isSelected(option.id)">
+      <strong>{{ option.label }}</strong>
+      <span>{{ option.meta }}</span>
+    </button>
+    <p *ngIf="!filtered().length">Nema rezultata za ovu pretragu.</p>
+  </div>
+  <small class="help" *ngIf="help">{{ help }}</small>
+</div>

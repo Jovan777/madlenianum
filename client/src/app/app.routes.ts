@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { adminAuthGuard } from './core/guards/admin-auth.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { AdminLoginComponent } from './admin/pages/admin-login/admin-login.component';
 import { AdminLayoutComponent } from './admin/layout/admin-layout/admin-layout.component';
 import { AdminDashboardComponent } from './admin/pages/admin-dashboard/admin-dashboard.component';
@@ -15,6 +16,23 @@ import { AdminProductionFormComponent } from './admin/pages/admin-production-for
 import { AdminPricePlanFormComponent } from './admin/pages/admin-price-plan-form/admin-price-plan-form.component';
 import { AdminArtistFormComponent } from './admin/pages/admin-artist-form/admin-artist-form.component';
 import { AdminMediaLibraryComponent } from './admin/pages/admin-media-library/admin-media-library.component';
+import { AdminProductionListComponent } from './admin/pages/admin-production-list/admin-production-list.component';
+import { AdminArtistListComponent } from './admin/pages/admin-artist-list/admin-artist-list.component';
+import { AdminNewsListComponent } from './admin/pages/admin-news-list/admin-news-list.component';
+import { AdminNewsFormComponent } from './admin/pages/admin-news-form/admin-news-form.component';
+import { AdminPagesListComponent } from './admin/pages/admin-pages-list/admin-pages-list.component';
+import { AdminAboutFormComponent } from './admin/pages/admin-about-form/admin-about-form.component';
+import { AdminContactFormComponent } from './admin/pages/admin-contact-form/admin-contact-form.component';
+import { AdminHomepageConfigComponent } from './admin/pages/admin-homepage-config/admin-homepage-config.component';
+import { AdminSiteSettingsComponent } from './admin/pages/admin-site-settings/admin-site-settings.component';
+import { AdminProductionPreviewComponent } from './admin/pages/admin-production-preview/admin-production-preview.component';
+import { AdminArtistPreviewComponent } from './admin/pages/admin-artist-preview/admin-artist-preview.component';
+import { AdminNewsPreviewComponent } from './admin/pages/admin-news-preview/admin-news-preview.component';
+import { AdminPagePreviewComponent } from './admin/pages/admin-page-preview/admin-page-preview.component';
+import { AdminHomepagePreviewComponent } from './admin/pages/admin-homepage-preview/admin-homepage-preview.component';
+import { AdminPromoSlideListComponent } from './admin/pages/admin-promo-slide-list/admin-promo-slide-list.component';
+import { AdminPromoSlideFormComponent } from './admin/pages/admin-promo-slide-form/admin-promo-slide-form.component';
+import { AdminPromoSlidePreviewComponent } from './admin/pages/admin-promo-slide-preview/admin-promo-slide-preview.component';
 
 import { PublicLayoutComponent } from './public/layout/public-layout/public-layout.component';
 import { PublicHomeComponent } from './public/pages/public-home/public-home.component';
@@ -60,19 +78,43 @@ export const routes: Routes = [
       {
         path: 'productions/new',
         component: AdminProductionFormComponent,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: 'productions/:id/edit',
         component: AdminProductionFormComponent,
+        canDeactivate: [unsavedChangesGuard],
       },
+      { path: 'productions/:id/preview', component: AdminProductionPreviewComponent },
+      { path: 'productions', component: AdminProductionListComponent },
       {
         path: 'artists/new',
         component: AdminArtistFormComponent,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: 'artists/:id/edit',
         component: AdminArtistFormComponent,
+        canDeactivate: [unsavedChangesGuard],
       },
+      { path: 'artists/:id/preview', component: AdminArtistPreviewComponent },
+      { path: 'artists', component: AdminArtistListComponent },
+      { path: 'news/new', component: AdminNewsFormComponent, canDeactivate: [unsavedChangesGuard] },
+      { path: 'news/:id/edit', component: AdminNewsFormComponent, canDeactivate: [unsavedChangesGuard] },
+      { path: 'news/:id/preview', component: AdminNewsPreviewComponent },
+      { path: 'news', component: AdminNewsListComponent },
+      { path: 'promo-slides/new', component: AdminPromoSlideFormComponent, canDeactivate: [unsavedChangesGuard] },
+      { path: 'promo-slides/:id/edit', component: AdminPromoSlideFormComponent, canDeactivate: [unsavedChangesGuard] },
+      { path: 'promo-slides/:id/preview', component: AdminPromoSlidePreviewComponent },
+      { path: 'promo-slides', component: AdminPromoSlideListComponent },
+      { path: 'pages/about/preview', component: AdminPagePreviewComponent, data: { pageType: 'about' } },
+      { path: 'pages/about', component: AdminAboutFormComponent, canDeactivate: [unsavedChangesGuard] },
+      { path: 'pages/contact/preview', component: AdminPagePreviewComponent, data: { pageType: 'contact' } },
+      { path: 'pages/contact', component: AdminContactFormComponent, canDeactivate: [unsavedChangesGuard] },
+      { path: 'pages', component: AdminPagesListComponent },
+      { path: 'homepage/preview', component: AdminHomepagePreviewComponent },
+      { path: 'homepage', component: AdminHomepageConfigComponent, canDeactivate: [unsavedChangesGuard] },
+      { path: 'site-settings', component: AdminSiteSettingsComponent, canDeactivate: [unsavedChangesGuard] },
       {
         path: 'price-plans/new',
         component: AdminPricePlanFormComponent,

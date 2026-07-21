@@ -51,9 +51,9 @@ export const PRODUCTION_TYPES = [
 ];
 
 export const PUBLISH_STATUSES = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'published', label: 'Published' },
-  { value: 'archived', label: 'Archived' },
+  { value: 'draft', label: 'Nacrt' },
+  { value: 'published', label: 'Objavljeno' },
+  { value: 'archived', label: 'Arhivirano' },
 ];
 
 export const ACTIVE_STATUSES = [

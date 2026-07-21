@@ -1,0 +1,7 @@
+<div class="editor-head"><div><h3>Kritike i osvrti</h3><p>Cuvaju se samo naslov, izvor i spoljasnji link.</p></div><button type="button" (click)="add()">Dodaj kritiku</button></div>
+<p class="empty" *ngIf="!array.length">Nema dodatih kritika.</p>
+<div class="review-row" *ngFor="let group of groups();let index=index" [formGroup]="group">
+  <header><strong>Kritika {{index+1}}</strong><div><button type="button" (click)="move(index,-1)" [disabled]="index===0">Gore</button><button type="button" (click)="move(index,1)" [disabled]="index===array.length-1">Dole</button><button type="button" class="danger" (click)="remove(index)">Ukloni</button></div></header>
+  <div class="grid"><label>Naslov<input formControlName="title" /></label><label>Publikacija<input formControlName="publication" /></label><label class="wide">URL<input type="url" formControlName="url" placeholder="https://..." /></label><label>Datum objave<input type="date" formControlName="publishedAt" /></label><label>Napomena<input formControlName="note" /></label></div>
+  <small class="error" *ngIf="group.get('url')?.touched&&group.get('url')?.invalid">Unesite punu HTTP/HTTPS adresu.</small>
+</div>

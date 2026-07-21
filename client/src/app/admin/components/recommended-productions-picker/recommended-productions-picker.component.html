@@ -1,0 +1,8 @@
+<app-search-picker
+  label="Preporucene predstave"
+  help="Rucno izaberite povezane naslove. Trenutna predstava nece biti ponudjena."
+  mode="multiple"
+  [options]="options"
+  [ngModel]="value"
+  (ngModelChange)="update($event)"
+/>

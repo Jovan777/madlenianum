@@ -1,0 +1,14 @@
+<div class="tag-editor">
+  <label for="tag-entry">{{ label }}</label>
+  <div class="entry">
+    <input id="tag-entry" [(ngModel)]="draft" [disabled]="disabled" [placeholder]="placeholder" (keyup.enter)="add()" />
+    <button type="button" (click)="add()" [disabled]="disabled || !draft.trim()">Dodaj</button>
+  </div>
+  <div class="chips" *ngIf="values.length" aria-label="Izabrane oznake">
+    <span *ngFor="let value of values; let index = index">
+      {{ value }}
+      <button type="button" [attr.aria-label]="'Ukloni ' + value" (click)="remove(index)" [disabled]="disabled">x</button>
+    </span>
+  </div>
+  <small *ngIf="!values.length">Nema dodatih oznaka.</small>
+</div>

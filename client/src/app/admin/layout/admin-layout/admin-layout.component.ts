@@ -28,6 +28,8 @@ export class AdminLayoutComponent {
     { label: 'Pages / Content', path: '/admin/pages', icon: 'G' },
     { label: 'News', path: '/admin/news', icon: 'N' },
     { label: 'Promo slides', path: '/admin/promo-slides', icon: 'B' },
+    { label: 'Homepage', path: '/admin/homepage', icon: 'H' },
+    { label: 'Site settings', path: '/admin/site-settings', icon: 'T' },
     { label: 'System', path: '/admin/system', icon: 'S' },
   ];
 

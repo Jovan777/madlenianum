@@ -1,0 +1,25 @@
+<div class="gallery-editor">
+  <app-media-picker
+    [label]="label"
+    mode="multiple"
+    mediaKind="image"
+    [value]="selectionValues()"
+    (selectionChange)="updateSelection($event)"
+  />
+  <p class="empty" *ngIf="!items.length">Galerija je prazna. Izaberite slike iz Media Library.</p>
+  <div class="gallery-row" *ngFor="let item of items; let index = index">
+    <header>
+      <strong>{{ index + 1 }}. {{ mediaTitle(item) }}</strong>
+      <div>
+        <button type="button" (click)="move(index, -1)" [disabled]="disabled || index === 0" aria-label="Pomeri gore">Gore</button>
+        <button type="button" (click)="move(index, 1)" [disabled]="disabled || index === items.length - 1" aria-label="Pomeri dole">Dole</button>
+        <button type="button" class="danger" (click)="remove(index)" [disabled]="disabled">Ukloni</button>
+      </div>
+    </header>
+    <div class="fields">
+      <label>Alt tekst<input [ngModel]="item.altText" (ngModelChange)="update(index, 'altText', $event)" [disabled]="disabled" /></label>
+      <label>Opis slike<input [ngModel]="item.caption" (ngModelChange)="update(index, 'caption', $event)" [disabled]="disabled" /></label>
+      <label>Autor / kredit<input [ngModel]="item.credit" (ngModelChange)="update(index, 'credit', $event)" [disabled]="disabled" /></label>
+    </div>
+  </div>
+</div>

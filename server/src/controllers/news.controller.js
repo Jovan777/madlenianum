@@ -1,119 +1,100 @@
 const asyncHandler = require("../utils/asyncHandler");
 const News = require("../models/News");
+const { newsDto } = require("../services/cmsDto.service");
+const { populateNews } = require("../services/cmsPopulate.service");
+const {
+  applyAudit,
+  applyPublishing,
+  createHttpError,
+  escapeRegex,
+  paginationFrom,
+  sendList,
+} = require("../services/cms.service");
+
+const buildFilter = (query) => {
+  const filter = {};
+  if (query.status) filter.status = query.status;
+  if (query.category) filter.category = query.category;
+  if (query.isFeatured !== undefined) filter.isFeatured = query.isFeatured === "true";
+  if (query.from || query.to) {
+    filter.publishedAt = {};
+    if (query.from) filter.publishedAt.$gte = new Date(query.from);
+    if (query.to) filter.publishedAt.$lte = new Date(query.to);
+  }
+  if (query.q) {
+    const search = new RegExp(escapeRegex(query.q), "i");
+    filter.$or = [{ title: search }, { subtitle: search }, { excerpt: search }];
+  }
+  return filter;
+};
 
 const getNewsList = asyncHandler(async (req, res) => {
-  const page = Number(req.query.page) || 1;
-  const limit = Math.min(Number(req.query.limit) || 20, 100);
-  const skip = (page - 1) * limit;
-
-  const filter = {};
-
-  if (req.query.status) filter.status = req.query.status;
-  if (req.query.category) filter.category = req.query.category;
-
-  if (req.query.isFeatured !== undefined) {
-    filter.isFeatured = req.query.isFeatured === "true";
-  }
-
-  if (req.query.q) {
-    filter.$or = [
-      { title: new RegExp(req.query.q, "i") },
-      { subtitle: new RegExp(req.query.q, "i") },
-      { body: new RegExp(req.query.q, "i") },
-    ];
-  }
-
-  const total = await News.countDocuments(filter);
-
-  const news = await News.find(filter)
-    .populate("image")
-    .populate("gallery")
-    .populate("attachment")
-    .populate("relatedProduction")
-    .sort("-publishedAt")
-    .skip(skip)
-    .limit(limit);
-
-  res.json({
-    success: true,
-    page,
-    limit,
-    total,
-    totalPages: Math.ceil(total / limit),
-    items: news,
-  });
+  const { page, limit, skip } = paginationFrom(req.query);
+  const filter = buildFilter(req.query);
+  const sortMap = { oldest: "publishedAt", updated: "-updatedAt", title: "title" };
+  const sort = sortMap[req.query.sort] || "-publishedAt -createdAt";
+  const [total, news] = await Promise.all([
+    News.countDocuments(filter),
+    populateNews(News.find(filter).sort(sort).skip(skip).limit(limit)),
+  ]);
+  sendList(res, { items: news, total, page, limit });
 });
 
 const getNewsById = asyncHandler(async (req, res) => {
-  const news = await News.findById(req.params.id)
-    .populate("image")
-    .populate("gallery")
-    .populate("attachment")
-    .populate("relatedProduction");
+  const news = await populateNews(News.findById(req.params.id));
+  if (!news) throw createHttpError(404, "Vest nije pronadjena.");
+  res.json({ success: true, item: news });
+});
 
-  if (!news) {
-    res.status(404);
-    throw new Error("Vest nije pronađena.");
-  }
-
-  res.json({
-    success: true,
-    item: news,
-  });
+const previewNews = asyncHandler(async (req, res) => {
+  const news = await populateNews(News.findById(req.params.id));
+  if (!news) throw createHttpError(404, "Vest nije pronadjena.");
+  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: newsDto(news) });
 });
 
 const createNews = asyncHandler(async (req, res) => {
-  const news = await News.create(req.body);
-
-  res.status(201).json({
-    success: true,
-    item: news,
-  });
+  const news = new News(req.body);
+  applyAudit(news, req.admin, { isNew: true });
+  applyPublishing(news);
+  await news.save();
+  const item = await populateNews(News.findById(news._id));
+  res.status(201).json({ success: true, item });
 });
 
 const updateNews = asyncHandler(async (req, res) => {
   const news = await News.findById(req.params.id);
-
-  if (!news) {
-    res.status(404);
-    throw new Error("Vest nije pronađena.");
-  }
-
+  if (!news) throw createHttpError(404, "Vest nije pronadjena.");
+  const previousStatus = news.status;
   Object.assign(news, req.body);
+  applyAudit(news, req.admin);
+  applyPublishing(news, previousStatus);
   await news.save();
+  const item = await populateNews(News.findById(news._id));
+  res.json({ success: true, item });
+});
 
-  const updatedNews = await News.findById(news._id)
-    .populate("image")
-    .populate("gallery")
-    .populate("attachment")
-    .populate("relatedProduction");
-
-  res.json({
-    success: true,
-    item: updatedNews,
-  });
+const archiveNews = asyncHandler(async (req, res) => {
+  const news = await News.findById(req.params.id);
+  if (!news) throw createHttpError(404, "Vest nije pronadjena.");
+  news.status = "archived";
+  applyAudit(news, req.admin);
+  await news.save();
+  res.json({ success: true, message: "Vest je arhivirana.", item: news });
 });
 
 const deleteNews = asyncHandler(async (req, res) => {
   const news = await News.findById(req.params.id);
-
-  if (!news) {
-    res.status(404);
-    throw new Error("Vest nije pronađena.");
-  }
-
+  if (!news) throw createHttpError(404, "Vest nije pronadjena.");
   await news.deleteOne();
-
-  res.json({
-    success: true,
-    message: "Vest je obrisana.",
-  });
+  res.json({ success: true, message: "Vest je obrisana." });
 });
 
 module.exports = {
-  getNewsList,
-  getNewsById,
+  archiveNews,
   createNews,
-  updateNews,
   deleteNews,
+  getNewsById,
+  getNewsList,
+  previewNews,
+  updateNews,
 };

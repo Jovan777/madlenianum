@@ -1,316 +1,168 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, UntypedFormArray, UntypedFormBuilder, Validators } from '@angular/forms';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { AdminApiService } from '../../../core/services/admin-api.service';
+import { CmsOption, GalleryItemInput } from '../../../core/models/cms.models';
+import { contentStatusLabel, productionTypeLabel } from '../../../core/models/cms-labels';
 import { MediaSelectionResult, MediaSelectionValue } from '../../../core/models/media.models';
+import { CmsAdminService } from '../../../core/services/cms-admin.service';
+import { AdminNotificationService } from '../../../core/services/admin-notification.service';
+import { CastEditorComponent } from '../../components/cast-editor/cast-editor.component';
+import { CreativeTeamEditorComponent } from '../../components/creative-team-editor/creative-team-editor.component';
 import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
+import { RecommendedProductionsPickerComponent } from '../../components/recommended-productions-picker/recommended-productions-picker.component';
+import { ReviewLinksEditorComponent } from '../../components/review-links-editor/review-links-editor.component';
+import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
+import { SeoFieldsComponent } from '../../components/seo-fields/seo-fields.component';
+import { StructuredGalleryEditorComponent } from '../../components/structured-gallery-editor/structured-gallery-editor.component';
+import { TagEditorComponent } from '../../components/tag-editor/tag-editor.component';
+import { VideoLinksEditorComponent } from '../../components/video-links-editor/video-links-editor.component';
 
 @Component({
   selector: 'app-admin-production-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent, RichTextEditorComponent, TagEditorComponent, StructuredGalleryEditorComponent, SeoFieldsComponent, CreativeTeamEditorComponent, CastEditorComponent, VideoLinksEditorComponent, ReviewLinksEditorComponent, RecommendedProductionsPickerComponent],
   templateUrl: './admin-production-form.component.html',
   styleUrl: './admin-production-form.component.scss',
 })
 export class AdminProductionFormComponent implements OnInit {
-  private readonly fb = inject(UntypedFormBuilder);
+  private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly api = inject(AdminApiService);
+  private readonly cms = inject(CmsAdminService);
+  private readonly notifications = inject(AdminNotificationService);
 
   readonly itemId = signal<string | null>(null);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly errorMessage = signal('');
-  readonly successMessage = signal('');
-  readonly options = signal<Record<string, any[]>>({});
   readonly posterSelection = signal<MediaSelectionValue[]>([]);
-  readonly gallerySelection = signal<MediaSelectionValue[]>([]);
+  readonly announcementSelection = signal<MediaSelectionValue[]>([]);
+  readonly artistOptions = signal<CmsOption[]>([]);
+  readonly productionOptions = signal<CmsOption[]>([]);
+  readonly productionTypes = signal<Array<{ value: string; label: string }>>([]);
+  readonly statuses = signal<Array<{ value: string; label: string }>>([]);
+  readonly creativeRoles = signal<Array<{ value: string; label: string }>>([]);
+  readonly videoProviders = signal<Array<{ value: string; label: string }>>([]);
+  readonly venueOptions = signal<Array<{ id: string; label: string }>>([]);
+  private originalSlug = '';
+  private originalStatus = 'draft';
 
   readonly form = this.fb.group({
-    title: ['', Validators.required],
-    slug: [''],
-    type: ['drama', Validators.required],
-    authorComposer: [''],
-    originalTitle: [''],
-    subtitle: [''],
-    shortDescription: [''],
-    description: [''],
-    synopsis: [''],
-    premiereDate: [''],
-    isPremiere: [false],
-    isOnRepertoire: [true],
-    venue: [''],
-    durationMinutes: [''],
-    performanceLanguage: ['sr'],
-    subtitles: [''],
-    poster: [''],
-    gallery: [[]],
-    season: ['2025/2026'],
-    tagsText: [''],
-    status: ['draft', Validators.required],
-    isFeatured: [false],
-    creativeTeam: this.fb.array([]),
-    cast: this.fb.array([]),
+    title: ['', Validators.required], slug: [''], type: ['drama', Validators.required], authorComposer: [''], originalTitle: [''], subtitle: [''], season: [''], premiereDate: [''], venue: [''], durationMinutes: [null as number | null], performanceLanguage: ['sr'], subtitles: [''],
+    tags: this.fb.control<string[]>([]), shortDescription: [''], description: [''], synopsis: [''], poster: [''], galleryItems: this.fb.control<GalleryItemInput[]>([]),
+    status: ['draft', Validators.required], publishedAt: [''], isPremiere: [false], isOnRepertoire: [true], isFeatured: [false],
+    creativeTeam: this.fb.array<FormGroup>([]), cast: this.fb.array<FormGroup>([]), videos: this.fb.array<FormGroup>([]), reviews: this.fb.array<FormGroup>([]), recommendedProductions: this.fb.control<string[]>([]),
+    announcement: this.fb.group({ isAnnounced: [false], month: [null as number | null], year: [new Date().getFullYear()], text: [''], image: [''], startsAt: [''], endsAt: [''] }),
+    seo: this.fb.group({ title: [''], description: [''], keywords: this.fb.control<string[]>([]), canonicalUrl: [''], noIndex: [false] }),
   });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     this.itemId.set(id);
     this.loadOptions();
-
-    if (id) {
-      this.loadItem(id);
-    }
+    if (id) this.loadProduction(id);
   }
 
-  get isEditMode(): boolean {
-    return Boolean(this.itemId());
-  }
+  get isEditMode(): boolean { return Boolean(this.itemId()); }
+  get creativeTeam(): FormArray { return this.form.controls.creativeTeam; }
+  get cast(): FormArray { return this.form.controls.cast; }
+  get videos(): FormArray { return this.form.controls.videos; }
+  get reviews(): FormArray { return this.form.controls.reviews; }
+  get announcement(): FormGroup { return this.form.controls.announcement; }
+  get seo(): FormGroup { return this.form.controls.seo; }
 
-  get creativeTeam(): UntypedFormArray {
-    return this.form.get('creativeTeam') as UntypedFormArray;
-  }
-
-  get cast(): UntypedFormArray {
-    return this.form.get('cast') as UntypedFormArray;
-  }
-
-  get artists(): any[] {
-    return this.options()['artists'] || [];
-  }
-
-  get venues(): any[] {
-    return this.options()['venues'] || [];
-  }
-
-  get productionTypes(): any[] {
-    return this.options()['productionTypes'] || [];
-  }
-
-  get statuses(): any[] {
-    return this.options()['statuses'] || [];
-  }
-
-  creativeTeamControls(): any[] {
-    return this.creativeTeam.controls;
-  }
-
-  castControls(): any[] {
-    return this.cast.controls;
-  }
+  hasUnsavedChanges(): boolean { return this.form.dirty && !this.isSaving(); }
+  @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent): void { if (this.hasUnsavedChanges()) event.preventDefault(); }
 
   loadOptions(): void {
-    this.api.getProductionFormOptions().subscribe({
-      next: (response) => {
-        this.options.set(response.options || {});
+    this.cms.formOptions('production').subscribe({
+      next: ({ options }) => {
+        const currentId = this.itemId();
+        this.artistOptions.set(this.toOptions(options['artists'], 'displayName', (item) => this.arrayText(item['professions'])));
+        this.productionOptions.set(this.toOptions(options['productions'], 'title', (item) => `${productionTypeLabel(String(item['type'] || ''))} / ${contentStatusLabel(String(item['status'] || ''))}`).filter((item) => item.id !== currentId));
+        this.productionTypes.set(this.optionPairs(options['productionTypes']));
+        this.statuses.set(this.optionPairs(options['statuses']));
+        this.creativeRoles.set(this.optionPairs(options['creativeRoles']));
+        this.videoProviders.set(this.optionPairs(options['videoProviders']));
+        this.venueOptions.set(this.toOptions(options['venues'], 'name').map(({ id, label }) => ({ id, label })));
       },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Production options could not be loaded.');
-      },
+      error: () => this.errorMessage.set('Opcije forme nisu ucitane. Pokusajte ponovo.'),
     });
   }
 
-  loadItem(id: string): void {
-    this.isLoading.set(true);
-    this.errorMessage.set('');
-
-    this.api.getItem<any>('productions', id).subscribe({
-      next: (response) => {
-        this.patchForm(response.item);
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Production could not be loaded.');
-      },
-      complete: () => {
-        this.isLoading.set(false);
-      },
+  loadProduction(id: string): void {
+    this.isLoading.set(true); this.errorMessage.set('');
+    this.cms.get<Record<string, unknown>>('productions', id).subscribe({
+      next: ({ item }) => this.patchProduction(item),
+      error: (error) => this.errorMessage.set(error?.error?.message || 'Predstava nije ucitana.'),
+      complete: () => this.isLoading.set(false),
     });
   }
 
-  patchForm(item: any): void {
+  patchProduction(item: Record<string, unknown>): void {
+    this.originalSlug = String(item['slug'] || ''); this.originalStatus = String(item['status'] || 'draft');
+    const announcement = this.object(item['announcement']); const seo = this.object(item['seo']);
     this.form.patchValue({
-      title: item.title || '',
-      slug: item.slug || '',
-      type: item.type || 'drama',
-      authorComposer: item.authorComposer || '',
-      originalTitle: item.originalTitle || '',
-      subtitle: item.subtitle || '',
-      shortDescription: item.shortDescription || '',
-      description: item.description || '',
-      synopsis: item.synopsis || '',
-      premiereDate: this.toDateInput(item.premiereDate),
-      isPremiere: Boolean(item.isPremiere),
-      isOnRepertoire: item.isOnRepertoire !== false,
-      venue: this.getId(item.venue),
-      durationMinutes: item.durationMinutes || '',
-      performanceLanguage: item.performanceLanguage || 'sr',
-      subtitles: item.subtitles || '',
-      poster: this.getId(item.poster),
-      gallery: Array.isArray(item.gallery) ? item.gallery.map((entry: any) => this.getId(entry)).filter(Boolean) : [],
-      season: item.season || '2025/2026',
-      tagsText: Array.isArray(item.tags) ? item.tags.join(', ') : '',
-      status: item.status || 'draft',
-      isFeatured: Boolean(item.isFeatured),
+      title:String(item['title']||''),slug:this.originalSlug,type:String(item['type']||'drama'),authorComposer:String(item['authorComposer']||''),originalTitle:String(item['originalTitle']||''),subtitle:String(item['subtitle']||''),season:String(item['season']||''),premiereDate:this.dateInput(item['premiereDate']),venue:this.idOf(item['venue']),durationMinutes:this.numberOrNull(item['durationMinutes']),performanceLanguage:String(item['performanceLanguage']||'sr'),subtitles:String(item['subtitles']||''),
+      tags:this.stringArray(item['tags']),shortDescription:String(item['shortDescription']||''),description:String(item['description']||''),synopsis:String(item['synopsis']||''),poster:this.idOf(item['poster']),galleryItems:this.galleryValue(item),status:this.originalStatus,publishedAt:this.dateTimeInput(item['publishedAt']),isPremiere:Boolean(item['isPremiere']),isOnRepertoire:item['isOnRepertoire']!==false,isFeatured:Boolean(item['isFeatured']),recommendedProductions:this.idArray(item['recommendedProductions']),
+      announcement:{isAnnounced:Boolean(announcement['isAnnounced']),month:this.numberOrNull(announcement['month']),year:this.numberOrNull(announcement['year'])||new Date().getFullYear(),text:String(announcement['text']||''),image:this.idOf(announcement['image']),startsAt:this.dateTimeInput(announcement['startsAt']),endsAt:this.dateTimeInput(announcement['endsAt'])},
+      seo:{title:String(seo['title']||''),description:String(seo['description']||''),keywords:this.stringArray(seo['keywords']),canonicalUrl:String(seo['canonicalUrl']||''),noIndex:Boolean(seo['noIndex'])},
     });
-
-    this.posterSelection.set(item.poster ? [item.poster] : []);
-    this.gallerySelection.set(Array.isArray(item.gallery) ? item.gallery : []);
-
-    this.creativeTeam.clear();
-    (item.creativeTeam || []).forEach((entry: any) => this.addCreativeTeam(entry));
-
-    this.cast.clear();
-    (item.cast || []).forEach((entry: any) => this.addCast(entry));
+    this.posterSelection.set(item['poster'] ? [item['poster'] as MediaSelectionValue] : []);
+    this.announcementSelection.set(announcement['image'] ? [announcement['image'] as MediaSelectionValue] : []);
+    this.replaceArray(this.creativeTeam, this.array(item['creativeTeam']), (entry, index) => this.creditGroup(entry, index));
+    this.replaceArray(this.cast, this.normalizeCast(this.array(item['cast'])), (entry, index) => this.castGroup(entry, index));
+    this.replaceArray(this.videos, this.array(item['videos']), (entry, index) => this.videoGroup(entry, index));
+    this.replaceArray(this.reviews, this.array(item['reviews']), (entry, index) => this.reviewGroup(entry, index));
+    this.form.markAsPristine();
   }
 
-  addCreativeTeam(entry: any = {}): void {
-    this.creativeTeam.push(
-      this.fb.group({
-        role: [entry.role || ''],
-        artist: [this.getId(entry.artist)],
-        name: [entry.name || ''],
-        order: [entry.order ?? this.creativeTeam.length + 1],
-      })
-    );
-  }
-
-  removeCreativeTeam(index: number): void {
-    this.creativeTeam.removeAt(index);
-  }
-
-  addCast(entry: any = {}): void {
-    this.cast.push(
-      this.fb.group({
-        character: [entry.character || ''],
-        artist: [this.getId(Array.isArray(entry.artists) ? entry.artists[0] : '')],
-        namesText: [Array.isArray(entry.names) ? entry.names.join(', ') : ''],
-        order: [entry.order ?? this.cast.length + 1],
-      })
-    );
-  }
-
-  removeCast(index: number): void {
-    this.cast.removeAt(index);
-  }
-
-  save(): void {
-    if (this.form.invalid || this.isSaving()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.isSaving.set(true);
-    this.errorMessage.set('');
-    this.successMessage.set('');
-
-    const id = this.itemId();
-    const payload = this.buildPayload();
-    const request = id ? this.api.update<any>('productions', id, payload) : this.api.create<any>('productions', payload);
-
+  save(status?: 'draft' | 'published'): void {
+    if (status) this.form.controls.status.setValue(status);
+    if (this.form.invalid || this.isSaving()) { this.form.markAllAsTouched(); this.errorMessage.set('Proverite obavezna polja i neispravne linkove.'); return; }
+    const slug = this.form.controls.slug.value || '';
+    if (this.originalStatus === 'published' && this.originalSlug && slug && slug !== this.originalSlug && !window.confirm('Promena sluga moze prekinuti postojece javne linkove. Nastaviti?')) return;
+    this.isSaving.set(true); this.errorMessage.set('');
+    const id = this.itemId(); const request = id ? this.cms.update<Record<string, unknown>>('productions', id, this.buildPayload()) : this.cms.create<Record<string, unknown>>('productions', this.buildPayload());
     request.subscribe({
-      next: (response) => {
-        const savedId = this.getId(response.item);
-        this.successMessage.set('Production saved.');
-
-        if (!id && savedId) {
-          this.router.navigate(['/admin/productions', savedId, 'edit']);
-        }
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Production save failed.');
-      },
-      complete: () => {
-        this.isSaving.set(false);
-      },
+      next: ({ item }) => { const savedId=this.idOf(item); this.notifications.success('Predstava je sacuvana.'); this.form.markAsPristine(); if(!id&&savedId){this.router.navigate(['/admin/productions',savedId,'edit']);} else {this.patchProduction(item);} },
+      error: (error) => { const message=error?.error?.message||'Cuvanje predstave nije uspelo.';this.errorMessage.set(message);this.notifications.error(message); },
+      complete:()=>this.isSaving.set(false),
     });
   }
 
-  updatePoster(selection: MediaSelectionResult): void {
-    this.posterSelection.set(selection.items.length ? selection.items : selection.ids);
-    this.form.patchValue({ poster: selection.ids[0] || '' });
-  }
-
-  updateGallery(selection: MediaSelectionResult): void {
-    this.gallerySelection.set(selection.items.length ? selection.items : selection.ids);
-    this.form.patchValue({ gallery: selection.ids });
-  }
+  preview(): void { const id=this.itemId(); if(!id){this.notifications.info('Prvo sacuvajte nacrt, zatim otvorite pregled.');return;} window.open(`/admin/productions/${id}/preview`,'_blank','noopener'); }
+  updatePoster(selection: MediaSelectionResult): void { this.posterSelection.set(selection.items.length?selection.items:selection.ids);this.form.controls.poster.setValue(selection.ids[0]||'');this.form.controls.poster.markAsDirty(); }
+  updateAnnouncementImage(selection: MediaSelectionResult): void { this.announcementSelection.set(selection.items.length?selection.items:selection.ids);this.announcement.get('image')?.setValue(selection.ids[0]||'');this.announcement.markAsDirty(); }
+  statusLabel(value:string|undefined|null):string{return contentStatusLabel(value||undefined);}
 
   buildPayload(): Record<string, unknown> {
-    const raw = this.form.getRawValue();
-
-    return this.removeEmpty({
-      title: raw.title,
-      slug: raw.slug,
-      type: raw.type,
-      authorComposer: raw.authorComposer,
-      originalTitle: raw.originalTitle,
-      subtitle: raw.subtitle,
-      shortDescription: raw.shortDescription,
-      description: raw.description,
-      synopsis: raw.synopsis,
-      premiereDate: raw.premiereDate ? new Date(raw.premiereDate).toISOString() : undefined,
-      isPremiere: Boolean(raw.isPremiere),
-      isOnRepertoire: Boolean(raw.isOnRepertoire),
-      venue: raw.venue || undefined,
-      durationMinutes: raw.durationMinutes ? Number(raw.durationMinutes) : undefined,
-      performanceLanguage: raw.performanceLanguage,
-      subtitles: raw.subtitles,
-      poster: raw.poster || null,
-      gallery: Array.isArray(raw.gallery) ? raw.gallery.filter(Boolean) : [],
-      season: raw.season,
-      tags: String(raw.tagsText || '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-      status: raw.status,
-      isFeatured: Boolean(raw.isFeatured),
-      creativeTeam: this.creativeTeam.getRawValue()
-        .map((entry: any) => ({
-          role: entry.role,
-          artist: entry.artist || undefined,
-          name: entry.name,
-          order: Number(entry.order || 0),
-        }))
-        .filter((entry: any) => entry.role || entry.artist || entry.name),
-      cast: this.cast.getRawValue()
-        .map((entry: any) => ({
-          character: entry.character,
-          artists: entry.artist ? [entry.artist] : [],
-          names: String(entry.namesText || '')
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean),
-          order: Number(entry.order || 0),
-        }))
-        .filter((entry: any) => entry.character || entry.artists.length || entry.names.length),
-    });
+    const raw=this.form.getRawValue();
+    return {...raw,premiereDate:this.iso(raw.premiereDate),publishedAt:this.iso(raw.publishedAt),poster:raw.poster||null,galleryItems:(raw.galleryItems||[]).map((item,index)=>({...item,media:this.idOf(item.media),displayOrder:index})),venue:raw.venue||null,durationMinutes:raw.durationMinutes||undefined,
+      creativeTeam:this.rowObjects(raw.creativeTeam).filter((item)=>item['label']&&(item['artist']||item['name'])),cast:this.rowObjects(raw.cast).filter((item)=>item['artist']||item['name']),videos:this.rowObjects(raw.videos).filter((item)=>item['url']).map((item,index)=>({...item,thumbnail:item['thumbnail']||null,displayOrder:index})),reviews:this.rowObjects(raw.reviews).filter((item)=>item['url']).map((item,index)=>({...item,publishedAt:this.iso(item['publishedAt']),displayOrder:index})),
+      announcement:{...raw.announcement,image:raw.announcement?.image||null,startsAt:this.iso(raw.announcement?.startsAt),endsAt:this.iso(raw.announcement?.endsAt)}};
   }
 
-  artistLabel(item: any): string {
-    const professions = Array.isArray(item.professions) && item.professions.length ? ` / ${item.professions.join(', ')}` : '';
-    return `${item.displayName || item.name || this.getId(item)}${professions}`;
-  }
-
-  getId(value: any): string {
-    return String(value?._id || value?.id || value || '');
-  }
-
-  toDateInput(value: unknown): string {
-    if (!value) return '';
-    const date = new Date(String(value));
-    return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
-  }
-
-  private removeEmpty(payload: Record<string, unknown>): Record<string, unknown> {
-    Object.keys(payload).forEach((key) => {
-      if (payload[key] === '' || payload[key] === undefined) {
-        delete payload[key];
-      }
-    });
-
-    return payload;
-  }
+  private creditGroup(value:Record<string,unknown>,index:number){return this.fb.group({roleKey:[String(value['roleKey']||'other')],label:[String(value['label']||value['role']||''),Validators.required],artist:[this.idOf(value['artist'])],name:[String(value['name']||'')],note:[String(value['note']||'')],displayOrder:[index]});}
+  private castGroup(value:Record<string,unknown>,index:number){return this.fb.group({artist:[this.idOf(value['artist'])],name:[String(value['name']||'')],role:[String(value['role']||value['character']||'')],note:[String(value['note']||'')],displayOrder:[index]});}
+  private videoGroup(value:Record<string,unknown>,index:number){return this.fb.group({provider:[String(value['provider']||'youtube')],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],title:[String(value['title']||'')],thumbnail:[this.idOf(value['thumbnail'])],isTrailer:[Boolean(value['isTrailer'])],displayOrder:[index]});}
+  private reviewGroup(value:Record<string,unknown>,index:number){return this.fb.group({title:[String(value['title']||'')],publication:[String(value['publication']||'')],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],publishedAt:[this.dateInput(value['publishedAt'])],note:[String(value['note']||'')],displayOrder:[index]});}
+  private replaceArray(array:FormArray,values:Record<string,unknown>[],factory:(value:Record<string,unknown>,index:number)=>FormGroup):void{array.clear();values.forEach((value,index)=>array.push(factory(value,index)));}
+  private normalizeCast(values:Record<string,unknown>[]):Record<string,unknown>[] { return values.flatMap((item)=>{if(item['artist']||item['name'])return[item];const artists=this.array(item['artists']);const names=this.array(item['names']);const count=Math.max(artists.length,names.length,1);return Array.from({length:count},(_,index)=>({artist:artists[index],name:String(names[index]||''),role:item['character']||'',note:item['note']||''}));}); }
+  private galleryValue(item:Record<string,unknown>):GalleryItemInput[]{const structured=this.array(item['galleryItems']);if(structured.length)return structured.map((entry,index)=>({media:entry['media'] as unknown as MediaSelectionValue,caption:String(entry['caption']||''),credit:String(entry['credit']||''),altText:String(entry['altText']||''),displayOrder:Number(entry['displayOrder']??index)}));return this.array(item['gallery']).map((media,index)=>({media:media as unknown as MediaSelectionValue,caption:'',credit:'',altText:'',displayOrder:index}));}
+  private rowObjects(value:unknown):Record<string,unknown>[]{return Array.isArray(value)?value.map((item)=>this.object(item)):[];}
+  private toOptions(value:unknown,key:string,meta?:(item:Record<string,unknown>)=>string):CmsOption[]{return this.array(value).map((item)=>({id:this.idOf(item),label:String(item[key]||''),meta:meta?.(item)||'',status:String(item['status']||'')})).filter((item)=>item.id&&item.label);}
+  private optionPairs(value:unknown):Array<{value:string;label:string}>{return this.array(value).map((item)=>({value:String(item['value']||''),label:String(item['label']||item['value']||'')}));}
+  private idOf(value:unknown):string{if(!value)return'';if(typeof value==='string')return value;const item=this.object(value);return String(item['_id']||item['id']||'');}
+  private idArray(value:unknown):string[]{return this.array(value).map((item)=>this.idOf(item)).filter(Boolean);}
+  private object(value:unknown):Record<string,unknown>{return value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};}
+  private array(value:unknown):Record<string,unknown>[]{return Array.isArray(value)?value.map((item)=>this.object(item)):[];}
+  private stringArray(value:unknown):string[]{return Array.isArray(value)?value.map(String):[];}
+  private arrayText(value:unknown):string{return Array.isArray(value)?value.join(', '):'';}
+  private numberOrNull(value:unknown):number|null{return value===null||value===undefined||value===''?null:Number(value);}
+  private dateInput(value:unknown):string{return value?new Date(String(value)).toISOString().slice(0,10):'';}
+  private dateTimeInput(value:unknown):string{if(!value)return'';const date=new Date(String(value));const offset=date.getTimezoneOffset()*60000;return new Date(date.getTime()-offset).toISOString().slice(0,16);}
+  private iso(value:unknown):string|undefined{return value?new Date(String(value)).toISOString():undefined;}
 }

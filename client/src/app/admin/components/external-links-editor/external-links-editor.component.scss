@@ -1,0 +1,9 @@
+.editor-head, .row-actions { display: flex; align-items: center; justify-content: space-between; gap: .65rem; flex-wrap: wrap; }
+h3, p { margin: 0; } p { color: #514b42; }
+button { padding: .5rem .7rem; border: 1px solid #5d574e; background: #f4f1ea; color: #171512; cursor: pointer; }
+.editor-head > button { background: #171512; color: #fff; }
+.link-row { display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: .75rem; align-items: end; margin-top: .8rem; padding: .8rem; border: 1px solid #c7c0b4; background: #fff; }
+label { display: grid; gap: .35rem; font-weight: 700; color: #2d281f; }
+input, select { min-width: 0; padding: .7rem; border: 1px solid #aaa397; background: #fff; color: #171512; }
+.danger, .error { color: #6b2020; }.empty { margin-top: .75rem; padding: .75rem; background: #f4f1ea; }
+@media (max-width: 900px) { .link-row { grid-template-columns: 1fr; } }

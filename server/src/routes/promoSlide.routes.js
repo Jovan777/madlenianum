@@ -6,6 +6,8 @@ const {
   createPromoSlide,
   updatePromoSlide,
   deletePromoSlide,
+  archivePromoSlide,
+  previewPromoSlide,
 } = require("../controllers/promoSlide.controller");
 
 const router = express.Router();
@@ -13,6 +15,8 @@ const router = express.Router();
 router.get("/", getPromoSlides);
 router.post("/", createPromoSlide);
 
+router.get("/:id/preview", previewPromoSlide);
+router.patch("/:id/archive", archivePromoSlide);
 router.get("/:id", getPromoSlideById);
 router.patch("/:id", updatePromoSlide);
 router.put("/:id", updatePromoSlide);

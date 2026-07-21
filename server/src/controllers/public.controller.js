@@ -4,78 +4,37 @@ const Artist = require("../models/Artist");
 const Production = require("../models/Production");
 const Event = require("../models/Event");
 const News = require("../models/News");
-const PromoSlide = require("../models/PromoSlide");
 const StaticPage = require("../models/StaticPage");
 const NewsletterSubscriber = require("../models/NewsletterSubscriber");
 const ContactMessage = require("../models/ContactMessage");
+const SiteSettings = require("../models/SiteSettings");
+const {
+  artistDto,
+  castDto,
+  creativeTeamDto,
+  eventDto,
+  idOf,
+  newsDto,
+  pageDto,
+  productionDto,
+  productionSummaryDto,
+  siteSettingsDto,
+} = require("../services/cmsDto.service");
+const { populateArtist, populateNews, populatePage, populateProduction } = require("../services/cmsPopulate.service");
+const { createHttpError, escapeRegex, publicPublishedFilter } = require("../services/cms.service");
+const { getResolvedHomepage } = require("../services/homepage.service");
+const { populateSiteSettings } = require("../services/siteSettings.service");
 
 const getHome = asyncHandler(async (req, res) => {
-  const now = new Date();
-
-  const [slides, featuredNews, upcomingEvents, featuredProductions] = await Promise.all([
-    PromoSlide.find({ status: "published" })
-      .sort("-createdAt")
-      .limit(8)
-      .populate("image")
-      .populate({
-        path: "relatedProduction",
-        populate: [{ path: "poster" }],
-      }),
-
-    News.find({ status: "published", isFeatured: true })
-      .sort("-publishedAt -createdAt")
-      .limit(6)
-      .populate("image")
-      .populate("relatedProduction"),
-
-    Event.find({
-      status: "scheduled",
-      startsAt: { $gte: now },
-    })
-      .sort("startsAt")
-      .limit(8)
-      .populate({
-        path: "production",
-        populate: [{ path: "poster" }],
-      })
-      .populate("venue"),
-
-    Production.find({
-      status: "published",
-      isFeatured: true,
-    })
-      .sort("-isFeatured title")
-      .limit(8)
-      .populate("poster")
-      .populate("venue"),
-  ]);
-
-  res.json({
-    success: true,
-    slides,
-    featuredNews,
-    upcomingEvents,
-    featuredProductions,
-    data: {
-      slides,
-      featuredNews,
-      upcomingEvents,
-      featuredProductions,
-    },
-  });
+  const data = await getResolvedHomepage();
+  res.json({ success: true, ...data, data });
 });
 
 const getRepertoire = asyncHandler(async (req, res) => {
   const now = new Date();
   const hasExplicitMonth = req.query.month !== undefined || req.query.year !== undefined;
-
-  const month = hasExplicitMonth
-    ? Number(req.query.month) || now.getMonth() + 1
-    : now.getMonth() + 1;
-  const year = hasExplicitMonth
-    ? Number(req.query.year) || now.getFullYear()
-    : now.getFullYear();
-
+  const month = hasExplicitMonth ? Number(req.query.month) || now.getMonth() + 1 : now.getMonth() + 1;
+  const year = hasExplicitMonth ? Number(req.query.year) || now.getFullYear() : now.getFullYear();
   const from = hasExplicitMonth
     ? new Date(year, month - 1, 1, 0, 0, 0)
     : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -83,246 +42,120 @@ const getRepertoire = asyncHandler(async (req, res) => {
     ? new Date(year, month, 1, 0, 0, 0)
     : new Date(from.getTime() + 120 * 24 * 60 * 60 * 1000);
 
-  const events = await Event.find({
-    status: "scheduled",
-    startsAt: {
-      $gte: from,
-      $lt: to,
-    },
-  })
+  const events = await Event.find({ status: "scheduled", startsAt: { $gte: from, $lt: to } })
     .sort("startsAt")
-    .populate({
-      path: "production",
-      match: { status: "published" },
-      populate: [{ path: "poster" }],
-    })
+    .populate({ path: "production", match: publicPublishedFilter(now), populate: { path: "poster" } })
     .populate("venue");
-
-  res.json({
-    success: true,
-    events: events.filter((event) => event.production),
-    data: {
-      month,
-      year,
-      events: events.filter((event) => event.production),
-    },
-  });
+  const items = events.filter((event) => event.production).map(eventDto);
+  res.json({ success: true, events: items, data: { month, year, events: items } });
 });
 
 const listProductions = asyncHandler(async (req, res) => {
-  const filter = {
-    status: "published",
-  };
-
-  if (req.query.type) {
-    filter.type = req.query.type;
-  }
-
-  if (req.query.isOnRepertoire !== undefined) {
-    filter.isOnRepertoire = req.query.isOnRepertoire === "true";
-  }
-
+  const filter = publicPublishedFilter();
+  if (req.query.type) filter.type = req.query.type;
+  if (req.query.isOnRepertoire !== undefined) filter.isOnRepertoire = req.query.isOnRepertoire === "true";
   if (req.query.q) {
-    filter.$or = [
-      { title: new RegExp(req.query.q, "i") },
-      { authorComposer: new RegExp(req.query.q, "i") },
-      { description: new RegExp(req.query.q, "i") },
-    ];
+    const search = new RegExp(escapeRegex(req.query.q), "i");
+    filter.$and = [{ $or: [{ title: search }, { authorComposer: search }, { shortDescription: search }] }];
   }
-
-  const items = await Production.find(filter)
-    .sort("-isFeatured title")
-    .populate("poster")
-    .populate("venue");
-
-  res.json({
-    success: true,
-    items,
-  });
+  const items = await populateProduction(Production.find(filter).sort("-isFeatured title"));
+  res.json({ success: true, items: items.map(productionSummaryDto) });
 });
 
 const getProductionBySlug = asyncHandler(async (req, res) => {
-  const production = await Production.findOne({
-    slug: req.params.slug,
-    status: "published",
-  })
-    .populate("poster")
-    .populate("gallery")
-    .populate("venue")
-    .populate("creativeTeam.artist")
-    .populate("cast.artists");
-
-  if (!production) {
-    res.status(404);
-    throw new Error("Predstava nije pronađena.");
-  }
-
-  const upcomingEvents = await Event.find({
-    production: production._id,
-    status: "scheduled",
-    startsAt: { $gte: new Date() },
-  })
+  const production = await populateProduction(Production.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
+  if (!production) throw createHttpError(404, "Predstava nije pronadjena.");
+  const events = await Event.find({ production: production._id, status: "scheduled", startsAt: { $gte: new Date() } })
     .sort("startsAt")
     .populate("venue");
-
-  res.json({
-    success: true,
-    item: production,
-    production,
-    events: upcomingEvents,
-    upcomingEvents,
-  });
+  const item = productionDto(production);
+  const upcomingEvents = events.map((event) => eventDto({ ...event.toObject(), production }));
+  res.json({ success: true, item, production: item, events: upcomingEvents, upcomingEvents });
 });
 
 const listArtists = asyncHandler(async (req, res) => {
-  const filter = {
-    status: "published",
-  };
-
+  const filter = publicPublishedFilter();
   if (req.query.q) {
-    filter.$or = [
-      { displayName: new RegExp(req.query.q, "i") },
-      { biography: new RegExp(req.query.q, "i") },
-      { professions: new RegExp(req.query.q, "i") },
-    ];
+    const search = new RegExp(escapeRegex(req.query.q), "i");
+    filter.$and = [{ $or: [{ displayName: search }, { professions: search }] }];
   }
-
-  const items = await Artist.find(filter)
-    .sort("displayName")
-    .populate("image");
-
-  res.json({
-    success: true,
-    items,
-  });
+  const items = await populateArtist(Artist.find(filter).sort("displayName"));
+  res.json({ success: true, items: items.map(artistDto) });
 });
 
 const getArtistBySlug = asyncHandler(async (req, res) => {
-  const artist = await Artist.findOne({
-    slug: req.params.slug,
-    status: "published",
-  })
-    .populate("image")
-    .populate("gallery");
+  const artist = await populateArtist(Artist.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
+  if (!artist) throw createHttpError(404, "Umetnik nije pronadjen.");
 
-  if (!artist) {
-    res.status(404);
-    throw new Error("Umetnik nije pronađen.");
-  }
+  const productions = await populateProduction(Production.find({
+    ...publicPublishedFilter(),
+    $and: [{
+      $or: [
+        { "creativeTeam.artist": artist._id },
+        { "cast.artist": artist._id },
+        { "cast.artists": artist._id },
+      ],
+    }],
+  }).sort("title"));
 
-  const productions = await Production.find({
-    status: "published",
-    $or: [
-      { "creativeTeam.artist": artist._id },
-      { "cast.artists": artist._id },
-    ],
-  })
-    .sort("title")
-    .populate("poster")
-    .populate("venue");
-
-  res.json({
-    success: true,
-    item: artist,
-    artist,
-    productions,
+  const relatedProductions = productions.map((production) => {
+    const credits = creativeTeamDto(production).filter((credit) => idOf(credit.artist) === String(artist._id));
+    const cast = castDto(production).filter((member) => idOf(member.artist) === String(artist._id));
+    return {
+      ...productionSummaryDto(production),
+      relationshipTypes: [credits.length ? "creativeTeam" : null, cast.length ? "cast" : null].filter(Boolean),
+      credits: credits.map((credit) => ({ roleKey: credit.roleKey, label: credit.label })),
+      roles: cast.map((member) => member.role).filter(Boolean),
+    };
   });
+
+  const item = { ...artistDto(artist), relatedProductions };
+  res.json({ success: true, item, artist: item, productions: relatedProductions });
 });
 
 const listNews = asyncHandler(async (req, res) => {
-  const filter = {
-    status: "published",
-  };
-
-  if (req.query.category) {
-    filter.category = req.query.category;
-  }
-
-  const items = await News.find(filter)
-    .sort("-publishedAt")
-    .populate("image")
-    .populate("relatedProduction");
-
-  res.json({
-    success: true,
-    items,
-  });
+  const filter = publicPublishedFilter();
+  if (req.query.category) filter.category = req.query.category;
+  const items = await populateNews(News.find(filter).sort("-publishedAt -createdAt"));
+  res.json({ success: true, items: items.map(newsDto) });
 });
 
 const getNewsBySlug = asyncHandler(async (req, res) => {
-  const item = await News.findOne({
-    slug: req.params.slug,
-    status: "published",
-  })
-    .populate("image")
-    .populate("gallery")
-    .populate("attachment")
-    .populate("relatedProduction");
-
-  if (!item) {
-    res.status(404);
-    throw new Error("Vest nije pronađena.");
-  }
-
-  res.json({
-    success: true,
-    item,
-  });
+  const item = await populateNews(News.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
+  if (!item) throw createHttpError(404, "Vest nije pronadjena.");
+  res.json({ success: true, item: newsDto(item) });
 });
 
 const getPageBySlug = asyncHandler(async (req, res) => {
-  const item = await StaticPage.findOne({
-    slug: req.params.slug,
-    status: "published",
-  })
-    .populate("image")
-    .populate("gallery")
-    .populate("attachments");
-
-  if (!item) {
-    res.status(404);
-    throw new Error("Strana nije pronađena.");
+  const item = await populatePage(StaticPage.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
+  if (!item) throw createHttpError(404, "Strana nije pronadjena.");
+  const response = pageDto(item);
+  if (item.pageType === "contact") {
+    const settings = await populateSiteSettings(SiteSettings.findOne({ key: "default" }));
+    response.organizationContact = siteSettingsDto(settings).contact;
+    response.socialLinks = siteSettingsDto(settings).socialLinks;
   }
+  res.json({ success: true, item: response });
+});
 
-  res.json({
-    success: true,
-    item,
-  });
+const getPublicSiteSettings = asyncHandler(async (req, res) => {
+  const settings = await populateSiteSettings(SiteSettings.findOne({ key: "default" }));
+  res.json({ success: true, item: siteSettingsDto(settings) });
 });
 
 const subscribeNewsletter = asyncHandler(async (req, res) => {
   const { email, fullName, language } = req.body;
-
-  if (!email) {
-    res.status(400);
-    throw new Error("Email je obavezan.");
-  }
-
-  const subscriber = await NewsletterSubscriber.findOneAndUpdate(
+  if (!email) throw createHttpError(400, "Email je obavezan.");
+  await NewsletterSubscriber.findOneAndUpdate(
     { email: email.toLowerCase() },
-    {
-      email: email.toLowerCase(),
-      fullName: fullName || "",
-      language: language || "sr",
-      status: "active",
-      source: "website",
-      consentAt: new Date(),
-    },
-    {
-      upsert: true,
-      returnDocument: "after",
-      runValidators: true,
-    }
+    { email: email.toLowerCase(), fullName: fullName || "", language: language || "sr", status: "active", source: "website", consentAt: new Date() },
+    { upsert: true, returnDocument: "after", runValidators: true }
   );
-
-  res.status(201).json({
-    success: true,
-    item: subscriber,
-  });
+  res.status(201).json({ success: true, message: "Prijava je sacuvana." });
 });
 
 const sendContactMessage = asyncHandler(async (req, res) => {
-  const item = await ContactMessage.create({
+  await ContactMessage.create({
     fullName: req.body.fullName,
     email: req.body.email,
     phone: req.body.phone || "",
@@ -330,23 +163,20 @@ const sendContactMessage = asyncHandler(async (req, res) => {
     message: req.body.message,
     sourcePage: req.body.sourcePage || "",
   });
-
-  res.status(201).json({
-    success: true,
-    item,
-  });
+  res.status(201).json({ success: true, message: "Poruka je sacuvana." });
 });
 
 module.exports = {
-  getHome,
-  getRepertoire,
-  listProductions,
-  getProductionBySlug,
-  listArtists,
   getArtistBySlug,
-  listNews,
+  getHome,
   getNewsBySlug,
   getPageBySlug,
-  subscribeNewsletter,
+  getProductionBySlug,
+  getPublicSiteSettings,
+  getRepertoire,
+  listArtists,
+  listNews,
+  listProductions,
   sendContactMessage,
+  subscribeNewsletter,
 };

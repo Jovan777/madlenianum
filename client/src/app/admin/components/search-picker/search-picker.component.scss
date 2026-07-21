@@ -1,0 +1,13 @@
+.picker { position: relative; display: grid; gap: .5rem; min-width: 0; }
+label { font-weight: 800; color: #171512; }
+.picker-toggle { min-height: 2.8rem; padding: .7rem; text-align: left; background: #fff; border: 1px solid #aaa397; color: #171512; cursor: pointer; }
+.selected { display: flex; flex-wrap: wrap; gap: .4rem; }
+.selected span { display: grid; grid-template-columns: 1fr auto; gap: .1rem .45rem; align-items: center; padding: .4rem .55rem; background: #eee9dc; border: 1px solid #c9b878; color: #2d281f; }
+.selected small { grid-column: 1; color: #514b42; }
+.selected button { grid-column: 2; grid-row: 1 / span 2; border: 0; background: transparent; color: #501d1d; font-size: 1rem; cursor: pointer; }
+.panel { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; max-height: 19rem; overflow: auto; padding: .55rem; background: #fff; border: 1px solid #756e63; box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+.panel input { width: 100%; box-sizing: border-box; padding: .7rem; border: 1px solid #aaa397; margin-bottom: .45rem; }
+.panel > button { width: 100%; display: grid; gap: .15rem; padding: .65rem; text-align: left; border: 0; border-bottom: 1px solid #e0dbd1; background: #fff; color: #171512; cursor: pointer; }
+.panel > button:hover, .panel > button.active { background: #f0e7ca; }
+.panel span, .help, .panel p { color: #514b42; }
+button:focus-visible, input:focus-visible { outline: 3px solid #8d6815; outline-offset: 2px; }

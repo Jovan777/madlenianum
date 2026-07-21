@@ -12,6 +12,7 @@ const {
   getPageBySlug,
   subscribeNewsletter,
   sendContactMessage,
+  getPublicSiteSettings,
 } = require("../controllers/public.controller");
 
 const {
@@ -38,6 +39,7 @@ router.get("/news", listNews);
 router.get("/news/:slug", getNewsBySlug);
 
 router.get("/pages/:slug", getPageBySlug);
+router.get("/site-settings", getPublicSiteSettings);
 
 router.get("/events/:eventId/seats", getEventSeats);
 router.post("/events/:eventId/seats/lock", lockSeats);

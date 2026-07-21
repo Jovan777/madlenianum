@@ -10,6 +10,9 @@ const Media = require("../models/Media");
 const Artist = require("../models/Artist");
 const Production = require("../models/Production");
 const PromoSlide = require("../models/PromoSlide");
+const News = require("../models/News");
+const HomepageConfig = require("../models/HomepageConfig");
+const SiteSettings = require("../models/SiteSettings");
 const Event = require("../models/Event");
 const StaticPage = require("../models/StaticPage");
 const Venue = require("../models/Venue");
@@ -175,7 +178,58 @@ const upsertMediaMany = async (items) => {
   return result;
 };
 
-const upsertArtist = async ({ displayName, professions, biography, image }) => {
+const galleryItems = (items) => (items || []).map((media, index) => ({
+  media: media._id,
+  caption: "",
+  credit: "Madlenianum",
+  altText: media.alt || media.title || "",
+  displayOrder: index,
+}));
+
+const roleKeyFor = (role) => {
+  const value = String(role || "").toLowerCase();
+  if (value.includes("redit")) return "director";
+  if (value.includes("pis") || value.includes("autor")) return "writer";
+  if (value.includes("kompoz")) return "composer";
+  if (value.includes("dirigent")) return "conductor";
+  if (value.includes("koreograf")) return "choreographer";
+  if (value.includes("muzik")) return "music";
+  return "other";
+};
+
+const normalizeCredits = (items) => (items || []).map((entry, index) => ({
+  roleKey: entry.roleKey || roleKeyFor(entry.label || entry.role),
+  label: entry.label || entry.role || "Saradnik",
+  artist: entry.artist,
+  name: entry.name || "",
+  note: entry.note || "",
+  displayOrder: entry.displayOrder ?? entry.order ?? index,
+}));
+
+const normalizeCast = (items) => (items || []).flatMap((entry, index) => {
+  if (entry.artist || entry.name) {
+    return [{
+      artist: entry.artist,
+      name: entry.name || "",
+      role: entry.role || entry.character || "",
+      note: entry.note || "",
+      displayOrder: entry.displayOrder ?? entry.order ?? index,
+    }];
+  }
+
+  const artists = entry.artists || [];
+  const names = entry.names || [];
+  const count = Math.max(artists.length, names.length, 1);
+  return Array.from({ length: count }, (_, personIndex) => ({
+    artist: artists[personIndex],
+    name: names[personIndex] || "",
+    role: entry.character || "",
+    note: entry.note || "",
+    displayOrder: (entry.order ?? index) + personIndex,
+  }));
+});
+
+const upsertArtist = async ({ displayName, professions, biography, image, gallery = [], links = [] }) => {
   const slug = slugify(displayName);
 
   return Artist.findOneAndUpdate(
@@ -186,10 +240,17 @@ const upsertArtist = async ({ displayName, professions, biography, image }) => {
       professions,
       biography,
       image: image?._id,
-      gallery: [],
-      links: [],
+      gallery: gallery.map((item) => item._id),
+      galleryItems: galleryItems(gallery),
+      links: links.map((item, index) => ({ ...item, displayOrder: index })),
       translations: {},
       status: "published",
+      publishedAt: new Date(),
+      seo: {
+        title: `${displayName} | Madlenianum`,
+        description: biography.slice(0, 155),
+        keywords: ["Madlenianum", ...professions],
+      },
     },
     {
       returnDocument: "after",
@@ -250,6 +311,8 @@ const upsertProduction = async ({
   cast,
   tags,
   isFeatured,
+  videos = [],
+  reviews = [],
 }) => {
   const slug = slugify(title);
 
@@ -271,9 +334,12 @@ const upsertProduction = async ({
     subtitles: "",
     poster: poster?._id,
     gallery: gallery.map((item) => item._id),
-    videoUrls: [],
-    creativeTeam,
-    cast,
+    galleryItems: galleryItems(gallery),
+    videoUrls: videos.map((item) => ({ label: item.title, url: item.url })),
+    videos,
+    creativeTeam: normalizeCredits(creativeTeam),
+    cast: normalizeCast(cast),
+    reviews,
     season: "2025/2026",
     tags,
     translations: {},
@@ -283,6 +349,7 @@ const upsertProduction = async ({
       keywords: ["Madlenianum", title, type],
     },
     status: "published",
+    publishedAt: new Date(),
     isFeatured,
   };
 
@@ -385,8 +452,12 @@ const upsertPromoSlide = async ({
       linkLabel: "Pogledajte vise",
       linkUrl: production ? `/predstave/${production.slug}` : "",
       relatedProduction: production?._id,
+      relatedEvent: event?._id,
+      activeFrom: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      activeUntil: event?.startsAt ? new Date(event.startsAt.getTime() + 24 * 60 * 60 * 1000) : undefined,
       language: "sr",
       status: "published",
+      publishedAt: new Date(),
     },
     {
       returnDocument: "after",
@@ -402,6 +473,8 @@ const upsertStaticPage = async ({
   body,
   pageType,
   image,
+  sections = [],
+  contact = {},
 }) => {
   return StaticPage.findOneAndUpdate(
     { slug },
@@ -412,7 +485,10 @@ const upsertStaticPage = async ({
       pageType,
       image: image?._id,
       gallery: [],
+      galleryItems: [],
       attachments: [],
+      sections,
+      contact,
       translations: {},
       seo: {
         title: `${title} | Madlenianum`,
@@ -420,12 +496,119 @@ const upsertStaticPage = async ({
         keywords: ["Madlenianum", title],
       },
       status: "published",
+      publishedAt: new Date(),
     },
     {
       returnDocument: "after",
       upsert: true,
       runValidators: true,
     }
+  );
+};
+
+const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, relatedProduction }) => {
+  const slug = slugify(title);
+  return News.findOneAndUpdate(
+    { slug },
+    {
+      title,
+      slug,
+      subtitle,
+      excerpt,
+      body,
+      category: "premijera",
+      image: image?._id,
+      gallery: (gallery || []).map((item) => item._id),
+      galleryItems: galleryItems(gallery),
+      externalLinks: [{
+        label: "Program Madlenianuma",
+        url: "https://madlenianum.rs/",
+        type: "website",
+        displayOrder: 0,
+      }],
+      relatedProduction: relatedProduction?._id,
+      publishedAt: new Date(),
+      status: "published",
+      isFeatured: true,
+      seo: {
+        title: `${title} | Madlenianum`,
+        description: excerpt,
+        keywords: ["Madlenianum", "premijera", relatedProduction?.title].filter(Boolean),
+      },
+    },
+    { returnDocument: "after", upsert: true, runValidators: true }
+  );
+};
+
+const upsertHomepageConfig = async ({ slides, events, productions, news, teaserImage, aboutPage }) => {
+  return HomepageConfig.findOneAndUpdate(
+    { key: "default" },
+    {
+      key: "default",
+      hero: { enabled: true, mode: "manual", limit: 5, selectedSlides: slides.map((item) => item._id), fallbackToAutomatic: true },
+      upcomingEvents: { enabled: true, mode: "manual", heading: "Repertoar", limit: 8, selectedEvents: events.map((item) => item._id) },
+      featuredProductions: { enabled: true, mode: "manual", heading: "Izdvajamo", limit: 6, selectedProductions: productions.map((item) => item._id), allowedTypes: [] },
+      featuredNews: { enabled: true, mode: "manual", heading: "Aktuelno", limit: 6, selectedNews: news.map((item) => item._id), category: "" },
+      institutionalTeaser: {
+        enabled: true,
+        heading: "Madlenianum",
+        text: "<p>Opera i teatar u Zemunu, sa programom koji povezuje muziku, dramu i igru.</p>",
+        image: teaserImage?._id,
+        ctaLabel: "O nama",
+        ctaUrl: "/strana/o-nama",
+        linkedPage: aboutPage?._id,
+      },
+      ctaCards: [],
+      sections: [
+        { sectionType: "hero", enabled: true, displayOrder: 0 },
+        { sectionType: "upcomingEvents", enabled: true, displayOrder: 1 },
+        { sectionType: "featuredProductions", enabled: true, displayOrder: 2 },
+        { sectionType: "featuredNews", enabled: true, displayOrder: 3 },
+        { sectionType: "institutionalTeaser", enabled: true, displayOrder: 4 },
+      ],
+      seo: { title: "Madlenianum", description: "Opera i teatar Madlenianum u Zemunu", keywords: ["Madlenianum", "opera", "teatar"] },
+    },
+    { returnDocument: "after", upsert: true, runValidators: true }
+  );
+};
+
+const upsertSiteSettings = async ({ logo, socialImage }) => {
+  return SiteSettings.findOneAndUpdate(
+    { key: "default" },
+    {
+      key: "default",
+      siteName: "Madlenianum",
+      shortDescription: "Opera i teatar Madlenianum u Zemunu.",
+      mainLogo: logo?._id,
+      footerLogo: logo?._id,
+      contact: {
+        address: "Glavna 32, Zemun, Beograd",
+        generalEmail: "office@madlenianum.rs",
+        ticketOfficeEmail: "biletarnica@madlenianum.rs",
+        phones: ["+381 11 316 27 20"],
+        ticketOfficePhones: ["+381 11 316 27 20"],
+      },
+      socialLinks: [
+        { platform: "instagram", label: "Instagram", url: "https://www.instagram.com/madlenianum/", enabled: true, displayOrder: 0 },
+      ],
+      legalLinks: [],
+      footerNavigation: [{
+        title: "Madlenianum",
+        enabled: true,
+        displayOrder: 0,
+        links: [
+          { label: "O nama", url: "/strana/o-nama", enabled: true, displayOrder: 0 },
+          { label: "Kontakt", url: "/strana/kontakt", enabled: true, displayOrder: 1 },
+        ],
+      }],
+      partnerLogos: [],
+      defaultSeo: { title: "Madlenianum", description: "Opera i teatar Madlenianum", keywords: ["Madlenianum", "Zemun"] },
+      socialImage: socialImage?._id,
+      languages: ["sr", "en"],
+      defaultLanguage: "sr",
+      maintenanceMessage: "",
+    },
+    { returnDocument: "after", upsert: true, runValidators: true }
   );
 };
 
@@ -731,6 +914,8 @@ const seedPhase3Content = async () => {
         biography:
           "Tamara Aleksić je umetnica povezana sa repertoarom Madlenianuma i dramskim naslovima aktuelne sezone.",
         image: media.artists.tamara,
+        gallery: media.gallery.staklena.slice(0, 2),
+        links: [{ label: "Instagram", url: "https://www.instagram.com/", type: "instagram" }],
       }),
       nikola: await upsertArtist({
         displayName: "Nikola Rakočević",
@@ -738,6 +923,8 @@ const seedPhase3Content = async () => {
         biography:
           "Nikola Rakočević je umetnik povezan sa repertoarom Madlenianuma i savremenim pozorišnim izrazom.",
         image: media.artists.nikola,
+        gallery: media.gallery.gordost.slice(0, 2),
+        links: [{ label: "Biografija", url: "https://madlenianum.rs/", type: "website" }],
       }),
       ivan: await upsertArtist({
         displayName: "Ivan Vuković",
@@ -745,6 +932,8 @@ const seedPhase3Content = async () => {
         biography:
           "Ivan Vuković je reditelj povezan sa predstavama na repertoaru Madlenianuma i radom ansambla.",
         image: media.artists.ivan,
+        gallery: media.gallery.pluca.slice(0, 2),
+        links: [{ label: "Madlenianum", url: "https://madlenianum.rs/", type: "website" }],
       }),
     };
 
@@ -892,6 +1081,21 @@ const seedPhase3Content = async () => {
       cast: [],
       tags: ["balet", "carmen", "bolero", "velika scena"],
       isFeatured: true,
+      videos: [{
+        provider: "youtube",
+        url: "https://www.youtube.com/watch?v=madlenianum-carmen",
+        title: "Carmen Suite & Bolero - trejler",
+        thumbnail: media.main.carmen?._id,
+        isTrailer: true,
+        displayOrder: 0,
+      }],
+      reviews: [{
+        title: "Baletski program Madlenianuma",
+        publication: "Madlenianum",
+        url: "https://madlenianum.rs/",
+        note: "Primer spoljnog linka za proveru CMS polja.",
+        displayOrder: 0,
+      }],
     });
 
     const pluca = await upsertProduction({
@@ -954,6 +1158,18 @@ const seedPhase3Content = async () => {
       tags: ["drama", "savremeno"],
       isFeatured: false,
     });
+
+    carmen.recommendedProductions = [staklena._id, gordost._id];
+    carmen.announcement = {
+      isAnnounced: true,
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+      text: "Baletski naslov aktuelne sezone.",
+      image: media.main.carmen?._id,
+      startsAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      endsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+    };
+    await carmen.save();
 
     const schedule = {
       staklena: futurePerformance({
@@ -1069,6 +1285,43 @@ const seedPhase3Content = async () => {
         image: media.main.staklena,
         body:
           "Madlenianum je scena posvecena operi, baletu, drami, mjuziklu i koncertnom programu. Ova demo stranica se kreira kroz seed kako bi javni sajt uvek imao osnovni institucionalni sadrzaj za lokalno testiranje.",
+        sections: [
+          {
+            sectionType: "hero",
+            enabled: true,
+            heading: "Madlenianum",
+            subtitle: "Opera i teatar u Zemunu",
+            body: "<p>Scena posvecena operi, baletu, drami, mjuziklu i koncertnom programu.</p>",
+            backgroundImage: media.main.staklena?._id,
+            displayOrder: 0,
+          },
+          {
+            sectionType: "text-image",
+            enabled: true,
+            heading: "Kuca umetnosti",
+            body: "<p>Madlenianum okuplja umetnike i publiku kroz repertoar koji povezuje tradiciju i savremeni izraz.</p>",
+            image: media.main.gordost?._id,
+            imagePosition: "right",
+            displayOrder: 1,
+          },
+          {
+            sectionType: "timeline",
+            enabled: true,
+            heading: "Nas put",
+            timelineItems: [
+              { period: "1999", title: "Osnivanje", description: "Pocetak rada opere i teatra Madlenianum.", displayOrder: 0 },
+              { period: "Danas", title: "Aktuelni repertoar", description: "Opera, balet, drama i koncertni program.", displayOrder: 1 },
+            ],
+            displayOrder: 2,
+          },
+          {
+            sectionType: "gallery",
+            enabled: true,
+            heading: "Galerija",
+            galleryItems: galleryItems(media.gallery.staklena),
+            displayOrder: 3,
+          },
+        ],
       }),
       contact: await upsertStaticPage({
         title: "Kontakt",
@@ -1077,8 +1330,47 @@ const seedPhase3Content = async () => {
         image: media.main.gordost,
         body:
           "Madlenianum, Glavna 32, Zemun. Za informacije o programu, ulaznicama i saradnji koristite kontakt podatke koji ce biti uredjeni kroz admin panel.",
+        contact: {
+          introduction: "<p>Za informacije o programu, ulaznicama i saradnji obratite se timu Madlenianuma.</p>",
+          mapUrl: "https://maps.google.com/?q=Madlenianum+Zemun",
+          officeHours: "Radnim danima 09:00-17:00",
+          ticketOfficeHours: "Radnim danima i na dane izvodjenja",
+          additionalItems: [
+            { label: "Adresa", value: "Glavna 32, Zemun", type: "text", displayOrder: 0 },
+          ],
+          contactFormEnabled: true,
+          recipientEmails: ["office@madlenianum.rs"],
+        },
       }),
     };
+
+    const seededNews = await upsertNews({
+      title: "Nova sezona Madlenianuma",
+      subtitle: "Repertoar koji povezuje umetnike i publiku",
+      excerpt: "Predstavljamo izbor dramskih i baletskih naslova aktuelne sezone.",
+      body: "<p>Madlenianum u novoj sezoni donosi pazljivo odabran program drame i baleta.</p><h2>Program</h2><p>Termini i ulaznice dostupni su kroz javni repertoar.</p>",
+      image: media.main.carmen,
+      gallery: media.gallery.carmen,
+      relatedProduction: carmen,
+    });
+
+    const seededSlides = await PromoSlide.find({
+      slug: { $in: [carmen.slug, gordost.slug, pluca.slug, staklena.slug] },
+    });
+
+    const homepageConfig = await upsertHomepageConfig({
+      slides: seededSlides,
+      events: Object.values(events),
+      productions: [carmen, staklena, gordost, pluca],
+      news: [seededNews],
+      teaserImage: media.main.staklena,
+      aboutPage: staticPages.about,
+    });
+
+    const siteSettings = await upsertSiteSettings({
+      logo: media.main.staklena,
+      socialImage: media.main.carmen,
+    });
 
     const customers = {
       milica: await upsertCustomer({

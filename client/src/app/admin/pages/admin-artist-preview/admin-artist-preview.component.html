@@ -1,0 +1,25 @@
+<article class="preview-page">
+  <header class="preview-admin">
+    <div>
+      <strong>Admin pregled sacuvane verzije</strong>
+      <span>Pregled ne menja status objave profila.</span>
+    </div>
+    <a [routerLink]="['/admin/artists', item()?.['id'], 'edit']">Nazad na uredjivanje</a>
+  </header>
+  <p *ngIf="loading()">Ucitavanje...</p>
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+  <ng-container *ngIf="item() as artist">
+    <img class="portrait" *ngIf="image(artist['image'])" [src]="image(artist['image'])" [alt]="$any(artist['displayName'])" />
+    <p class="eyebrow">{{ artist['professions'] }}</p>
+    <h1>{{ artist['displayName'] }}</h1>
+    <section [innerHTML]="artist['biography']"></section>
+    <section>
+      <h2>Galerija</h2>
+      <div class="gallery"><img *ngFor="let entry of array('galleryItems')" [src]="image(entry['media'])" /></div>
+    </section>
+    <section>
+      <h2>Povezane predstave</h2>
+      <p *ngFor="let production of array('relatedProductions')">{{ production['title'] }}</p>
+    </section>
+  </ng-container>
+</article>

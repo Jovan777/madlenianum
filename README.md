@@ -105,6 +105,51 @@ Video upload is not supported. The default limit is 10 MB per file and can be ch
 
 Deletion is blocked when a Media record is referenced by a production, artist, news article, promo slide, static page, or venue. Unused managed files are deleted from both MongoDB and local storage.
 
+## Content CMS
+
+The authenticated admin CMS manages Productions, Artists, News, structured About and Contact pages, homepage editorial selection, global Site Settings, Promo Slides, and the existing Media Library. Production remains editorial content; Events remain dated performances with ticketing configuration.
+
+Main Angular admin routes:
+
+- `/admin/productions`, `/admin/productions/new`, `/admin/productions/:id/edit`, `/admin/productions/:id/preview`
+- `/admin/artists`, `/admin/artists/new`, `/admin/artists/:id/edit`, `/admin/artists/:id/preview`
+- `/admin/news`, `/admin/news/new`, `/admin/news/:id/edit`, `/admin/news/:id/preview`
+- `/admin/pages`, `/admin/pages/about`, `/admin/pages/about/preview`, `/admin/pages/contact`, `/admin/pages/contact/preview`
+- `/admin/homepage`, `/admin/homepage/preview`, `/admin/site-settings`
+- `/admin/promo-slides`, `/admin/promo-slides/new`, `/admin/promo-slides/:id/edit`, `/admin/promo-slides/:id/preview`, `/admin/media`
+
+New editorial content starts as `draft`. Normal public APIs return only `published` records whose `publishedAt` is empty or not in the future. `archived` records remain available to administrators but are removed from public responses. Preview endpoints are below `/api/admin` and require an admin bearer token; they return the last saved version with `noindex,nofollow` metadata. Preview does not publish unsaved browser changes.
+
+Production, Artist, News, StaticPage, and PromoSlide use consistent status, SEO, publishing, and optional audit fields. Slugs are generated when omitted, remain manually editable, and are unique. Changing a published slug can break existing links because redirects are not part of this phase.
+
+Rich editorial HTML is sanitized by `sanitize-html` on the backend with an explicit allowlist for paragraphs, headings, emphasis, lists, blockquotes, links, and line breaks. Scripts, event handlers, arbitrary iframes, and unsupported markup are removed. Production video entries accept YouTube, Vimeo, or explicitly labelled external HTTP/HTTPS links; no video files or pasted embed HTML are accepted.
+
+Structured galleries use Media Library references plus caption, credit, alt text, and `displayOrder`. Legacy `gallery` arrays remain readable during transition. New editors write `galleryItems`, and used Media remains protected from deletion across structured sections, video thumbnails, announcement images, homepage configuration, and Site Settings.
+
+About and Contact are controlled `StaticPage` types. `HomepageConfig` and `SiteSettings` are singleton documents with the immutable key `default`; their services create the default document only when it is missing, while the content seed upserts that same key. Do not create these records directly from application code.
+
+Prefer Archive over Delete for editorial records. Production deletion is blocked by Events or recommendations, Artist deletion is blocked by cast or creative-team usage, structured About/Contact pages cannot be deleted, and referenced Media cannot be deleted. Conflict responses use HTTP `409` and include usage details where available.
+
+## Structured content migration
+
+Databases created before the structured CMS can migrate legacy galleries, videos, and production credits with:
+
+```powershell
+cd C:\Zepter\Madlenianum\server
+npm run migrate:structured-content
+```
+
+The migration is idempotent and skips already migrated fields. It is optional for existing databases and intentionally not part of the mandatory fresh-install seed sequence. Keep legacy gallery/video fields until all environments have been migrated and downstream clients no longer consume them.
+
+Authenticated CMS API smoke checks can be run while the backend is running:
+
+```powershell
+cd C:\Zepter\Madlenianum\server
+npm run test:cms
+```
+
+The script creates uniquely named temporary records, checks draft/public visibility, sanitization, validation, preview protection, publishing, archiving, scheduled News, singleton identity, and deletion conflicts, then removes its temporary records.
+
 ## Build and verification
 
 ```powershell

@@ -1,0 +1,8 @@
+.rich-editor { display: grid; gap: .55rem; }
+label { font-weight: 800; color: var(--text-on-light, #171512); }
+.toolbar { display: flex; flex-wrap: wrap; gap: .35rem; padding: .45rem; border: 1px solid #c9c3b8; background: #f4f1ea; }
+.toolbar button { min-width: 2.5rem; min-height: 2.25rem; border: 1px solid #aaa397; background: #fff; color: #171512; cursor: pointer; }
+.toolbar button:focus-visible, .editor:focus-visible { outline: 3px solid #8d6815; outline-offset: 2px; }
+.editor { min-height: 13rem; padding: .9rem; border: 1px solid #aaa397; background: #fff; color: #171512; line-height: 1.65; overflow-wrap: anywhere; }
+.editor.disabled { background: #ece9e2; cursor: not-allowed; }
+small { color: #514b42; }

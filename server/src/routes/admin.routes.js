@@ -21,6 +21,8 @@ const seatRoutes = require("./seat.routes");
 const adminCustomerRoutes = require("./adminCustomer.routes");
 const adminOrderRoutes = require("./adminOrder.routes");
 const adminFormOptionsRoutes = require("./adminFormOptions.routes");
+const homepageConfigRoutes = require("./homepageConfig.routes");
+const siteSettingsRoutes = require("./siteSettings.routes");
 const { protectAdmin } = require("../middleware/auth.middleware");
 
 const router = express.Router();
@@ -48,5 +50,7 @@ router.use("/price-plans", pricePlanRoutes);
 router.use("/seat-maps", seatMapRoutes);
 router.use("/seats", seatRoutes);
 router.use("/form-options", adminFormOptionsRoutes);
+router.use("/homepage-config", homepageConfigRoutes);
+router.use("/site-settings", siteSettingsRoutes);
 
 module.exports = router;
