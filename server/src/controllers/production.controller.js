@@ -12,6 +12,68 @@ const {
   sendList,
 } = require("../services/cms.service");
 
+const cleanText = (value) => (value === undefined || value === null ? "" : String(value).trim());
+
+const cleanRef = (value) => {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "object") {
+    if (value._id) return String(value._id);
+    if (value.id) return String(value.id);
+    return value;
+  }
+  const text = String(value).trim();
+  return text || undefined;
+};
+
+const hasLegacyPeople = (item) =>
+  (Array.isArray(item.artists) && item.artists.length > 0) ||
+  (Array.isArray(item.names) && item.names.some((name) => cleanText(name)));
+
+const normalizePeoplePayload = (body = {}) => {
+  const payload = { ...body };
+
+  if (Array.isArray(payload.creativeTeam)) {
+    payload.creativeTeam = payload.creativeTeam
+      .map((raw, index) => {
+        const source = raw && typeof raw === "object" ? raw : {};
+        const artist = cleanRef(source.artist);
+        const item = {
+          ...source,
+          roleKey: cleanText(source.roleKey) || "other",
+          label: cleanText(source.label || source.role),
+          name: cleanText(source.name),
+          note: cleanText(source.note),
+          displayOrder: Number.isFinite(Number(source.displayOrder)) ? Number(source.displayOrder) : index,
+        };
+        if (artist) item.artist = artist;
+        else delete item.artist;
+        return item;
+      })
+      .filter((item) => item.label && (item.artist || item.name));
+  }
+
+  if (Array.isArray(payload.cast)) {
+    payload.cast = payload.cast
+      .map((raw, index) => {
+        const source = raw && typeof raw === "object" ? raw : {};
+        const artist = cleanRef(source.artist);
+        const item = {
+          ...source,
+          name: cleanText(source.name),
+          role: cleanText(source.role || source.character),
+          note: cleanText(source.note),
+          displayOrder: Number.isFinite(Number(source.displayOrder)) ? Number(source.displayOrder) : index,
+        };
+        if (artist) item.artist = artist;
+        else delete item.artist;
+        return item;
+      })
+      .filter((item) => item.artist || item.name || hasLegacyPeople(item));
+  }
+
+  return payload;
+};
+
 const getProductions = asyncHandler(async (req, res) => {
   const { page, limit, skip } = paginationFrom(req.query);
   const filter = {};
@@ -56,7 +118,7 @@ const previewProduction = asyncHandler(async (req, res) => {
 });
 
 const createProduction = asyncHandler(async (req, res) => {
-  const production = new Production(req.body);
+  const production = new Production(normalizePeoplePayload(req.body));
   applyAudit(production, req.admin, { isNew: true });
   applyPublishing(production);
   await production.save();
@@ -69,7 +131,7 @@ const updateProduction = asyncHandler(async (req, res) => {
   if (!production) throw createHttpError(404, "Predstava nije pronadjena.");
 
   const previousStatus = production.status;
-  Object.assign(production, req.body);
+  Object.assign(production, normalizePeoplePayload(req.body));
   applyAudit(production, req.admin);
   applyPublishing(production, previousStatus);
   await production.save();
