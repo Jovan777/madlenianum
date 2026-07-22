@@ -81,11 +81,11 @@ export class PublicDisplayService {
     const saleEndsAt = event.saleEndsAt ? new Date(event.saleEndsAt).getTime() : 0;
     if (event.status === 'cancelled') return { state: 'cancelled', canPurchase: false, label: 'Otkazano' };
     if (event.status === 'postponed') return { state: 'postponed', canPurchase: false, label: 'Odloženo' };
-    if (event.status === 'finished' || (startsAt > 0 && startsAt <= now)) return { state: 'finished', canPurchase: false, label: 'Događaj je završen' };
+    if (['completed', 'finished', 'archived'].includes(event.status || '') || (startsAt > 0 && startsAt <= now)) return { state: 'finished', canPurchase: false, label: 'Događaj je završen' };
     if (event.saleStatus === 'sold_out') return { state: 'sold_out', canPurchase: false, label: 'Rasprodato' };
-    if (event.saleStatus === 'sales_closed' || (saleEndsAt > 0 && saleEndsAt <= now)) return { state: 'closed', canPurchase: false, label: 'Prodaja završena' };
+    if (['closed', 'sales_closed'].includes(event.saleStatus || '') || (saleEndsAt > 0 && saleEndsAt <= now)) return { state: 'closed', canPurchase: false, label: 'Prodaja završena' };
     if (event.saleStatus === 'free') return { state: 'free', canPurchase: false, label: 'Slobodan ulaz' };
-    if (event.saleStatus === 'not_on_sale' || (saleStartsAt > now)) return { state: 'upcoming', canPurchase: false, label: 'Prodaja uskoro' };
+    if (['not_started', 'not_on_sale'].includes(event.saleStatus || '') || (saleStartsAt > now)) return { state: 'upcoming', canPurchase: false, label: 'Prodaja uskoro' };
     const canPurchase = event.saleStatus === 'on_sale'
       && event.ticketing?.enabled === true
       && event.ticketing?.provider === 'internal'

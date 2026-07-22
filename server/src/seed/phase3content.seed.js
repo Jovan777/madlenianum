@@ -288,11 +288,19 @@ const getRequiredBaseData = async () => {
     name: "Drama - Velika scena - regular",
   }).populate("rules.priceCategory");
 
-  const balletRegularPlan = await PricePlan.findOne({
+  const dramaPremierePlan = await PricePlan.findOne({
+    name: "Drama - Velika scena - premijera",
+  }).populate("rules.priceCategory");
+
+  const operaRegularPlan = await PricePlan.findOne({
     name: "Opera, opereta i balet - Velika scena - regular",
   }).populate("rules.priceCategory");
 
-  if (!dramaRegularPlan || !balletRegularPlan) {
+  const musicalRegularPlan = await PricePlan.findOne({
+    name: "Mjuzikl - Velika scena - regular",
+  }).populate("rules.priceCategory");
+
+  if (!dramaRegularPlan || !dramaPremierePlan || !operaRegularPlan || !musicalRegularPlan) {
     throw new Error("Required price plans were not found. Run npm run seed:phase2a first.");
   }
 
@@ -300,7 +308,9 @@ const getRequiredBaseData = async () => {
     venue,
     seatMap,
     dramaRegularPlan,
-    balletRegularPlan,
+    dramaPremierePlan,
+    operaRegularPlan,
+    musicalRegularPlan,
   };
 };
 
@@ -866,7 +876,9 @@ const seedPhase3Content = async () => {
       venue,
       seatMap,
       dramaRegularPlan,
-      balletRegularPlan,
+      dramaPremierePlan,
+      operaRegularPlan,
+      musicalRegularPlan,
     } = await getRequiredBaseData();
 
     const media = {
@@ -1360,7 +1372,7 @@ const seedPhase3Content = async () => {
         production: gospodin,
         venue,
         seatMap,
-        pricePlan: dramaRegularPlan,
+        pricePlan: dramaPremierePlan,
         startsAt: schedule.gospodin.startsAt,
         endsAt: schedule.gospodin.endsAt,
         badge: "Premijera",
@@ -1371,7 +1383,7 @@ const seedPhase3Content = async () => {
         production: pariski,
         venue,
         seatMap,
-        pricePlan: balletRegularPlan,
+        pricePlan: operaRegularPlan,
         startsAt: schedule.pariski.startsAt,
         endsAt: schedule.pariski.endsAt,
         badge: eventBadge(schedule.pariski.startsAt),
@@ -1382,7 +1394,7 @@ const seedPhase3Content = async () => {
         production: company,
         venue,
         seatMap,
-        pricePlan: balletRegularPlan,
+        pricePlan: musicalRegularPlan,
         startsAt: schedule.company.startsAt,
         endsAt: schedule.company.endsAt,
         badge: eventBadge(schedule.company.startsAt),
@@ -1397,7 +1409,7 @@ const seedPhase3Content = async () => {
         endsAt: schedule.novaLjubav.endsAt,
         badge: eventBadge(schedule.novaLjubav.startsAt),
         notes: "Seeded event for Nova ljubav.",
-        saleStatus: "not_on_sale",
+        saleStatus: "not_started",
       }),
       staklena: await upsertEvent({
         production: staklena,
@@ -1423,7 +1435,7 @@ const seedPhase3Content = async () => {
         production: carmen,
         venue,
         seatMap,
-        pricePlan: balletRegularPlan,
+        pricePlan: operaRegularPlan,
         startsAt: schedule.carmen.startsAt,
         endsAt: schedule.carmen.endsAt,
         badge: eventBadge(schedule.carmen.startsAt),
@@ -1477,11 +1489,11 @@ const seedPhase3Content = async () => {
         production: pariski,
         venue,
         seatMap,
-        pricePlan: balletRegularPlan,
+        pricePlan: operaRegularPlan,
         ...archiveSchedule.pariski,
         notes: "[seed:phase3content:archive] Pariski zivot.",
-        saleStatus: "sales_closed",
-        status: "finished",
+        saleStatus: "closed",
+        status: "completed",
         ticketingEnabled: false,
       }),
       upsertEvent({
@@ -1491,8 +1503,8 @@ const seedPhase3Content = async () => {
         pricePlan: dramaRegularPlan,
         ...archiveSchedule.gospodin,
         notes: "[seed:phase3content:archive] Gospodin u cizmama od dima.",
-        saleStatus: "sales_closed",
-        status: "finished",
+        saleStatus: "closed",
+        status: "completed",
         ticketingEnabled: false,
       }),
       upsertEvent({
@@ -1502,19 +1514,19 @@ const seedPhase3Content = async () => {
         pricePlan: dramaRegularPlan,
         ...archiveSchedule.novaLjubav,
         notes: "[seed:phase3content:archive] Nova ljubav.",
-        saleStatus: "sales_closed",
-        status: "finished",
+        saleStatus: "closed",
+        status: "completed",
         ticketingEnabled: false,
       }),
       upsertEvent({
         production: company,
         venue,
         seatMap,
-        pricePlan: balletRegularPlan,
+        pricePlan: musicalRegularPlan,
         ...archiveSchedule.company,
         notes: "[seed:phase3content:archive] Company.",
-        saleStatus: "sales_closed",
-        status: "finished",
+        saleStatus: "closed",
+        status: "completed",
         ticketingEnabled: false,
       }),
       upsertEvent({
@@ -1524,8 +1536,8 @@ const seedPhase3Content = async () => {
         pricePlan: dramaRegularPlan,
         ...archiveSchedule.staklena,
         notes: "[seed:phase3content:archive] Staklena menazerija.",
-        saleStatus: "sales_closed",
-        status: "finished",
+        saleStatus: "closed",
+        status: "completed",
         ticketingEnabled: false,
       }),
     ]);

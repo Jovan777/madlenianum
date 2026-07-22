@@ -183,10 +183,25 @@ textarea:focus {
 
 .error,
 .success,
-.loading {
+.loading,
+.validation-summary {
   margin: 0;
   padding: 1rem;
   border-radius: 18px;
+}
+
+.validation-summary {
+  background: #fff3cd;
+  color: #4f3800;
+}
+
+.validation-summary ul {
+  margin-bottom: 0;
+}
+
+.field-error {
+  color: #8d1515;
+  font-weight: 700;
 }
 
 .error {

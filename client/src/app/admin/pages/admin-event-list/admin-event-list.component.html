@@ -1,0 +1,74 @@
+<section class="event-list-page">
+  <header class="list-hero">
+    <div>
+      <span>{{ total() }} termina</span>
+      <h1>Repertoar / termini</h1>
+      <p>Operativni pregled konkretnih izvođenja, prodaje i ticketing konfiguracije.</p>
+    </div>
+    <a routerLink="/admin/events/new">Novi termin</a>
+  </header>
+
+  <form class="filters" (ngSubmit)="load(true)">
+    <label>Predstava<input [(ngModel)]="q" name="q" placeholder="Pretraga po naslovu" /></label>
+    <label>Period
+      <select [(ngModel)]="timeScope" name="timeScope">
+        <option value="future">Budući</option><option value="past">Prošli</option><option value="all">Svi</option>
+      </select>
+    </label>
+    <label>Od<input type="date" [(ngModel)]="from" name="from" /></label>
+    <label>Do<input type="date" [(ngModel)]="to" name="to" /></label>
+    <label>Scena
+      <select [(ngModel)]="venue" name="venue"><option value="">Sve scene</option><option *ngFor="let item of venues()" [value]="item._id">{{ item.name }}</option></select>
+    </label>
+    <label>Status
+      <select [(ngModel)]="status" name="status"><option value="">Svi statusi</option><option *ngFor="let item of eventStatuses" [value]="item.value">{{ item.label }}</option></select>
+    </label>
+    <label>Prodaja
+      <select [(ngModel)]="saleStatus" name="saleStatus"><option value="">Svi statusi</option><option *ngFor="let item of saleStatuses" [value]="item.value">{{ item.label }}</option></select>
+    </label>
+    <label>Provider
+      <select [(ngModel)]="provider" name="provider"><option value="">Svi provideri</option><option *ngFor="let item of providers" [value]="item.value">{{ item.label }}</option></select>
+    </label>
+    <label>Redosled
+      <select [(ngModel)]="sort" name="sort"><option value="startsAt">Najraniji prvo</option><option value="-startsAt">Najkasniji prvo</option><option value="-updatedAt">Skoro izmenjeni</option></select>
+    </label>
+    <button type="submit">Primeni</button>
+  </form>
+
+  <p class="state error" *ngIf="error()">{{ error() }} <button type="button" (click)="load()">Pokušaj ponovo</button></p>
+  <p class="state" *ngIf="loading()">Učitavanje termina...</p>
+  <p class="state" *ngIf="!loading() && !error() && !items().length">Nema termina za izabrane filtere.</p>
+
+  <div class="event-list" *ngIf="!loading() && items().length">
+    <article *ngFor="let item of items()">
+      <time [attr.datetime]="item.startsAt">
+        <strong>{{ item.startsAt | date:'dd.MM.yyyy' }}</strong>
+        <span>{{ item.startsAt | date:'HH:mm' }}</span>
+      </time>
+      <div class="event-main">
+        <div class="badges">
+          <span class="badge">{{ statusLabel(item.status) }}</span>
+          <span class="badge sale">{{ saleLabel(item.saleStatus) }}</span>
+          <span class="warning" *ngIf="item.configurationWarnings?.length">{{ item.configurationWarnings?.length }} upozorenja</span>
+        </div>
+        <h2>{{ productionTitle(item) }}</h2>
+        <p>{{ item.venue?.name || 'Scena nije izabrana' }} · {{ providerLabel(item.ticketing?.provider) }}</p>
+        <small *ngIf="item.configurationWarnings?.length">{{ item.configurationWarnings?.[0]?.message }}</small>
+      </div>
+      <div class="actions">
+        <a [routerLink]="['/admin/events', item._id]">Otvori</a>
+        <a [routerLink]="['/admin/events', item._id, 'edit']">Uredi</a>
+        <button type="button" (click)="duplicate(item)">Dupliraj</button>
+        <button type="button" (click)="action(item, 'close-sale')" [disabled]="item.saleStatus === 'closed'">Zatvori prodaju</button>
+        <button type="button" class="danger" (click)="action(item, 'cancel')" [disabled]="item.status === 'cancelled'">Otkaži</button>
+        <button type="button" (click)="action(item, 'archive')" [disabled]="item.status === 'archived'">Arhiviraj</button>
+      </div>
+    </article>
+  </div>
+
+  <footer class="pagination" *ngIf="totalPages() > 1">
+    <button type="button" (click)="pageBy(-1)" [disabled]="page === 1">Prethodna</button>
+    <span>Strana {{ page }} od {{ totalPages() }}</span>
+    <button type="button" (click)="pageBy(1)" [disabled]="page === totalPages()">Sledeća</button>
+  </footer>
+</section>

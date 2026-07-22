@@ -1,0 +1,35 @@
+:host { display: block; }
+.plan-list-page { display: grid; gap: 1rem; color: #171512; }
+.list-hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1.25rem; background: #f8f5ee; border: 1px solid #d4cec1; }
+.list-hero h1, .list-hero p { margin: .2rem 0; }
+.list-hero span, .list-hero p { color: #514b42; }
+.list-hero > a { padding: .75rem .9rem; background: #e5c86b; color: #171512; text-decoration: none; font-weight: 800; }
+.filters { display: grid; grid-template-columns: 2fr repeat(5, minmax(8rem, 1fr)) auto; gap: .65rem; padding: .85rem; background: #f8f5ee; border: 1px solid #d4cec1; }
+.filters label { display: grid; gap: .3rem; font-weight: 700; }
+.filters input, .filters select { min-width: 0; padding: .65rem; border: 1px solid #aaa397; background: #fff; color: #171512; }
+.filters button { align-self: end; padding: .7rem; background: #171512; color: #fff; border: 1px solid #171512; }
+.state { padding: 1rem; background: #f8f5ee; }
+.error { color: #721c24; }
+.plan-list { display: grid; gap: .65rem; }
+.plan-list article { display: grid; grid-template-columns: minmax(18rem, 1fr) auto; gap: 1rem; align-items: center; padding: 1rem; background: #fff; border: 1px solid #d4cec1; }
+.plan-main h2, .plan-main p { margin: .3rem 0; }
+.plan-main p, .plan-main small { color: #514b42; }
+.badges, .actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+.badges span { padding: .25rem .45rem; background: #e8e1d4; font-weight: 800; }
+.badges .warning { background: #fff0c2; color: #5b3b00; }
+.actions { justify-content: flex-end; }
+.actions a, .actions button { padding: .55rem .65rem; border: 1px solid #5d574e; background: #f4f1ea; color: #171512; text-decoration: none; }
+.actions button:disabled { opacity: .55; cursor: not-allowed; }
+.actions .danger { color: #8f172d; border-color: #8f172d; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; color: #fff; }
+
+@media (max-width: 1050px) {
+  .filters { grid-template-columns: repeat(3, 1fr); }
+  .plan-list article { grid-template-columns: 1fr; }
+  .actions { justify-content: flex-start; }
+}
+
+@media (max-width: 650px) {
+  .list-hero { flex-direction: column; }
+  .filters { grid-template-columns: 1fr; }
+}

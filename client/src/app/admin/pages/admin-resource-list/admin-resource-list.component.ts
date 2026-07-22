@@ -43,7 +43,7 @@ export class AdminResourceListComponent implements OnInit {
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    this.api.getList<Record<string, unknown>>(config.resource, config.query || '').subscribe({
+    this.api.getList<Record<string, unknown>>(config.resource, this.requestQuery()).subscribe({
       next: (response) => {
         this.items.set(response.items || []);
         this.total.set(response.pagination?.total ?? response.items?.length ?? 0);
@@ -192,5 +192,26 @@ export class AdminResourceListComponent implements OnInit {
     }
 
     return ['/admin', this.pageKey(), 'new'];
+  }
+
+  canDeleteItem(item: Record<string, unknown>): boolean {
+    if (!this.config().canDelete) return false;
+    if (this.pageKey() !== 'price-categories') return true;
+    return !Boolean(this.getValue(item, 'usage.hasUsage'));
+  }
+
+  isProtectedCategory(item: Record<string, unknown>): boolean {
+    return this.pageKey() === 'price-categories' && Boolean(this.getValue(item, 'usage.hasUsage'));
+  }
+
+  private requestQuery(): string {
+    const configured = this.config().query || '';
+    if (this.pageKey() !== 'orders') return configured;
+    const params = new URLSearchParams(configured);
+    ['q', 'status', 'paymentStatus', 'event', 'customer'].forEach((key) => {
+      const value = this.route.snapshot.queryParamMap.get(key);
+      if (value) params.set(key, value);
+    });
+    return params.toString();
   }
 }

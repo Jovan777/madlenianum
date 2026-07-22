@@ -1,546 +1,345 @@
 const asyncHandler = require("../utils/asyncHandler");
 
 const Event = require("../models/Event");
-const Production = require("../models/Production");
-const Venue = require("../models/Venue");
-const SeatMap = require("../models/SeatMap");
-const PricePlan = require("../models/PricePlan");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
+const Seat = require("../models/Seat");
 const SeatLock = require("../models/SeatLock");
-
-const EVENT_STATUSES = ["draft", "scheduled", "cancelled", "postponed", "finished"];
-
-const SALE_STATUSES = [
-  "not_on_sale",
-  "on_sale",
-  "sold_out",
-  "sales_closed",
-  "free",
-];
-
-const TICKETING_PROVIDERS = ["internal", "legacy_php", "external", "manual"];
+const {
+  conflictError,
+  eventDangerousChanges,
+  getEventUsage,
+  normalizeEventPayload,
+  validateEventConfiguration,
+  validationError,
+} = require("../services/ticketingConfiguration.service");
+const { normalizeEventStatus, normalizeSaleStatus } = require("../constants/ticketing.constants");
 
 const populateEvent = [
-  {
-    path: "production",
-    populate: [{ path: "poster" }],
-  },
+  { path: "production", populate: [{ path: "poster" }] },
   { path: "venue" },
   { path: "seatMap" },
   {
     path: "pricePlan",
-    populate: [{ path: "rules.priceCategory" }],
+    populate: [{ path: "rules.priceCategory" }, { path: "parentPlan" }],
   },
 ];
 
-const parseBoolean = (value) => {
-  if (value === undefined || value === null || value === "") {
-    return undefined;
-  }
-
-  return value === true || value === "true";
-};
-
 const parseDate = (value) => {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsedDate = new Date(value);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return null;
-  }
-
-  return parsedDate;
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const buildEventFilter = (query) => {
+const canonicalEvent = (event, warnings = []) => {
+  const item = event?.toObject ? event.toObject() : { ...event };
+  item.status = normalizeEventStatus(item.status);
+  item.saleStatus = normalizeSaleStatus(item.saleStatus);
+  item.configurationWarnings = warnings;
+  return item;
+};
+
+const buildEventFilter = async (query) => {
   const filter = {};
-
-  if (query.production) {
-    filter.production = query.production;
+  if (query.production) filter.production = query.production;
+  if (query.venue) filter.venue = query.venue;
+  if (query.status) filter.status = query.status;
+  if (query.saleStatus) filter.saleStatus = query.saleStatus;
+  if (query.ticketingProvider) filter["ticketing.provider"] = query.ticketingProvider;
+  if (query.isPremiere !== undefined && query.isPremiere !== "") {
+    filter.isPremiere = query.isPremiere === "true";
   }
 
-  if (query.venue) {
-    filter.venue = query.venue;
-  }
-
-  if (query.status) {
-    filter.status = query.status;
-  }
-
-  if (query.saleStatus) {
-    filter.saleStatus = query.saleStatus;
-  }
-
-  if (query.ticketingProvider) {
-    filter["ticketing.provider"] = query.ticketingProvider;
-  }
-
-  const isPremiere = parseBoolean(query.isPremiere);
-
-  if (isPremiere !== undefined) {
-    filter.isPremiere = isPremiere;
-  }
-
-  const fromDate = parseDate(query.from);
-  const toDate = parseDate(query.to);
-
-  if (fromDate || toDate) {
+  const from = parseDate(query.from);
+  const to = parseDate(query.to);
+  const timeScope = query.timeScope || (!from && !to ? "future" : "all");
+  if (from || to || ["future", "past"].includes(timeScope)) {
     filter.startsAt = {};
-
-    if (fromDate) {
-      filter.startsAt.$gte = fromDate;
-    }
-
-    if (toDate) {
-      filter.startsAt.$lte = toDate;
-    }
+    if (from) filter.startsAt.$gte = from;
+    if (to) filter.startsAt.$lte = to;
+    if (!from && timeScope === "future") filter.startsAt.$gte = new Date();
+    if (!to && timeScope === "past") filter.startsAt.$lt = new Date();
   }
 
+  if (query.q) {
+    const escaped = String(query.q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const Production = require("../models/Production");
+    const productionIds = await Production.find({ title: new RegExp(escaped, "i") }).distinct("_id");
+    filter.production = filter.production
+      ? { $in: productionIds.filter((id) => String(id) === String(query.production)) }
+      : { $in: productionIds };
+  }
   return filter;
 };
 
-const validateEventPayload = async (payload, existingEvent = null) => {
-  const errors = [];
-
-  const productionId = payload.production !== undefined ? payload.production : existingEvent?.production;
-  const venueId = payload.venue !== undefined ? payload.venue : existingEvent?.venue;
-  const seatMapId = payload.seatMap !== undefined ? payload.seatMap : existingEvent?.seatMap;
-  const pricePlanId = payload.pricePlan !== undefined ? payload.pricePlan : existingEvent?.pricePlan;
-
-  if (!productionId) {
-    errors.push("Production is required.");
-  }
-
-  if (!venueId) {
-    errors.push("Venue is required.");
-  }
-
-  if (!payload.startsAt && !existingEvent?.startsAt) {
-    errors.push("Start date and time are required.");
-  }
-
-  if (payload.status && !EVENT_STATUSES.includes(payload.status)) {
-    errors.push("Invalid event status.");
-  }
-
-  if (payload.saleStatus && !SALE_STATUSES.includes(payload.saleStatus)) {
-    errors.push("Invalid sale status.");
-  }
-
-  if (payload.ticketing?.provider && !TICKETING_PROVIDERS.includes(payload.ticketing.provider)) {
-    errors.push("Invalid ticketing provider.");
-  }
-
-  const startsAt = parseDate(payload.startsAt);
-
-  if (payload.startsAt && startsAt === null) {
-    errors.push("Invalid startsAt date.");
-  }
-
-  const endsAt = parseDate(payload.endsAt);
-
-  if (payload.endsAt && endsAt === null) {
-    errors.push("Invalid endsAt date.");
-  }
-
-  if (startsAt && endsAt && endsAt <= startsAt) {
-    errors.push("endsAt must be after startsAt.");
-  }
-
-  const saleStartsAt = parseDate(payload.saleStartsAt);
-
-  if (payload.saleStartsAt && saleStartsAt === null) {
-    errors.push("Invalid saleStartsAt date.");
-  }
-
-  const saleEndsAt = parseDate(payload.saleEndsAt);
-
-  if (payload.saleEndsAt && saleEndsAt === null) {
-    errors.push("Invalid saleEndsAt date.");
-  }
-
-  if (saleStartsAt && saleEndsAt && saleEndsAt <= saleStartsAt) {
-    errors.push("saleEndsAt must be after saleStartsAt.");
-  }
-
-  const effectiveStartsAt = payload.startsAt !== undefined ? startsAt : existingEvent?.startsAt;
-  const effectiveSaleEndsAt = payload.saleEndsAt !== undefined ? saleEndsAt : existingEvent?.saleEndsAt;
-
-  if (effectiveStartsAt && effectiveSaleEndsAt && effectiveSaleEndsAt >= effectiveStartsAt) {
-    errors.push("saleEndsAt must be before startsAt.");
-  }
-
-  if (payload.maxTicketsPerOrder !== undefined) {
-    const value = Number(payload.maxTicketsPerOrder);
-
-    if (!Number.isInteger(value) || value < 1 || value > 20) {
-      errors.push("maxTicketsPerOrder must be between 1 and 20.");
-    }
-  }
-
-  if (payload.lockDurationMinutes !== undefined) {
-    const value = Number(payload.lockDurationMinutes);
-
-    if (!Number.isInteger(value) || value < 1 || value > 60) {
-      errors.push("lockDurationMinutes must be between 1 and 60.");
-    }
-  }
-
-  if (productionId) {
-    const productionExists = await Production.exists({ _id: productionId });
-
-    if (!productionExists) {
-      errors.push("Selected production does not exist.");
-    }
-  }
-
-  if (venueId) {
-    const venueExists = await Venue.exists({ _id: venueId });
-
-    if (!venueExists) {
-      errors.push("Selected venue does not exist.");
-    }
-  }
-
-  if (seatMapId) {
-    const seatMap = await SeatMap.findById(seatMapId);
-
-    if (!seatMap) {
-      errors.push("Selected seat map does not exist.");
-    } else if (venueId && String(seatMap.venue) !== String(venueId)) {
-      errors.push("Selected seat map does not belong to the selected venue.");
-    }
-  }
-
-  if (pricePlanId) {
-    const pricePlan = await PricePlan.findById(pricePlanId);
-
-    if (!pricePlan) {
-      errors.push("Selected price plan does not exist.");
-    } else if (venueId && pricePlan.venue && String(pricePlan.venue) !== String(venueId)) {
-      errors.push("Selected price plan does not belong to the selected venue.");
-    }
-  }
-
-  const ticketingEnabled = payload.ticketing?.enabled !== undefined
-    ? Boolean(payload.ticketing.enabled)
-    : Boolean(existingEvent?.ticketing?.enabled);
-
-  if (ticketingEnabled) {
-    const provider = payload.ticketing?.provider || existingEvent?.ticketing?.provider || "manual";
-
-    if (provider === "internal") {
-      if (!seatMapId) {
-        errors.push("Internal ticketing requires a seat map.");
-      }
-
-      if (!pricePlanId) {
-        errors.push("Internal ticketing requires a price plan.");
-      }
-    }
-
-    if (provider === "legacy_php" || provider === "external") {
-      const externalCheckoutUrl =
-        payload.ticketing.externalCheckoutUrl ??
-        existingEvent?.ticketing?.externalCheckoutUrl;
-
-      if (!externalCheckoutUrl) {
-        errors.push("External or legacy PHP ticketing requires externalCheckoutUrl.");
-      }
-    }
-  }
-
-  return errors;
-};
-
-const normalizeEventPayload = (payload) => {
-  const normalized = {};
-
-  const directFields = [
-    "production",
-    "venue",
-    "startsAt",
-    "endsAt",
-    "isPremiere",
-    "badge",
-    "status",
-    "saleStatus",
-    "seatMap",
-    "pricePlan",
-    "saleStartsAt",
-    "saleEndsAt",
-    "maxTicketsPerOrder",
-    "lockDurationMinutes",
-    "basePrice",
-    "notes",
-  ];
-
-  directFields.forEach((field) => {
-    if (payload[field] !== undefined) {
-      normalized[field] = payload[field];
-    }
-  });
-
-  if (payload.startsAt) {
-    normalized.startsAt = new Date(payload.startsAt);
-  }
-
-  if (payload.endsAt) {
-    normalized.endsAt = new Date(payload.endsAt);
-  }
-
-  if (payload.saleStartsAt) {
-    normalized.saleStartsAt = new Date(payload.saleStartsAt);
-  }
-
-  if (payload.saleEndsAt) {
-    normalized.saleEndsAt = new Date(payload.saleEndsAt);
-  }
-
-  if (payload.maxTicketsPerOrder !== undefined) {
-    normalized.maxTicketsPerOrder = Number(payload.maxTicketsPerOrder);
-  }
-
-  if (payload.lockDurationMinutes !== undefined) {
-    normalized.lockDurationMinutes = Number(payload.lockDurationMinutes);
-  }
-
-  if (payload.ticketing !== undefined) {
-    normalized.ticketing = {
-      enabled: Boolean(payload.ticketing.enabled),
-      provider: payload.ticketing.provider || "manual",
-      legacyEventId: payload.ticketing.legacyEventId || "",
-      externalCheckoutUrl: payload.ticketing.externalCheckoutUrl || "",
-      note: payload.ticketing.note || "",
-    };
-  }
-
-  return normalized;
-};
+const allowedSort = new Set(["startsAt", "-startsAt", "createdAt", "-createdAt", "updatedAt", "-updatedAt"]);
 
 const getEvents = asyncHandler(async (req, res) => {
-  const filter = buildEventFilter(req.query);
-
+  const filter = await buildEventFilter(req.query);
   const page = Math.max(Number(req.query.page) || 1, 1);
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
-  const skip = (page - 1) * limit;
+  const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+  const sort = allowedSort.has(req.query.sort) ? req.query.sort : "startsAt";
 
-  let sort = "startsAt";
-
-  if (req.query.sort) {
-    sort = req.query.sort;
-  }
-
-  const [items, total] = await Promise.all([
-    Event.find(filter)
-      .populate(populateEvent)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit),
+  const [events, total] = await Promise.all([
+    Event.find(filter).populate(populateEvent).sort(sort).skip((page - 1) * limit).limit(limit),
     Event.countDocuments(filter),
   ]);
+
+  const items = await Promise.all(events.map(async (event) => {
+    const result = await validateEventConfiguration({}, { existingEvent: event });
+    return canonicalEvent(event, [...result.errors, ...result.warnings]);
+  }));
 
   res.json({
     success: true,
     items,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit),
-    },
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
   });
 });
 
 const getEventById = asyncHandler(async (req, res) => {
-  const item = await Event.findById(req.params.id).populate(populateEvent);
-
-  if (!item) {
-    res.status(404);
-    throw new Error("Event not found.");
+  const event = await Event.findById(req.params.id).populate(populateEvent);
+  if (!event) {
+    const error = new Error("Termin nije pronađen.");
+    error.statusCode = 404;
+    throw error;
   }
-
-  const [ordersCount, activeLocksCount] = await Promise.all([
-    Order.countDocuments({
-      event: item._id,
-      status: { $in: ["reserved", "paid"] },
-    }),
-    SeatLock.countDocuments({
-      event: item._id,
-      status: "active",
-      expiresAt: { $gt: new Date() },
-    }),
+  const [usage, validation] = await Promise.all([
+    getEventUsage(event._id),
+    validateEventConfiguration({}, { existingEvent: event }),
   ]);
-
   res.json({
     success: true,
-    item,
-    meta: {
-      ordersCount,
-      activeLocksCount,
-    },
+    item: canonicalEvent(event, [...validation.errors, ...validation.warnings]),
+    meta: { usage },
   });
 });
 
-const createEvent = asyncHandler(async (req, res) => {
-  const errors = await validateEventPayload(req.body);
-
-  if (errors.length > 0) {
-    res.status(400);
-    throw new Error(errors.join(" "));
+const validateRequest = async (payload, existingEvent = null) => {
+  const result = await validateEventConfiguration(payload, { existingEvent });
+  if (result.errors.length) {
+    throw validationError("Konfiguracija termina nije ispravna.", result.errors, result.warnings);
   }
+  return result;
+};
 
-  const payload = normalizeEventPayload(req.body);
-
-  const item = await Event.create(payload);
-
-  const populatedItem = await Event.findById(item._id).populate(populateEvent);
-
-  res.status(201).json({
-    success: true,
-    item: populatedItem,
-  });
+const createEvent = asyncHandler(async (req, res) => {
+  const validation = await validateRequest(req.body);
+  const event = await Event.create(normalizeEventPayload(req.body));
+  const populated = await Event.findById(event._id).populate(populateEvent);
+  res.status(201).json({ success: true, item: canonicalEvent(populated, validation.warnings), warnings: validation.warnings });
 });
 
 const updateEvent = asyncHandler(async (req, res) => {
-  const item = await Event.findById(req.params.id);
-
-  if (!item) {
-    res.status(404);
-    throw new Error("Event not found.");
+  const event = await Event.findById(req.params.id);
+  if (!event) {
+    const error = new Error("Termin nije pronađen.");
+    error.statusCode = 404;
+    throw error;
   }
 
-  const errors = await validateEventPayload(req.body, item);
-
-  if (errors.length > 0) {
-    res.status(400);
-    throw new Error(errors.join(" "));
+  const usage = await getEventUsage(event._id);
+  const dangerousFields = eventDangerousChanges(event, req.body);
+  if (usage.hasHistory && dangerousFields.length) {
+    throw conflictError("Termin ima ticketing istoriju i kritična konfiguracija ne može biti promenjena.", {
+      fields: dangerousFields,
+      usage,
+      recommendation: "Zatvorite prodaju, otkažite ili odložite termin. Za novu konfiguraciju duplirajte termin.",
+    });
   }
 
-  const payload = normalizeEventPayload(req.body);
+  const validation = await validateRequest(req.body, event);
+  Object.assign(event, normalizeEventPayload(req.body, event));
+  await event.save();
+  const populated = await Event.findById(event._id).populate(populateEvent);
+  res.json({ success: true, item: canonicalEvent(populated, validation.warnings), warnings: validation.warnings });
+});
 
-  Object.assign(item, payload);
-  await item.save();
+const validateEvent = asyncHandler(async (req, res) => {
+  const existingEvent = req.params.id ? await Event.findById(req.params.id) : null;
+  if (req.params.id && !existingEvent) {
+    const error = new Error("Termin nije pronađen.");
+    error.statusCode = 404;
+    throw error;
+  }
+  const result = await validateEventConfiguration(req.body, { existingEvent });
+  res.json({ success: true, valid: result.errors.length === 0, errors: result.errors, warnings: result.warnings });
+});
 
-  const updatedItem = await Event.findById(item._id).populate(populateEvent);
+const duplicateEvent = asyncHandler(async (req, res) => {
+  const source = await Event.findById(req.params.id);
+  if (!source) {
+    const error = new Error("Termin nije pronađen.");
+    error.statusCode = 404;
+    throw error;
+  }
 
-  res.json({
-    success: true,
-    item: updatedItem,
+  const body = req.body || {};
+  const startsAt = body.startsAt ? new Date(body.startsAt) : source.startsAt;
+  const sourceDuration = source.endsAt ? new Date(source.endsAt).getTime() - new Date(source.startsAt).getTime() : 0;
+  const endsAt = body.endsAt
+    ? new Date(body.endsAt)
+    : (sourceDuration > 0 ? new Date(new Date(startsAt).getTime() + sourceDuration) : null);
+
+  const duplicate = await Event.create({
+    production: source.production,
+    venue: source.venue,
+    startsAt,
+    endsAt,
+    isPremiere: source.isPremiere,
+    badge: source.badge,
+    status: "draft",
+    saleStatus: "not_started",
+    seatMap: source.seatMap,
+    pricePlan: source.pricePlan,
+    saleStartsAt: null,
+    saleEndsAt: null,
+    maxTicketsPerOrder: source.maxTicketsPerOrder,
+    lockDurationMinutes: source.lockDurationMinutes,
+    ticketing: {
+      enabled: false,
+      provider: source.ticketing?.provider || "manual",
+      legacyEventId: "",
+      externalCheckoutUrl: source.ticketing?.provider === "external"
+        ? source.ticketing?.externalCheckoutUrl || ""
+        : "",
+      note: source.ticketing?.note || "",
+    },
+    basePrice: source.basePrice,
+    notes: source.notes ? `${source.notes}\nDuplikat termina ${source._id}.` : `Duplikat termina ${source._id}.`,
   });
+
+  const populated = await Event.findById(duplicate._id).populate(populateEvent);
+  res.status(201).json({
+    success: true,
+    item: canonicalEvent(populated),
+    meta: { sourceEventId: String(source._id), requiresDateReview: true },
+  });
+});
+
+const applyEventAction = (action) => asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.id);
+  if (!event) {
+    const error = new Error("Termin nije pronađen.");
+    error.statusCode = 404;
+    throw error;
+  }
+  if (action === "close-sale") event.saleStatus = "closed";
+  if (action === "cancel") {
+    event.status = "cancelled";
+    event.saleStatus = "closed";
+    event.ticketing.enabled = false;
+  }
+  if (action === "archive") {
+    event.status = "archived";
+    event.saleStatus = "closed";
+    event.ticketing.enabled = false;
+  }
+  await event.save();
+  const populated = await Event.findById(event._id).populate(populateEvent);
+  res.json({ success: true, item: canonicalEvent(populated) });
 });
 
 const deleteEvent = asyncHandler(async (req, res) => {
-  const item = await Event.findById(req.params.id);
-
-  if (!item) {
-    res.status(404);
-    throw new Error("Event not found.");
+  const event = await Event.findById(req.params.id);
+  if (!event) {
+    const error = new Error("Termin nije pronađen.");
+    error.statusCode = 404;
+    throw error;
   }
-
-  const [ordersCount, orderItemsCount, activeLocksCount] = await Promise.all([
-    Order.countDocuments({ event: item._id }),
-    OrderItem.countDocuments({ event: item._id }),
-    SeatLock.countDocuments({ event: item._id, status: "active" }),
-  ]);
-
-  if (ordersCount > 0 || orderItemsCount > 0 || activeLocksCount > 0) {
-    res.status(400);
-    throw new Error(
-      "Event cannot be deleted because it has orders, order items or active seat locks. Change status instead."
-    );
+  const usage = await getEventUsage(event._id);
+  if (usage.hasHistory) {
+    throw conflictError("Termin ne može biti obrisan jer ima ticketing istoriju.", {
+      usage,
+      recommendation: "Arhivirajte, otkažite ili zatvorite prodaju umesto brisanja.",
+    });
   }
-
-  await item.deleteOne();
-
-  res.json({
-    success: true,
-    message: "Event deleted.",
-  });
+  await event.deleteOne();
+  res.json({ success: true, message: "Termin je obrisan." });
 });
 
 const getEventTicketingSummary = asyncHandler(async (req, res) => {
-  const event = await Event.findById(req.params.id)
-    .populate("production")
-    .populate("venue")
-    .populate("seatMap")
-    .populate({
-      path: "pricePlan",
-      populate: [{ path: "rules.priceCategory" }],
-    });
-
+  const event = await Event.findById(req.params.id).populate(populateEvent);
   if (!event) {
-    res.status(404);
-    throw new Error("Event not found.");
+    const error = new Error("Termin nije pronađen.");
+    error.statusCode = 404;
+    throw error;
   }
 
   const now = new Date();
-
-  const [
-    reservedOrdersCount,
-    paidOrdersCount,
-    reservedItemsCount,
-    paidItemsCount,
-    activeLocksCount,
-  ] = await Promise.all([
-    Order.countDocuments({
-      event: event._id,
-      status: "reserved",
-      $or: [
-        { expiresAt: { $exists: false } },
-        { expiresAt: null },
-        { expiresAt: { $gt: now } },
-      ],
-    }),
-    Order.countDocuments({
-      event: event._id,
-      status: "paid",
-    }),
-    OrderItem.countDocuments({
-      event: event._id,
-      status: "reserved",
-    }),
-    OrderItem.countDocuments({
-      event: event._id,
-      status: "paid",
-    }),
-    SeatLock.countDocuments({
-      event: event._id,
-      status: "active",
-      expiresAt: { $gt: now },
-    }),
+  const [seats, orders, orderItems, activeLocks, validation] = await Promise.all([
+    event.seatMap ? Seat.find({ seatMap: event.seatMap._id, isActive: true }).select("_id isSellable seatType") : [],
+    Order.find({ event: event._id }).select("_id status paymentStatus totalAmount expiresAt"),
+    OrderItem.find({ event: event._id }).select("seat order status finalPrice"),
+    SeatLock.find({ event: event._id, status: "active", expiresAt: { $gt: now } }).select("seat"),
+    validateEventConfiguration({}, { existingEvent: event }),
   ]);
+
+  const orderById = new Map(orders.map((order) => [String(order._id), order]));
+  const activeReservedOrder = (order) => order?.status === "reserved"
+    && (!order.expiresAt || new Date(order.expiresAt) > now);
+  const reservedSeatIds = new Set();
+  const paidSeatIds = new Set();
+  let cancelledOrExpiredItemsCount = 0;
+  orderItems.forEach((item) => {
+    const order = orderById.get(String(item.order));
+    if (item.status === "paid" || order?.status === "paid" || order?.paymentStatus === "paid") {
+      paidSeatIds.add(String(item.seat));
+    } else if (item.status === "reserved" && activeReservedOrder(order)) {
+      reservedSeatIds.add(String(item.seat));
+    } else if (["cancelled", "refunded"].includes(item.status) || ["cancelled", "expired", "refunded"].includes(order?.status)) {
+      cancelledOrExpiredItemsCount += 1;
+    }
+  });
+
+  const activeLockSeatIds = new Set(activeLocks.map((lock) => String(lock.seat)));
+  const occupied = new Set([...reservedSeatIds, ...paidSeatIds, ...activeLockSeatIds]);
+  const sellableSeatIds = new Set(seats
+    .filter((seat) => seat.isSellable && seat.seatType !== "unavailable")
+    .map((seat) => String(seat._id)));
+  const unavailableSeats = seats.length - sellableSeatIds.size;
+  const availableSeats = [...sellableSeatIds].filter((id) => !occupied.has(id)).length;
+  const paidOrders = orders.filter((order) => order.status === "paid" || order.paymentStatus === "paid");
+  const revenue = paidOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+  const occupancy = sellableSeatIds.size
+    ? Math.round(((reservedSeatIds.size + paidSeatIds.size) / sellableSeatIds.size) * 1000) / 10
+    : 0;
 
   res.json({
     success: true,
     item: {
-      event,
-      ticketing: event.ticketing,
-      saleStatus: event.saleStatus,
-      seatMap: event.seatMap,
-      pricePlan: event.pricePlan,
-      maxTicketsPerOrder: event.maxTicketsPerOrder,
-      lockDurationMinutes: event.lockDurationMinutes,
+      event: canonicalEvent(event),
+      warnings: [...validation.errors, ...validation.warnings],
       stats: {
-        reservedOrdersCount,
-        paidOrdersCount,
-        reservedItemsCount,
-        paidItemsCount,
-        activeLocksCount,
+        totalConfiguredSeats: seats.length,
+        sellableSeats: sellableSeatIds.size,
+        unavailableSeats,
+        availableSeats,
+        activeLocksCount: activeLocks.length,
+        reservedSeatsCount: reservedSeatIds.size,
+        paidSeatsCount: paidSeatIds.size,
+        cancelledOrExpiredItemsCount,
+        occupancyPercentage: occupancy,
+        reservedOrdersCount: orders.filter(activeReservedOrder).length,
+        paidOrdersCount: paidOrders.length,
+        cancelledOrdersCount: orders.filter((order) => ["cancelled", "expired", "refunded"].includes(order.status)).length,
+        paidRevenue: revenue,
+        currency: event.pricePlan?.currency || "RSD",
       },
     },
   });
 });
 
 module.exports = {
-  getEvents,
-  getEventById,
+  archiveEvent: applyEventAction("archive"),
+  cancelEvent: applyEventAction("cancel"),
+  closeEventSale: applyEventAction("close-sale"),
   createEvent,
-  updateEvent,
   deleteEvent,
+  duplicateEvent,
+  getEventById,
   getEventTicketingSummary,
+  getEvents,
+  updateEvent,
+  validateEvent,
 };

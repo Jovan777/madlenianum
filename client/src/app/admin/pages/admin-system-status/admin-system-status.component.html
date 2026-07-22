@@ -17,7 +17,7 @@
 
     <div class="grid">
       <article *ngFor="let item of counts()">
-        <span>{{ item.key }}</span>
+        <span>{{ label(item.key) }}</span>
         <strong>{{ item.value }}</strong>
       </article>
     </div>
@@ -28,8 +28,18 @@
 
     <div class="grid warning-grid">
       <article *ngFor="let item of warnings()">
-        <span>{{ item.key }}</span>
+        <span>{{ label(item.key) }}</span>
         <strong>{{ item.value }}</strong>
+      </article>
+    </div>
+  </section>
+
+  <section *ngIf="warningItems().length">
+    <h3>Detalji upozorenja</h3>
+    <div class="warning-list">
+      <article *ngFor="let item of warningItems()">
+        <div><strong>{{ label(item.code) }}</strong><span>{{ item.targetLabel }}</span><p>{{ item.message }}</p></div>
+        <a [routerLink]="item.link">Otvori</a>
       </article>
     </div>
   </section>

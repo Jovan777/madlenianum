@@ -12,7 +12,9 @@
     "seed:phase3a": "node src/seed/phase3content.seed.js",
     "seed:remove-weight": "node src/seed/removeWeightFields.seed.js",
     "migrate:structured-content": "node src/migration/migrateStructuredContent.js",
-    "test:cms": "node src/tests/cms.smoke.js"
+    "migrate:phase4a-ticketing": "node src/migration/migratePhase4aTicketing.js",
+    "test:cms": "node src/tests/cms.smoke.js",
+    "test:phase4a": "node src/tests/phase4a-ticketing.smoke.js"
   },
   "keywords": [],
   "author": "",

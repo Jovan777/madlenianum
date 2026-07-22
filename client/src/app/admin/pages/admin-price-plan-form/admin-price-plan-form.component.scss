@@ -13,6 +13,8 @@
   color: var(--admin-ink);
 }
 
+.usage,.warnings{display:grid;gap:.35rem;padding:1rem;background:#fff3cd;color:#3f3108;border:1px solid #d7ba62}.usage p,.warnings ul{margin:.25rem 0 0}.field-error{color:#8d1515;font-weight:700}.revision{display:grid;gap:.25rem;align-content:center;color:#3a2c16}.section-row p{margin:.25rem 0;color:#5d574e}
+
 .back,
 .actions a {
   color: #64594f;

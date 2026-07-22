@@ -1,190 +1,30 @@
 <div class="event-form-page">
   <a class="back" routerLink="/admin/events">&larr; Repertoar</a>
-
-  <header class="page-hero">
-    <div>
-      <p>Termin i prodaja ulaznica</p>
-      <h1>{{ isEditMode ? 'Izmeni termin' : 'Dodaj termin' }}</h1>
-      <span>Predstava, scena, datum, mapa sedišta, cenovnik i način prodaje.</span>
-    </div>
-
-    <a *ngIf="eventId()" class="ghost-link" [routerLink]="['/admin/events', eventId()]">
-      Detalji
-    </a>
-  </header>
-
-  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Učitavanje termina...</p>
+  <header class="page-hero"><div><p>Termin i prodaja ulaznica</p><h1>{{ isEditMode ? 'Izmeni termin' : 'Dodaj termin' }}</h1><span>Event je konkretan datum izvođenja; predstava ostaje urednički sadržaj.</span></div><a *ngIf="eventId()" class="ghost-link" [routerLink]="['/admin/events',eventId()]">Detalji</a></header>
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p><p class="loading" *ngIf="isLoading()">Učitavanje termina...</p>
+  <section class="validation-summary" *ngIf="warnings().length"><strong>Upozorenja pre objave</strong><ul><li *ngFor="let warning of warnings()">{{ warning.message }}</li></ul></section>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="event-form">
-    <section class="card">
-      <h2>Osnovni podaci</h2>
+    <section class="card"><h2>1. Predstava i scena</h2><p class="hint">Predstava sadrži naslov i umetnički sadržaj. Termin povezuje tu predstavu sa scenom i datumom.</p><div class="form-grid">
+      <label>Predstava<select formControlName="production"><option value="">Izaberite predstavu...</option><option *ngFor="let item of productions" [value]="item._id">{{item.title}} · {{item.type}}</option></select><small class="field-error" *ngIf="fieldError('production')">{{fieldError('production')}}</small></label>
+      <label>Scena<select formControlName="venue"><option value="">Izaberite scenu...</option><option *ngFor="let item of venues" [value]="item._id">{{item.name}}</option></select><small class="field-error" *ngIf="fieldError('venue')">{{fieldError('venue')}}</small></label>
+    </div></section>
 
-      <div class="form-grid">
-        <label>
-          Predstava
-          <select formControlName="production">
-            <option value="">Izaberite predstavu...</option>
-            <option *ngFor="let item of productions" [value]="item._id">
-              {{ item.title }} · {{ item.type }}
-            </option>
-          </select>
-        </label>
+    <section class="card"><h2>2. Datum i vreme</h2><div class="form-grid"><label>Početak<input type="datetime-local" formControlName="startsAt"/><small class="field-error" *ngIf="fieldError('startsAt')">{{fieldError('startsAt')}}</small></label><label>Kraj<input type="datetime-local" formControlName="endsAt"/><small class="field-error" *ngIf="fieldError('endsAt')">{{fieldError('endsAt')}}</small></label></div></section>
 
-        <label>
-          Scena
-          <select formControlName="venue">
-            <option value="">Izaberite scenu...</option>
-            <option *ngFor="let item of venues" [value]="item._id">{{ item.name }}</option>
-          </select>
-        </label>
+    <section class="card"><h2>3. Status termina</h2><p class="hint">Nacrt nije javan. Otkazan, odložen ili završen termin ne može prodavati ulaznice.</p><div class="form-grid"><label>Status<select formControlName="status"><option *ngFor="let item of eventStatuses" [value]="item.value">{{item.label}}</option></select><small class="field-error" *ngIf="fieldError('status')">{{fieldError('status')}}</small></label><label class="check-row"><input type="checkbox" formControlName="isPremiere"/><span>Premijera</span></label><label>Javna oznaka<input type="text" formControlName="badge" placeholder="Premijera, gostovanje..."/></label></div></section>
 
-        <label>
-          Početak
-          <input type="datetime-local" formControlName="startsAt" />
-        </label>
+    <section class="card"><h2>4. Prodajni status i period</h2><div class="form-grid"><label>Status prodaje<select formControlName="saleStatus"><option *ngFor="let item of saleStatuses" [value]="item.value">{{item.label}}</option></select><small class="field-error" *ngIf="fieldError('saleStatus')">{{fieldError('saleStatus')}}</small></label><label>Početak prodaje<input type="datetime-local" formControlName="saleStartsAt"/><small class="field-error" *ngIf="fieldError('saleStartsAt')">{{fieldError('saleStartsAt')}}</small></label><label>Kraj prodaje<input type="datetime-local" formControlName="saleEndsAt"/><small class="field-error" *ngIf="fieldError('saleEndsAt')">{{fieldError('saleEndsAt')}}</small></label></div></section>
 
-        <label>
-          Kraj
-          <input type="datetime-local" formControlName="endsAt" />
-        </label>
+    <section class="card" *ngIf="provider === 'internal'"><h2>5. Mapa sedišta</h2><p class="hint">Mapa definiše stalni fizički raspored sedišta za izabranu scenu.</p><div class="form-grid"><label>Mapa sedišta<select formControlName="seatMap"><option value="">Bez mape</option><option *ngFor="let item of seatMaps" [value]="item._id">{{item.name}}</option></select><small class="field-error" *ngIf="fieldError('seatMap')">{{fieldError('seatMap')}}</small></label><div class="setup-summary" *ngIf="selectedSeatMap() as map"><strong>{{map.name}}</strong><small>{{map.sections?.length||0}} sekcija · {{map.canvas?.width||'-'}} × {{map.canvas?.height||'-'}}</small></div></div></section>
 
-        <label>
-          Oznaka
-          <input type="text" formControlName="badge" placeholder="Premijera, gostovanje..." />
-        </label>
+    <section class="card" *ngIf="provider === 'internal' && form.controls.saleStatus.value !== 'free'"><h2>6. Cenovnik</h2><p class="hint">Cenovnik definiše cene kategorija i mora odgovarati sceni, tipu predstave, datumu i premijernom statusu.</p><div class="form-grid"><label>Cenovnik<select formControlName="pricePlan"><option value="">Bez cenovnika</option><option *ngFor="let item of pricePlans" [value]="item._id">{{item.name}} · v{{item.revision||1}} · {{item.status}}</option></select><small class="field-error" *ngIf="fieldError('pricePlan')">{{fieldError('pricePlan')}}</small></label><div class="setup-summary" *ngIf="selectedPricePlan() as plan"><strong>{{plan.name}} · {{plan.currency}}</strong><small>{{plan.rules.length}} cena po kategorijama</small><ul><li *ngFor="let rule of plan.rules">{{formatRule(rule)}}</li></ul><a [routerLink]="['/admin/price-plans',plan._id,'edit']">Otvori cenovnik</a></div></div></section>
 
-        <label>
-          Status termina
-          <select formControlName="status">
-            <option *ngFor="let item of eventStatuses" [value]="item.value">{{ item.label }}</option>
-          </select>
-        </label>
+    <section class="card"><h2>7. Način prodaje</h2><p class="hint">Interni provider koristi mapu i cenovnik. PHP provider koristi legacy ID. Spoljni provider koristi bezbedan HTTP/HTTPS URL.</p><div class="nested" formGroupName="ticketing"><label>Provider<select formControlName="provider"><option *ngFor="let item of ticketingProviders" [value]="item.value">{{item.label}}</option></select></label><label class="check-row" *ngIf="provider !== 'manual'"><input type="checkbox" formControlName="enabled"/><span>Online ticketing je omogućen</span></label><label *ngIf="provider === 'legacy_php'">ID događaja u starom sistemu<input type="text" formControlName="legacyEventId"/><small class="field-error" *ngIf="fieldError('ticketing.legacyEventId')">{{fieldError('ticketing.legacyEventId')}}</small></label><label *ngIf="provider === 'external'">Spoljni URL za kupovinu<input type="url" formControlName="externalCheckoutUrl" placeholder="https://..."/><small class="field-error" *ngIf="fieldError('ticketing.externalCheckoutUrl')">{{fieldError('ticketing.externalCheckoutUrl')}}</small></label><label class="wide">Napomena za prodaju<textarea rows="3" formControlName="note"></textarea></label></div></section>
 
-        <label>
-          Status prodaje
-          <select formControlName="saleStatus">
-            <option *ngFor="let item of saleStatuses" [value]="item.value">{{ item.label }}</option>
-          </select>
-        </label>
+    <section class="card"><h2>8. Ograničenja i rezervacija</h2><div class="form-grid"><label>Najviše ulaznica po porudžbini<input type="number" formControlName="maxTicketsPerOrder" min="1" max="20"/><small class="field-error" *ngIf="fieldError('maxTicketsPerOrder')">{{fieldError('maxTicketsPerOrder')}}</small></label><label>Trajanje rezervacije u minutima<input type="number" formControlName="lockDurationMinutes" min="1" max="60"/><small class="field-error" *ngIf="fieldError('lockDurationMinutes')">{{fieldError('lockDurationMinutes')}}</small></label></div></section>
 
-        <label class="check-row">
-          <input type="checkbox" formControlName="isPremiere" />
-          <span>Premijera</span>
-        </label>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Prodaja ulaznica</h2>
-      <p class="hint">Za internu prodaju obavezno izaberite mapu sedišta i cenovnik za izabranu scenu.</p>
-
-      <div class="form-grid">
-        <label>
-          Mapa sedišta
-          <select formControlName="seatMap">
-            <option value="">Bez mape sedišta</option>
-            <option *ngFor="let item of seatMaps" [value]="item._id">
-              {{ item.name }} · {{ item.venue?.name }}
-            </option>
-          </select>
-        </label>
-
-        <label>
-          Cenovnik
-          <select formControlName="pricePlan">
-            <option value="">Bez cenovnika</option>
-            <option *ngFor="let item of pricePlans" [value]="item._id">{{ item.name }}</option>
-          </select>
-        </label>
-
-        <div class="setup-summary" *ngIf="selectedSeatMap() as map">
-          <strong>Mapa sedišta</strong>
-          <span>{{ map.name }}</span>
-          <small>{{ map.sections?.length || 0 }} sekcija · {{ map.canvas?.width || '-' }} × {{ map.canvas?.height || '-' }}</small>
-        </div>
-
-        <div class="setup-summary" *ngIf="selectedPricePlan() as plan">
-          <strong>Cenovnik</strong>
-          <span>{{ plan.name }} · {{ plan.currency || 'RSD' }}</span>
-          <small>{{ pricePlanRules().length }} cena po kategorijama</small>
-          <ul>
-            <li *ngFor="let rule of pricePlanRules()">{{ formatRule(rule) }}</li>
-          </ul>
-          <a [routerLink]="['/admin/price-plans', plan._id, 'edit']">Izmeni cenovnik</a>
-        </div>
-
-        <div class="setup-summary muted" *ngIf="!selectedPricePlan()">
-          <strong>Cenovnik nije izabran</strong>
-          <span>Interna prodaja postaje dostupna nakon izbora cenovnika.</span>
-          <a routerLink="/admin/price-plans/new">Napravi cenovnik</a>
-        </div>
-
-        <label>
-          Početak prodaje
-          <input type="datetime-local" formControlName="saleStartsAt" />
-        </label>
-
-        <label>
-          Kraj prodaje
-          <input type="datetime-local" formControlName="saleEndsAt" />
-        </label>
-
-        <label>
-          Najviše ulaznica po porudžbini
-          <input type="number" formControlName="maxTicketsPerOrder" min="1" max="20" />
-        </label>
-
-        <label>
-          Trajanje rezervacije u minutima
-          <input type="number" formControlName="lockDurationMinutes" min="1" max="60" />
-        </label>
-      </div>
-
-      <div class="nested" formGroupName="ticketing">
-        <label class="check-row">
-          <input type="checkbox" formControlName="enabled" />
-          <span>Prodaja ulaznica je omogućena</span>
-        </label>
-
-        <label>
-          Način prodaje
-          <select formControlName="provider">
-            <option *ngFor="let item of ticketingProviders" [value]="item.value">{{ item.label }}</option>
-          </select>
-        </label>
-
-        <label>
-          ID starog događaja
-          <input type="text" formControlName="legacyEventId" />
-        </label>
-
-        <label>
-          Spoljni URL za kupovinu
-          <input type="url" formControlName="externalCheckoutUrl" />
-        </label>
-
-        <label class="wide">
-          Napomena za prodaju
-          <textarea rows="3" formControlName="note"></textarea>
-        </label>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Interne napomene</h2>
-      <label>
-        Napomena
-        <textarea rows="4" formControlName="notes"></textarea>
-      </label>
-    </section>
-
-    <footer class="actions">
-      <a class="ghost-link" routerLink="/admin/events">Otkaži</a>
-      <button class="primary" type="submit" [disabled]="isSaving()">
-        {{ isSaving() ? 'Čuvanje...' : 'Sačuvaj termin' }}
-      </button>
-    </footer>
+    <section class="card"><h2>9. Interne napomene</h2><label>Napomena<textarea rows="4" formControlName="notes"></textarea></label></section>
+    <footer class="actions"><a class="ghost-link" routerLink="/admin/events">Otkaži</a><button type="button" class="ghost-link" (click)="validateOnly()" [disabled]="isValidating()">{{isValidating()?'Provera...':'Proveri konfiguraciju'}}</button><button class="primary" type="submit" [disabled]="isSaving()">{{isSaving()?'Čuvanje...':'Sačuvaj termin'}}</button></footer>
   </form>
 </div>

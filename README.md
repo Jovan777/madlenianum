@@ -150,6 +150,24 @@ npm run test:cms
 
 The script creates uniquely named temporary records, checks draft/public visibility, sanitization, validation, preview protection, publishing, archiving, scheduled News, singleton identity, and deletion conflicts, then removes its temporary records.
 
+## Event and pricing configuration migration
+
+Databases that contain Events with legacy `finished`, `not_on_sale`, or `sales_closed` values, or Price Plans created before revision metadata was added, can be normalized with:
+
+```powershell
+cd C:\Zepter\Madlenianum\server
+npm run migrate:phase4a-ticketing
+```
+
+This migration is idempotent. It normalizes legacy statuses and Price Plan revisions, and repairs legacy OrderItem seat references only when the Event SeatMap contains exactly one seat with the stored historical seat label. It never changes OrderItem price snapshots. The migration is optional for existing databases, must be reviewed before use against production data, and is intentionally not part of the mandatory fresh-install seed sequence.
+
+The Event and pricing smoke checks create and remove temporary records while validating compatibility rules, history protection, duplication/versioning, operational statistics, and existing public repertoire/ticketing routes:
+
+```powershell
+cd C:\Zepter\Madlenianum\server
+npm run test:phase4a
+```
+
 ## Build and verification
 
 ```powershell

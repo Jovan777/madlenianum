@@ -6,6 +6,10 @@ const Seat = require("../models/Seat");
 const SeatLock = require("../models/SeatLock");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
+const {
+  getPublicTicketingReadiness,
+  validationError,
+} = require("../services/ticketingConfiguration.service");
 
 const getSeatPrice = (seat, pricePlan) => {
   if (!pricePlan || !Array.isArray(pricePlan.rules)) {
@@ -154,7 +158,7 @@ const getActiveOrderSeatStatuses = async (eventId) => {
   };
 };
 
-const getEventWithTicketing = async (eventId) => {
+const getEventWithTicketing = async (eventId, { requireOnSale = false } = {}) => {
   const event = await Event.findById(eventId)
     .populate({
       path: "production",
@@ -177,6 +181,11 @@ const getEventWithTicketing = async (eventId) => {
     const error = new Error("Event does not have a seat map.");
     error.statusCode = 400;
     throw error;
+  }
+
+  const readiness = await getPublicTicketingReadiness(event, { requireOnSale });
+  if (!readiness.ready) {
+    throw validationError("Termin nije spreman za internu prodaju ulaznica.", readiness.errors, readiness.warnings);
   }
 
   return event;
@@ -309,7 +318,7 @@ const getEventSeats = asyncHandler(async (req, res) => {
 const lockSeats = asyncHandler(async (req, res) => {
   await expireOldLocksAndOrders();
 
-  const event = await getEventWithTicketing(req.params.eventId);
+  const event = await getEventWithTicketing(req.params.eventId, { requireOnSale: true });
 
   if (!event.ticketing?.enabled) {
     res.status(400);
@@ -523,7 +532,7 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error("sessionId is required for guest orders.");
   }
 
-  const event = await getEventWithTicketing(eventId);
+  const event = await getEventWithTicketing(eventId, { requireOnSale: true });
 
   if (!event.ticketing?.enabled) {
     res.status(400);

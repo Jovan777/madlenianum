@@ -1,4 +1,13 @@
 const mongoose = require("mongoose");
+const {
+  EVENT_STATUSES,
+  LEGACY_EVENT_STATUS_MAP,
+  LEGACY_SALE_STATUS_MAP,
+  SALE_STATUSES,
+  TICKETING_PROVIDERS,
+  normalizeEventStatus,
+  normalizeSaleStatus,
+} = require("../constants/ticketing.constants");
 
 const eventSchema = new mongoose.Schema(
   {
@@ -27,13 +36,13 @@ const eventSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "scheduled", "cancelled", "postponed", "finished"],
-      default: "scheduled",
+      enum: [...EVENT_STATUSES, ...Object.keys(LEGACY_EVENT_STATUS_MAP)],
+      default: "draft",
     },
     saleStatus: {
       type: String,
-      enum: ["not_on_sale", "on_sale", "sold_out", "sales_closed", "free"],
-      default: "not_on_sale",
+      enum: [...SALE_STATUSES, ...Object.keys(LEGACY_SALE_STATUS_MAP)],
+      default: "not_started",
     },
 
     seatMap: {
@@ -62,7 +71,7 @@ const eventSchema = new mongoose.Schema(
       },
       provider: {
         type: String,
-        enum: ["internal", "legacy_php", "external", "manual"],
+        enum: TICKETING_PROVIDERS,
         default: "manual",
       },
       legacyEventId: {
@@ -104,5 +113,10 @@ eventSchema.index({ startsAt: 1 });
 eventSchema.index({ production: 1, startsAt: 1 });
 eventSchema.index({ seatMap: 1 });
 eventSchema.index({ pricePlan: 1 });
+
+eventSchema.pre("validate", function () {
+  this.status = normalizeEventStatus(this.status);
+  this.saleStatus = normalizeSaleStatus(this.saleStatus);
+});
 
 module.exports = mongoose.model("Event", eventSchema, "events");

@@ -1,85 +1,16 @@
 <div class="detail-page">
-  <a class="back" routerLink="/admin/events">← Events</a>
-
-  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Loading event...</p>
-
+  <a class="back" routerLink="/admin/events">&larr; Repertoar</a>
+  <p class="error" *ngIf="errorMessage()">{{errorMessage()}}</p><p class="loading" *ngIf="isLoading()">Učitavanje termina...</p>
   <ng-container *ngIf="event() as item">
-    <header class="hero">
-      <div>
-        <span>{{ item.production?.type || 'event' }}</span>
-        <h2>{{ item.production?.title || 'Event' }}</h2>
-        <p>{{ formatDate(item.startsAt) }} · {{ item.venue?.name || '-' }}</p>
-      </div>
-
-      <div class="status-stack">
-        <strong>{{ item.saleStatus }}</strong>
-        <span>{{ item.ticketing?.provider || 'manual' }}</span>
-        <a [routerLink]="['/admin/events', item._id, 'edit']">Edit event</a>
-      </div>
-    </header>
-
+    <header class="hero"><div><span>{{item.production?.type||'termin'}}</span><h2>{{item.production?.title||'Termin'}}</h2><p>{{formatDate(item.startsAt)}} · {{item.venue?.name||'-'}}</p></div><div class="status-stack"><strong>{{eventLabel(item.status)}}</strong><span>{{saleLabel(item.saleStatus)}}</span><span>{{providerLabel(item.ticketing?.provider)}}</span><a [routerLink]="['/admin/events',item._id,'edit']">Uredi termin</a></div></header>
+    <nav class="operational-actions" aria-label="Operativne akcije"><button type="button" (click)="duplicate()">Dupliraj</button><button type="button" (click)="action('close-sale')" [disabled]="item.saleStatus==='closed'">Zatvori prodaju</button><button type="button" (click)="action('cancel')" [disabled]="item.status==='cancelled'">Otkaži</button><button type="button" (click)="action('archive')" [disabled]="item.status==='archived'">Arhiviraj</button><button type="button" class="danger" (click)="deleteEvent()" [disabled]="usage()?.hasHistory">Obriši nekorišćen termin</button></nav>
+    <section class="warnings" *ngIf="summary()?.warnings?.length"><h3>Konfiguraciona upozorenja</h3><ul><li *ngFor="let warning of summary()?.warnings">{{warning.message}}</li></ul></section>
     <section class="grid">
-      <article>
-        <h3>Event setup</h3>
-        <dl>
-          <div>
-            <dt>Status</dt>
-            <dd>{{ item.status }}</dd>
-          </div>
-          <div>
-            <dt>Sale status</dt>
-            <dd>{{ item.saleStatus }}</dd>
-          </div>
-          <div>
-            <dt>Seat map</dt>
-            <dd>{{ item.seatMap?.name || '-' }}</dd>
-          </div>
-          <div>
-            <dt>Price plan</dt>
-            <dd>{{ item.pricePlan?.name || '-' }}</dd>
-          </div>
-          <div>
-            <dt>Max tickets</dt>
-            <dd>{{ item.maxTicketsPerOrder }}</dd>
-          </div>
-          <div>
-            <dt>Lock duration</dt>
-            <dd>{{ item.lockDurationMinutes }} min</dd>
-          </div>
-        </dl>
-      </article>
-
-      <article>
-        <h3>Ticketing stats</h3>
-        <dl *ngIf="summary()?.stats as stats">
-          <div>
-            <dt>Reserved orders</dt>
-            <dd>{{ stats.reservedOrdersCount }}</dd>
-          </div>
-          <div>
-            <dt>Paid orders</dt>
-            <dd>{{ stats.paidOrdersCount }}</dd>
-          </div>
-          <div>
-            <dt>Reserved items</dt>
-            <dd>{{ stats.reservedItemsCount }}</dd>
-          </div>
-          <div>
-            <dt>Paid items</dt>
-            <dd>{{ stats.paidItemsCount }}</dd>
-          </div>
-          <div>
-            <dt>Active locks</dt>
-            <dd>{{ stats.activeLocksCount }}</dd>
-          </div>
-        </dl>
-      </article>
+      <article><h3>Konfiguracija termina</h3><dl><div><dt>Predstava</dt><dd>{{item.production?.title||'-'}}</dd></div><div><dt>Scena</dt><dd>{{item.venue?.name||'-'}}</dd></div><div><dt>Početak</dt><dd>{{formatDate(item.startsAt)}}</dd></div><div><dt>Kraj</dt><dd>{{formatDate(item.endsAt)}}</dd></div><div><dt>Status</dt><dd>{{eventLabel(item.status)}}</dd></div><div><dt>Prodaja</dt><dd>{{saleLabel(item.saleStatus)}}</dd></div><div><dt>Period prodaje</dt><dd>{{formatDate(item.saleStartsAt)}} – {{formatDate(item.saleEndsAt)}}</dd></div><div><dt>Premijera / oznaka</dt><dd>{{item.isPremiere?'Da':'Ne'}} · {{item.badge||'-'}}</dd></div></dl></article>
+      <article><h3>Ticketing konfiguracija</h3><dl><div><dt>Provider</dt><dd>{{providerLabel(item.ticketing?.provider)}}</dd></div><div><dt>Online omogućen</dt><dd>{{item.ticketing?.enabled?'Da':'Ne'}}</dd></div><div *ngIf="item.ticketing?.provider==='legacy_php'"><dt>Legacy ID</dt><dd>{{item.ticketing?.legacyEventId||'-'}}</dd></div><div *ngIf="item.ticketing?.provider==='external'"><dt>Spoljni URL</dt><dd>{{item.ticketing?.externalCheckoutUrl||'-'}}</dd></div><div><dt>Mapa sedišta</dt><dd>{{item.seatMap?.name||'-'}}</dd></div><div><dt>Cenovnik</dt><dd>{{item.pricePlan?.name||'-'}}</dd></div><div><dt>Najviše ulaznica</dt><dd>{{item.maxTicketsPerOrder}}</dd></div><div><dt>Trajanje rezervacije</dt><dd>{{item.lockDurationMinutes}} min</dd></div></dl></article>
     </section>
-
-    <section class="ticketing">
-      <h3>Ticketing configuration</h3>
-      <pre>{{ item.ticketing | json }}</pre>
-    </section>
+    <section class="stats" *ngIf="summary()?.stats as stats"><article><span>Ukupno sedišta</span><strong>{{stats.totalConfiguredSeats}}</strong></article><article><span>Raspoloživo</span><strong>{{stats.availableSeats}}</strong></article><article><span>Aktivne rezervacije</span><strong>{{stats.activeLocksCount}}</strong></article><article><span>Rezervisano</span><strong>{{stats.reservedSeatsCount}}</strong></article><article><span>Prodato</span><strong>{{stats.paidSeatsCount}}</strong></article><article><span>Popunjenost</span><strong>{{stats.occupancyPercentage}}%</strong></article><article><span>Rezervisane porudžbine</span><strong>{{stats.reservedOrdersCount}}</strong></article><article><span>Plaćene porudžbine</span><strong>{{stats.paidOrdersCount}}</strong></article><article><span>Otkazano / isteklo</span><strong>{{stats.cancelledOrExpiredItemsCount}}</strong></article><article><span>Plaćeni prihod</span><strong>{{stats.paidRevenue|number:'1.0-0'}} {{stats.currency}}</strong></article></section>
+    <section class="history"><div><h3>Istorija i porudžbine</h3><p>{{usage()?.orders||0}} porudžbina · {{usage()?.orderItems||0}} stavki · {{usage()?.locks||0}} ukupnih lock zapisa</p></div><a [routerLink]="['/admin/orders']" [queryParams]="{event:item._id}">Prikaži porudžbine termina</a></section>
+    <section class="timestamps"><span>Kreirano: {{formatDate(item.createdAt)}}</span><span>Ažurirano: {{formatDate(item.updatedAt)}}</span></section>
   </ng-container>
 </div>

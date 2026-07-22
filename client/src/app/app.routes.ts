@@ -5,15 +5,11 @@ import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { AdminLoginComponent } from './admin/pages/admin-login/admin-login.component';
 import { AdminLayoutComponent } from './admin/layout/admin-layout/admin-layout.component';
 import { AdminDashboardComponent } from './admin/pages/admin-dashboard/admin-dashboard.component';
-import { AdminSystemStatusComponent } from './admin/pages/admin-system-status/admin-system-status.component';
 import { AdminResourceListComponent } from './admin/pages/admin-resource-list/admin-resource-list.component';
 import { AdminResourceFormComponent } from './admin/pages/admin-resource-form/admin-resource-form.component';
-import { AdminEventDetailComponent } from './admin/pages/admin-event-detail/admin-event-detail.component';
-import { AdminEventFormComponent } from './admin/pages/admin-event-form/admin-event-form.component';
 import { AdminOrderDetailComponent } from './admin/pages/admin-order-detail/admin-order-detail.component';
 import { AdminSeatMapDesignerComponent } from './admin/pages/admin-seat-map-designer/admin-seat-map-designer.component';
 import { AdminProductionFormComponent } from './admin/pages/admin-production-form/admin-production-form.component';
-import { AdminPricePlanFormComponent } from './admin/pages/admin-price-plan-form/admin-price-plan-form.component';
 import { AdminArtistFormComponent } from './admin/pages/admin-artist-form/admin-artist-form.component';
 import { AdminMediaLibraryComponent } from './admin/pages/admin-media-library/admin-media-library.component';
 import { AdminProductionListComponent } from './admin/pages/admin-production-list/admin-production-list.component';
@@ -61,21 +57,25 @@ export const routes: Routes = [
       },
       {
         path: 'system',
-        component: AdminSystemStatusComponent,
+        loadComponent: () => import('./admin/pages/admin-system-status/admin-system-status.component').then((item) => item.AdminSystemStatusComponent),
       },
       {
         path: 'events/new',
-        component: AdminEventFormComponent,
+        loadComponent: () => import('./admin/pages/admin-event-form/admin-event-form.component').then((item) => item.AdminEventFormComponent),
         canDeactivate: [unsavedChangesGuard],
       },
       {
         path: 'events/:id/edit',
-        component: AdminEventFormComponent,
+        loadComponent: () => import('./admin/pages/admin-event-form/admin-event-form.component').then((item) => item.AdminEventFormComponent),
         canDeactivate: [unsavedChangesGuard],
       },
       {
         path: 'events/:id',
-        component: AdminEventDetailComponent,
+        loadComponent: () => import('./admin/pages/admin-event-detail/admin-event-detail.component').then((item) => item.AdminEventDetailComponent),
+      },
+      {
+        path: 'events',
+        loadComponent: () => import('./admin/pages/admin-event-list/admin-event-list.component').then((item) => item.AdminEventListComponent),
       },
       {
         path: 'productions/new',
@@ -119,11 +119,17 @@ export const routes: Routes = [
       { path: 'site-settings', component: AdminSiteSettingsComponent, canDeactivate: [unsavedChangesGuard] },
       {
         path: 'price-plans/new',
-        component: AdminPricePlanFormComponent,
+        loadComponent: () => import('./admin/pages/admin-price-plan-form/admin-price-plan-form.component').then((item) => item.AdminPricePlanFormComponent),
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: 'price-plans/:id/edit',
-        component: AdminPricePlanFormComponent,
+        loadComponent: () => import('./admin/pages/admin-price-plan-form/admin-price-plan-form.component').then((item) => item.AdminPricePlanFormComponent),
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'price-plans',
+        loadComponent: () => import('./admin/pages/admin-price-plan-list/admin-price-plan-list.component').then((item) => item.AdminPricePlanListComponent),
       },
       {
         path: 'orders/:id',

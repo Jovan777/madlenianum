@@ -1,0 +1,20 @@
+<section class="plan-list-page">
+  <header class="list-hero"><div><span>{{ total() }} cenovnika</span><h1>Cenovnici</h1><p>Verzionisane cene po sceni, tipu predstave i premijernom statusu.</p></div><a routerLink="/admin/price-plans/new">Novi cenovnik</a></header>
+  <form class="filters" (ngSubmit)="load(true)">
+    <label>Pretraga<input [(ngModel)]="q" name="q" placeholder="Naziv ili napomena" /></label>
+    <label>Scena<select [(ngModel)]="venue" name="venue"><option value="">Sve scene</option><option *ngFor="let item of venues()" [value]="item._id">{{ item.name }}</option></select></label>
+    <label>Status<select [(ngModel)]="status" name="status"><option value="">Svi statusi</option><option *ngFor="let item of statuses" [value]="item.value">{{ item.label }}</option></select></label>
+    <label>Režim<select [(ngModel)]="premiere" name="premiere"><option value="">Svi</option><option value="false">Regularni</option><option value="true">Premijerni</option></select></label>
+    <label>Tip predstave<select [(ngModel)]="productionType" name="productionType"><option value="">Svi tipovi</option><option *ngFor="let item of productionTypes" [value]="item.value">{{ item.label }}</option></select></label>
+    <label>Važi na datum<input type="date" [(ngModel)]="validOn" name="validOn" /></label>
+    <button type="submit">Primeni</button>
+  </form>
+  <p class="state error" *ngIf="error()">{{ error() }}</p><p class="state" *ngIf="loading()">Učitavanje...</p><p class="state" *ngIf="!loading()&&!items().length">Nema cenovnika za izabrane filtere.</p>
+  <div class="plan-list" *ngIf="!loading()&&items().length">
+    <article *ngFor="let item of items()">
+      <div class="plan-main"><div class="badges"><span>{{ statusLabel(item.status) }}</span><span>v{{ item.revision || 1 }}</span><span>{{ item.isPremiere ? 'Premijera' : 'Regularno' }}</span><span class="warning" *ngIf="item.configurationWarnings?.length">{{ item.configurationWarnings?.length }} upozorenja</span></div><h2>{{ item.name }}</h2><p>{{ item.venue?.name || 'Bez scene' }} · {{ typeLabels(item) }}</p><small>{{ item.validFrom | date:'dd.MM.yyyy' }} – {{ item.validTo | date:'dd.MM.yyyy' }} · {{ usageLabel(item) }}</small></div>
+      <div class="actions"><a [routerLink]="['/admin/price-plans',item._id,'edit']">Otvori</a><button type="button" (click)="duplicate(item)">Nova verzija</button><button type="button" (click)="action(item,'activate')" [disabled]="item.status==='active'">Aktiviraj</button><button type="button" (click)="action(item,'deactivate')" [disabled]="item.status==='inactive'||!!item.usage?.futureEvents" [title]="item.usage?.futureEvents ? 'Cenovnik ima buduće termine.' : ''">Deaktiviraj</button><button type="button" (click)="action(item,'archive')" [disabled]="item.status==='archived'||!!item.usage?.futureEvents" [title]="item.usage?.futureEvents ? 'Cenovnik ima buduće termine.' : ''">Arhiviraj</button><button type="button" class="danger" *ngIf="!item.usage?.hasUsage" (click)="remove(item)">Obriši</button></div>
+    </article>
+  </div>
+  <footer class="pagination" *ngIf="totalPages()>1"><button type="button" (click)="pageBy(-1)" [disabled]="page===1">Prethodna</button><span>Strana {{page}} od {{totalPages()}}</span><button type="button" (click)="pageBy(1)" [disabled]="page===totalPages()">Sledeća</button></footer>
+</section>

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { PRICE_PLAN_STATUSES, SUPPORTED_CURRENCIES } = require("../constants/ticketing.constants");
 
 const priceRuleSchema = new mongoose.Schema(
   {
@@ -45,15 +46,16 @@ const pricePlanSchema = new mongoose.Schema(
     venue: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Venue",
+      required: [true, "Venue is required."],
     },
     isPremiere: {
       type: Boolean,
       default: false,
     },
-    // srediti currency da se dohvata iz nekog default fila
     currency: {
       type: String,
       default: "RSD",
+      enum: SUPPORTED_CURRENCIES,
       uppercase: true,
       trim: true,
     },
@@ -66,13 +68,26 @@ const pricePlanSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "active", "archived"],
+      enum: PRICE_PLAN_STATUSES,
       default: "draft",
+    },
+    revision: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    parentPlan: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PricePlan",
+      default: null,
     },
   },
   {
     timestamps: true,
   }
 );
+
+pricePlanSchema.index({ venue: 1, status: 1, isPremiere: 1 });
+pricePlanSchema.index({ parentPlan: 1, revision: 1 });
 
 module.exports = mongoose.model("PricePlan", pricePlanSchema, "priceplans");

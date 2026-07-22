@@ -2,7 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import { environment } from '../../../environments/environment';
-import { AdminSystemStatusResponse, ApiItemResponse, ApiListResponse } from '../models/admin.models';
+import {
+  AdminEventFormOptions,
+  AdminEventSummary,
+  AdminPricePlanFormOptions,
+  AdminSystemStatusResponse,
+  AdminValidationIssue,
+  ApiItemResponse,
+  ApiListResponse,
+} from '../models/admin.models';
 
 @Injectable({
   providedIn: 'root',
@@ -40,14 +48,14 @@ export class AdminApiService {
   }
 
   getEventTicketingSummary(id: string) {
-    return this.http.get<ApiItemResponse<unknown>>(
+    return this.http.get<ApiItemResponse<AdminEventSummary>>(
       `${this.apiUrl}/admin/events/${id}/ticketing-summary`
     );
   }
 
   getEventFormOptions(query = '') {
     const suffix = query ? `?${query}` : '';
-    return this.http.get<{ success: boolean; options: Record<string, any[]> }>(
+    return this.http.get<{ success: boolean; options: AdminEventFormOptions }>(
       `${this.apiUrl}/admin/form-options/event${suffix}`
     );
   }
@@ -71,7 +79,7 @@ export class AdminApiService {
   }
 
   getPricePlanFormOptions() {
-    return this.http.get<{ success: boolean; options: Record<string, any[]> }>(
+    return this.http.get<{ success: boolean; options: AdminPricePlanFormOptions }>(
       `${this.apiUrl}/admin/form-options/price-plan`
     );
   }
@@ -80,6 +88,30 @@ export class AdminApiService {
     return this.http.patch<ApiItemResponse<unknown>>(
       `${this.apiUrl}/admin/orders/${id}/status`,
       payload
+    );
+  }
+
+  validate<T = unknown>(resource: string, payload: unknown, id?: string) {
+    const path = id ? `${resource}/${id}/validate` : `${resource}/validate`;
+    return this.http.post<{
+      success: boolean;
+      valid: boolean;
+      errors: AdminValidationIssue[];
+      warnings: AdminValidationIssue[];
+    }>(`${this.apiUrl}/admin/${path}`, payload);
+  }
+
+  duplicate<T>(resource: string, id: string, payload: unknown = {}) {
+    return this.http.post<ApiItemResponse<T>>(
+      `${this.apiUrl}/admin/${resource}/${id}/duplicate`,
+      payload
+    );
+  }
+
+  runAction<T>(resource: string, id: string, action: string) {
+    return this.http.post<ApiItemResponse<T>>(
+      `${this.apiUrl}/admin/${resource}/${id}/actions/${action}`,
+      {}
     );
   }
 }

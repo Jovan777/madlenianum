@@ -1,117 +1,25 @@
 <div class="admin-edit-page">
-  <a class="back" routerLink="/admin/price-plans">← Price plans</a>
-
-  <header class="page-hero">
-    <div>
-      <p>Ticket pricing</p>
-      <h1>{{ isEditMode ? 'Edit price plan' : 'Create price plan' }}</h1>
-      <span>Define which seat categories and prices apply to events.</span>
-    </div>
-  </header>
-
-  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Loading price plan...</p>
-
+  <a class="back" routerLink="/admin/price-plans">&larr; Cenovnici</a>
+  <header class="page-hero"><div><p>Konfiguracija cena</p><h1>{{isEditMode?'Izmeni cenovnik':'Novi cenovnik'}}</h1><span>Cenovnik je verzionisana konfiguracija; istorijske porudžbine čuvaju sopstvene snapshot cene.</span></div><button *ngIf="isEditMode" type="button" (click)="createVersion()">Nova verzija</button></header>
+  <p class="error" *ngIf="errorMessage()">{{errorMessage()}}</p><p class="loading" *ngIf="isLoading()">Učitavanje...</p>
+  <section class="usage" *ngIf="usage() as info"><strong>{{criticalLocked?'Cenovnik je u upotrebi':'Cenovnik još nije korišćen'}}</strong><span>{{info.events||0}} termina · {{info.orders||0}} porudžbina · {{info.orderItems||0}} stavki</span><p *ngIf="criticalLocked">Cene, pravila, scena i period su zaključani. Napravite novu verziju za izmene.</p></section>
+  <section class="warnings" *ngIf="warnings().length"><strong>Upozorenja</strong><ul><li *ngFor="let item of warnings()">{{item.message}}</li></ul></section>
   <form [formGroup]="form" (ngSubmit)="save()" class="edit-form">
-    <section class="panel">
-      <h2>Main data</h2>
-      <div class="form-grid">
-        <label>
-          Name
-          <input type="text" formControlName="name" />
-        </label>
+    <section class="panel"><h2>Osnovni podaci</h2><div class="form-grid">
+      <label>Naziv<input type="text" formControlName="name"/><small class="field-error" *ngIf="fieldError('name')">{{fieldError('name')}}</small></label>
+      <label>Scena<select formControlName="venue"><option value="">Izaberite scenu</option><option *ngFor="let item of venues" [value]="item._id">{{item.name}}</option></select><small class="field-error" *ngIf="fieldError('venue')">{{fieldError('venue')}}</small></label>
+      <label>Valuta<select formControlName="currency"><option value="RSD">RSD</option><option value="EUR">EUR</option></select><small class="field-error" *ngIf="fieldError('currency')">{{fieldError('currency')}}</small></label>
+      <label>Status<select formControlName="status"><option *ngFor="let item of statuses" [value]="item.value">{{item.label}}</option></select></label>
+      <label>Važi od<input type="date" formControlName="validFrom"/></label><label>Važi do<input type="date" formControlName="validTo"/><small class="field-error" *ngIf="fieldError('validTo')">{{fieldError('validTo')}}</small></label>
+      <label class="check-row"><input type="checkbox" formControlName="isPremiere"/><span>Premijerni cenovnik</span></label>
+      <div class="revision"><strong>Verzija {{revision()}}</strong><span *ngIf="parentPlanName()">Nastala iz: {{parentPlanName()}}</span></div>
+    </div>
+    <div class="type-grid"><span>Podržani tipovi predstava</span><label *ngFor="let type of productionTypes"><input type="checkbox" [disabled]="criticalLocked" [checked]="hasProductionType(type.value)" (change)="onProductionTypeChange(type.value,$event)"/>{{type.label}}</label><small class="field-error" *ngIf="fieldError('productionTypes')">{{fieldError('productionTypes')}}</small></div>
+    <label>Interne napomene<textarea rows="3" formControlName="notes"></textarea></label></section>
 
-        <label>
-          Venue
-          <select formControlName="venue">
-            <option value="">Any venue</option>
-            <option *ngFor="let venue of venues" [value]="venue._id">{{ venue.name }}</option>
-          </select>
-        </label>
-
-        <label>
-          Currency
-          <input type="text" formControlName="currency" />
-        </label>
-
-        <label>
-          Status
-          <select formControlName="status">
-            <option *ngFor="let item of statuses" [value]="item.value">{{ item.label }}</option>
-          </select>
-        </label>
-
-        <label>
-          Valid from
-          <input type="date" formControlName="validFrom" />
-        </label>
-
-        <label>
-          Valid to
-          <input type="date" formControlName="validTo" />
-        </label>
-
-        <label class="check-row">
-          <input type="checkbox" formControlName="isPremiere" />
-          <span>Premiere plan</span>
-        </label>
-      </div>
-
-      <div class="type-grid">
-        <span>Production types</span>
-        <label *ngFor="let type of productionTypes">
-          <input
-            type="checkbox"
-            [checked]="hasProductionType(type.value)"
-            (change)="toggleProductionType(type.value, $any($event.target).checked)"
-          />
-          {{ type.label }}
-        </label>
-      </div>
-
-      <label>
-        Notes
-        <textarea rows="3" formControlName="notes"></textarea>
-      </label>
+    <section class="panel"><div class="section-row"><div><h2>Cene po kategorijama</h2><p>ALL predstavlja jednu cenu za sva mesta i ne kombinuje se sa drugim kategorijama.</p></div><button type="button" (click)="addRule()" [disabled]="criticalLocked">Dodaj cenu</button></div><small class="field-error" *ngIf="fieldError('rules')">{{fieldError('rules')}}</small>
+      <div class="repeat-list" formArrayName="rules"><div class="repeat-row" *ngFor="let group of rules.controls;let index=index" [formGroupName]="index"><label>Kategorija<select formControlName="priceCategory"><option value="">Izaberite kategoriju</option><option *ngFor="let category of categoriesForRule(index)" [value]="category._id">{{category.code}} / {{category.name}}{{category.status==='inactive'?' (neaktivna)':''}}</option></select></label><label>Iznos<input type="number" formControlName="amount" min="0" step="1"/></label><label>Oznaka<input type="text" formControlName="label" placeholder="Parter, loža..."/></label><button type="button" class="danger" (click)="removeRule(index)" [disabled]="criticalLocked||rules.length===1">Ukloni</button></div></div>
     </section>
-
-    <section class="panel">
-      <div class="section-row">
-        <h2>Category prices</h2>
-        <button type="button" (click)="addRule()">Add price</button>
-      </div>
-
-      <div class="repeat-list" formArrayName="rules">
-        <div class="repeat-row" *ngFor="let group of ruleControls(); let index = index" [formGroupName]="index">
-          <label>
-            Seat category
-            <select formControlName="priceCategory">
-              <option value="">Select category</option>
-              <option *ngFor="let category of priceCategories" [value]="category._id">
-                {{ category.code }} / {{ category.name }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            Amount
-            <input type="number" formControlName="amount" min="0" />
-          </label>
-
-          <label>
-            Label
-            <input type="text" formControlName="label" placeholder="Parter, loža..." />
-          </label>
-
-          <button type="button" class="danger" (click)="removeRule(index)">Remove</button>
-        </div>
-      </div>
-    </section>
-
-    <footer class="actions">
-      <a routerLink="/admin/price-plans">Cancel</a>
-      <button type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Saving...' : 'Save price plan' }}</button>
-    </footer>
+    <footer class="actions"><a routerLink="/admin/price-plans">Otkaži</a><button type="button" (click)="validateOnly()" [disabled]="isValidating()">{{isValidating()?'Provera...':'Proveri'}}</button><button type="submit" [disabled]="isSaving()">{{isSaving()?'Čuvanje...':'Sačuvaj cenovnik'}}</button></footer>
   </form>
 </div>

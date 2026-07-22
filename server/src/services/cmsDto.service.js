@@ -1,3 +1,5 @@
+const { normalizeEventStatus, normalizeSaleStatus } = require("../constants/ticketing.constants");
+
 const idOf = (value) => {
   if (!value) return null;
   return String(value._id || value.id || value);
@@ -155,8 +157,8 @@ const eventDto = (value) => {
     endsAt: event.endsAt,
     isPremiere: Boolean(event.isPremiere),
     badge: event.badge || "",
-    status: event.status,
-    saleStatus: event.saleStatus,
+    status: normalizeEventStatus(event.status),
+    saleStatus: normalizeSaleStatus(event.saleStatus),
     saleStartsAt: event.saleStartsAt,
     saleEndsAt: event.saleEndsAt,
     ticketing: event.ticketing
@@ -176,19 +178,21 @@ const eventSaleAvailability = (event) => {
   const saleStartsAt = event.saleStartsAt ? new Date(event.saleStartsAt) : null;
   const saleEndsAt = event.saleEndsAt ? new Date(event.saleEndsAt) : null;
 
-  if (event.status === "cancelled") return { state: "cancelled", canPurchase: false, label: "Otkazano" };
-  if (event.status === "postponed") return { state: "postponed", canPurchase: false, label: "Odlozeno" };
-  if (event.status === "finished" || (startsAt && startsAt <= now)) return { state: "finished", canPurchase: false, label: "Dogadjaj je zavrsen" };
-  if (event.saleStatus === "sold_out") return { state: "sold_out", canPurchase: false, label: "Rasprodato" };
-  if (event.saleStatus === "sales_closed" || (saleEndsAt && saleEndsAt <= now)) return { state: "closed", canPurchase: false, label: "Prodaja zavrsena" };
-  if (event.saleStatus === "free") return { state: "free", canPurchase: false, label: "Slobodan ulaz" };
-  if (event.saleStatus === "not_on_sale" || (saleStartsAt && saleStartsAt > now)) return { state: "upcoming", canPurchase: false, label: "Prodaja uskoro" };
+  const status = normalizeEventStatus(event.status);
+  const saleStatus = normalizeSaleStatus(event.saleStatus);
+  if (status === "cancelled") return { state: "cancelled", canPurchase: false, label: "Otkazano" };
+  if (status === "postponed") return { state: "postponed", canPurchase: false, label: "Odlozeno" };
+  if (["completed", "archived"].includes(status) || (startsAt && startsAt <= now)) return { state: "finished", canPurchase: false, label: "Dogadjaj je zavrsen" };
+  if (saleStatus === "sold_out") return { state: "sold_out", canPurchase: false, label: "Rasprodato" };
+  if (saleStatus === "closed" || (saleEndsAt && saleEndsAt <= now)) return { state: "closed", canPurchase: false, label: "Prodaja zavrsena" };
+  if (saleStatus === "free") return { state: "free", canPurchase: false, label: "Slobodan ulaz" };
+  if (saleStatus === "not_started" || (saleStartsAt && saleStartsAt > now)) return { state: "upcoming", canPurchase: false, label: "Prodaja uskoro" };
 
   const internalTicketing = event.ticketing?.enabled
     && event.ticketing?.provider === "internal"
     && event.seatMap
     && event.pricePlan;
-  if (event.saleStatus === "on_sale" && internalTicketing) return { state: "on_sale", canPurchase: true, label: "Kupi karte" };
+  if (saleStatus === "on_sale" && internalTicketing) return { state: "on_sale", canPurchase: true, label: "Kupi karte" };
 
   return { state: "unavailable", canPurchase: false, label: "Prodaja nije dostupna" };
 };

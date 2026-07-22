@@ -12,67 +12,88 @@ const Customer = require("../models/Customer");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
+const {
+  validateEventConfiguration,
+  validatePricePlanPayload,
+} = require("../services/ticketingConfiguration.service");
 
 const getAdminSystemStatus = asyncHandler(async (req, res) => {
   const now = new Date();
-
   const [
     productionsCount,
     artistsCount,
-    eventsCount,
+    events,
     venuesCount,
     seatMapsCount,
     seatsCount,
     priceCategoriesCount,
-    pricePlansCount,
+    pricePlans,
     customersCount,
     ordersCount,
     orderItemsCount,
     activeLocksCount,
-    eventsMissingSeatMap,
-    eventsMissingPricePlan,
-    eventsOnSale,
   ] = await Promise.all([
     Production.countDocuments(),
     Artist.countDocuments(),
-    Event.countDocuments(),
+    Event.find().populate("production").populate("venue").populate("seatMap").populate({
+      path: "pricePlan",
+      populate: "rules.priceCategory",
+    }),
     Venue.countDocuments(),
     SeatMap.countDocuments(),
     Seat.countDocuments(),
     PriceCategory.countDocuments(),
-    PricePlan.countDocuments(),
+    PricePlan.find().populate("venue").populate("rules.priceCategory"),
     Customer.countDocuments(),
     Order.countDocuments(),
     OrderItem.countDocuments(),
-    SeatLock.countDocuments({
-      status: "active",
-      expiresAt: { $gt: now },
-    }),
-    Event.countDocuments({
-      saleStatus: "on_sale",
-      $or: [{ seatMap: null }, { seatMap: { $exists: false } }],
-    }),
-    Event.countDocuments({
-      saleStatus: "on_sale",
-      $or: [{ pricePlan: null }, { pricePlan: { $exists: false } }],
-    }),
-    Event.countDocuments({
-      saleStatus: "on_sale",
-    }),
+    SeatLock.countDocuments({ status: "active", expiresAt: { $gt: now } }),
   ]);
+
+  const warningItems = [];
+  const warningCounts = {};
+  const addWarning = (problem, targetType, target) => {
+    warningCounts[problem.code] = (warningCounts[problem.code] || 0) + 1;
+    warningItems.push({
+      code: problem.code,
+      field: problem.field,
+      message: problem.message,
+      targetType,
+      targetId: String(target._id),
+      targetLabel: targetType === "event"
+        ? `${target.production?.title || "Termin"} - ${new Date(target.startsAt).toLocaleString("sr-RS")}`
+        : target.name,
+      link: targetType === "event"
+        ? `/admin/events/${target._id}`
+        : `/admin/price-plans/${target._id}/edit`,
+    });
+  };
+
+  for (const event of events) {
+    const result = await validateEventConfiguration({}, { existingEvent: event });
+    [...result.errors, ...result.warnings].forEach((problem) => addWarning(problem, "event", event));
+  }
+  for (const pricePlan of pricePlans) {
+    const result = await validatePricePlanPayload({}, { existingPlan: pricePlan });
+    result.warnings.forEach((problem) => addWarning(problem, "pricePlan", pricePlan));
+  }
+
+  const eventsOnSale = events.filter((event) => event.saleStatus === "on_sale").length;
+  const eventsMissingSeatMap = events.filter((event) => event.saleStatus === "on_sale" && !event.seatMap).length;
+  const eventsMissingPricePlan = events.filter((event) => event.saleStatus === "on_sale" && !event.pricePlan).length;
 
   res.json({
     success: true,
-    status: "ok",
+    status: warningItems.some((item) => item.targetType === "event") ? "warning" : "ok",
     counts: {
       productions: productionsCount,
       artists: artistsCount,
-      events: eventsCount,
+      events: events.length,
       venues: venuesCount,
       seatMaps: seatMapsCount,
       seats: seatsCount,
       priceCategories: priceCategoriesCount,
-      pricePlans: pricePlansCount,
+      pricePlans: pricePlans.length,
       customers: customersCount,
       orders: ordersCount,
       orderItems: orderItemsCount,
@@ -82,10 +103,10 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       eventsOnSale,
       eventsMissingSeatMap,
       eventsMissingPricePlan,
+      ...warningCounts,
     },
+    warningItems,
   });
 });
 
-module.exports = {
-  getAdminSystemStatus,
-};
+module.exports = { getAdminSystemStatus };

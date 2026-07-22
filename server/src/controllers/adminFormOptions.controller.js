@@ -13,29 +13,36 @@ const PromoSlide = require("../models/PromoSlide");
 const StaticPage = require("../models/StaticPage");
 const { CREATIVE_ROLE_KEYS } = require("../models/Production");
 const { NEWS_CATEGORIES } = require("../models/News");
+const {
+  EVENT_STATUSES,
+  PRICE_PLAN_STATUSES,
+  SALE_STATUSES,
+  TICKETING_PROVIDERS,
+} = require("../constants/ticketing.constants");
 
-const EVENT_STATUSES = [
-  { value: "draft", label: "Nacrt" },
-  { value: "scheduled", label: "Zakazano" },
-  { value: "cancelled", label: "Otkazano" },
-  { value: "postponed", label: "Odloženo" },
-  { value: "finished", label: "Završeno" },
-];
+const EVENT_STATUS_OPTIONS = EVENT_STATUSES.map((value) => ({ value, label: ({
+  draft: "Nacrt",
+  scheduled: "Zakazano",
+  completed: "Završeno",
+  cancelled: "Otkazano",
+  postponed: "Odloženo",
+  archived: "Arhivirano",
+})[value] }));
 
-const SALE_STATUSES = [
-  { value: "not_on_sale", label: "Prodaja još nije počela" },
-  { value: "on_sale", label: "U prodaji" },
-  { value: "sold_out", label: "Rasprodato" },
-  { value: "sales_closed", label: "Prodaja završena" },
-  { value: "free", label: "Slobodan ulaz" },
-];
+const SALE_STATUS_OPTIONS = SALE_STATUSES.map((value) => ({ value, label: ({
+  not_started: "Prodaja nije počela",
+  on_sale: "U prodaji",
+  sold_out: "Rasprodato",
+  closed: "Prodaja zatvorena",
+  free: "Slobodan ulaz",
+})[value] }));
 
-const TICKETING_PROVIDERS = [
-  { value: "internal", label: "Interna prodaja sedišta" },
-  { value: "legacy_php", label: "Postojeći PHP sistem" },
-  { value: "external", label: "Spoljni sistem prodaje" },
-  { value: "manual", label: "Bez online prodaje" },
-];
+const TICKETING_PROVIDER_OPTIONS = TICKETING_PROVIDERS.map((value) => ({ value, label: ({
+  internal: "Interna prodaja sedišta",
+  legacy_php: "Postojeći PHP sistem",
+  external: "Spoljni sistem prodaje",
+  manual: "Bez online prodaje",
+})[value] }));
 
 const PRODUCTION_TYPES = [
   { value: "opera", label: "Opera" },
@@ -108,7 +115,7 @@ const getEventFormOptions = asyncHandler(async (req, res) => {
     PricePlan.find(pricePlanFilter)
       .populate("venue")
       .populate("rules.priceCategory")
-      .select("name venue productionTypes isPremiere currency rules status validFrom validTo")
+      .select("name venue productionTypes isPremiere currency rules status validFrom validTo revision parentPlan")
       .sort("name"),
     PriceCategory.find({ status: "active" }).sort("code"),
   ]);
@@ -121,9 +128,9 @@ const getEventFormOptions = asyncHandler(async (req, res) => {
       seatMaps,
       pricePlans,
       priceCategories,
-      eventStatuses: EVENT_STATUSES,
-      saleStatuses: SALE_STATUSES,
-      ticketingProviders: TICKETING_PROVIDERS,
+      eventStatuses: EVENT_STATUS_OPTIONS,
+      saleStatuses: SALE_STATUS_OPTIONS,
+      ticketingProviders: TICKETING_PROVIDER_OPTIONS,
       productionTypes: PRODUCTION_TYPES,
     },
   });
@@ -208,7 +215,7 @@ const getPricePlanFormOptions = asyncHandler(async (req, res) => {
     Venue.find()
       .select("name slug venueType capacity status")
       .sort("name"),
-    PriceCategory.find({ status: "active" }).sort("code"),
+    PriceCategory.find().sort("code"),
   ]);
 
   res.json({
@@ -217,11 +224,12 @@ const getPricePlanFormOptions = asyncHandler(async (req, res) => {
       venues,
       priceCategories,
       productionTypes: PRODUCTION_TYPES,
-      statuses: [
-        { value: "draft", label: "Draft" },
-        { value: "active", label: "Active" },
-        { value: "archived", label: "Archived" },
-      ],
+      statuses: PRICE_PLAN_STATUSES.map((value) => ({ value, label: ({
+        draft: "Nacrt",
+        active: "Aktivan",
+        inactive: "Neaktivan",
+        archived: "Arhiviran",
+      })[value] })),
     },
   });
 });

@@ -7,6 +7,8 @@ const priceCategorySchema = new mongoose.Schema(
       required: [true, "Price category code is required."],
       trim: true,
       uppercase: true,
+      set: (value) => String(value || "").trim().toUpperCase(),
+      match: [/^[A-Z0-9_-]+$/, "Code may contain only letters, numbers, underscore and dash."],
       unique: true,
     },
     name: {

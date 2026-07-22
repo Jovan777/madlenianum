@@ -125,6 +125,13 @@ const createPricePlan = async ({
   rules,
   notes,
 }) => {
+  const validFrom = new Date();
+  validFrom.setDate(validFrom.getDate() - 30);
+  validFrom.setHours(0, 0, 0, 0);
+  const validTo = new Date();
+  validTo.setFullYear(validTo.getFullYear() + 2);
+  validTo.setHours(23, 59, 59, 999);
+
   return PricePlan.findOneAndUpdate(
     { name },
     {
@@ -136,8 +143,9 @@ const createPricePlan = async ({
       rules,
       notes,
       status: "active",
-      validFrom: new Date("2025-11-20T00:00:00.000Z"),
-      validTo: new Date("2026-12-31T23:59:59.999Z"),
+      validFrom,
+      validTo,
+      revision: 1,
     },
     {
       returnDocument: "after",
@@ -357,8 +365,6 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
 };
 
 const seedSeats = async ({ seatMap, venue, categoryI, categoryII, categoryIII }) => {
-  await Seat.deleteMany({ seatMap: seatMap._id });
-
   const parterSeats = buildParterSeats({
     seatMap,
     venue,
@@ -377,7 +383,21 @@ const seedSeats = async ({ seatMap, venue, categoryI, categoryII, categoryIII })
 
   const seats = [...parterSeats, ...gallerySeats];
 
-  await Seat.insertMany(seats, { ordered: false });
+  await Seat.bulkWrite(
+    seats.map((seat) => ({
+      updateOne: {
+        filter: { seatMap: seatMap._id, label: seat.label },
+        update: { $set: seat },
+        upsert: true,
+      },
+    })),
+    { ordered: false }
+  );
+
+  await Seat.updateMany(
+    { seatMap: seatMap._id, label: { $nin: seats.map((seat) => seat.label) } },
+    { $set: { isActive: false, isSellable: false } }
+  );
 
   return {
     parter: parterSeats.length,
@@ -513,24 +533,32 @@ const getOrCreateGiulioCesareEvent = async ({
   seatMap,
   pricePlan,
 }) => {
+  const startsAt = new Date();
+  startsAt.setDate(startsAt.getDate() + 28);
+  startsAt.setHours(18, 30, 0, 0);
+  const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
+  const saleStartsAt = new Date();
+  saleStartsAt.setHours(0, 0, 0, 0);
+  const saleEndsAt = new Date(startsAt.getTime() - 30 * 60 * 1000);
+
   return Event.findOneAndUpdate(
     {
       production: production._id,
-      startsAt: new Date("2026-01-26T18:30:00.000Z"),
+      notes: { $regex: "^Premijera opere Julije Cezar" },
     },
     {
       production: production._id,
       venue: venue._id,
-      startsAt: new Date("2026-01-26T18:30:00.000Z"),
-      endsAt: new Date("2026-01-26T21:30:00.000Z"),
+      startsAt,
+      endsAt,
       isPremiere: true,
       badge: "PREMIJERA",
       status: "scheduled",
       saleStatus: "on_sale",
       seatMap: seatMap._id,
       pricePlan: pricePlan._id,
-      saleStartsAt: new Date("2025-11-20T00:00:00.000Z"),
-      saleEndsAt: new Date("2026-01-26T18:00:00.000Z"),
+      saleStartsAt,
+      saleEndsAt,
       maxTicketsPerOrder: 4,
       lockDurationMinutes: 15,
       ticketing: {

@@ -87,7 +87,7 @@ const getRepertoire = asyncHandler(async (req, res) => {
   const to = hasExplicitMonth
     ? monthEnd
     : (isArchive ? now : new Date(from.getTime() + 120 * 24 * 60 * 60 * 1000));
-  const eventStatus = isArchive ? { $in: ["scheduled", "finished"] } : "scheduled";
+  const eventStatus = isArchive ? { $in: ["scheduled", "completed", "finished"] } : "scheduled";
   const dateRange = isArchive
     ? { $gte: from, $lt: new Date(Math.min(to.getTime(), now.getTime())) }
     : { $gte: new Date(Math.max(from.getTime(), now.getTime())), $lt: to };

@@ -40,7 +40,8 @@
         <a *ngIf="detailLink(item) as link" [routerLink]="link">Open</a>
         <a *ngIf="editLink(item) as link" [routerLink]="link">Edit</a>
         <a *ngIf="mapLink(item) as link" [routerLink]="link">Map</a>
-        <button *ngIf="config().canDelete" type="button" (click)="deleteItem(item)">Delete</button>
+        <button *ngIf="canDeleteItem(item)" type="button" (click)="deleteItem(item)">Delete</button>
+        <span *ngIf="isProtectedCategory(item)" class="protected-note">In use · deactivate instead</span>
       </div>
     </article>
 

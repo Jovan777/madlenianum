@@ -192,6 +192,8 @@ export const ADMIN_RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'code', label: 'Code' },
       { key: 'name', label: 'Name' },
       { key: 'status', label: 'Status', type: 'status' },
+      { key: 'usage.seats', label: 'Seats' },
+      { key: 'usage.pricePlans', label: 'Plans' },
     ],
     formFields: [
       { key: 'code', label: 'Code', type: 'text', required: true },

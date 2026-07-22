@@ -4,6 +4,8 @@
   color: var(--text-on-dark);
 }
 
+.warning-list{display:grid;gap:.65rem}.warning-list article{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem;background:#fff7df;color:#231d13;border:1px solid #d7ba62}.warning-list div{display:grid;gap:.2rem}.warning-list span,.warning-list p{color:#54452c}.warning-list p{margin:0}.warning-list a{padding:.55rem .7rem;background:#17120c;color:#fff;text-decoration:none}
+
 header {
   display: flex;
   align-items: flex-end;
