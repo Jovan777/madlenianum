@@ -23,9 +23,12 @@ export interface PublicProduction {
   synopsis?: string;
   poster?: PublicMedia | string;
   gallery?: Array<PublicMedia | string>;
+  galleryItems?: PublicGalleryItem[];
+  videos?: PublicVideo[];
+  trailer?: PublicVideo | null;
   creativeTeam?: any[];
   cast?: any[];
-  venue?: any;
+  venue?: PublicVenue | null;
   season?: string;
   durationMinutes?: number;
   performanceLanguage?: string;
@@ -36,13 +39,48 @@ export interface PublicProduction {
   status?: string;
 }
 
+export interface PublicGalleryItem {
+  id?: string;
+  media?: PublicMedia | string | null;
+  caption?: string;
+  credit?: string;
+  altText?: string;
+  displayOrder?: number;
+}
+
+export interface PublicVideo {
+  id?: string;
+  provider?: 'youtube' | 'vimeo' | 'external' | string;
+  url: string;
+  title?: string;
+  thumbnail?: PublicMedia | string | null;
+  isTrailer?: boolean;
+  displayOrder?: number;
+}
+
+export interface PublicVenue {
+  id?: string;
+  name?: string;
+  title?: string;
+  slug?: string;
+  venueType?: string;
+  capacity?: number;
+}
+
+export interface PublicSaleAvailability {
+  state: 'on_sale' | 'upcoming' | 'sold_out' | 'closed' | 'free' | 'cancelled' | 'postponed' | 'finished' | 'unavailable' | string;
+  canPurchase: boolean;
+  label: string;
+}
+
 export interface PublicEvent {
   _id?: string;
   id?: string;
   production?: PublicProduction | string;
-  venue?: any;
+  venue?: PublicVenue | null;
   startsAt?: string;
   endsAt?: string;
+  isPremiere?: boolean;
   badge?: string;
   status?: string;
   saleStatus?: string;
@@ -51,6 +89,9 @@ export interface PublicEvent {
   pricePlan?: any;
   maxTicketsPerOrder?: number;
   lockDurationMinutes?: number;
+  saleStartsAt?: string;
+  saleEndsAt?: string;
+  saleAvailability?: PublicSaleAvailability;
 }
 
 export interface PublicPromoSlide {
@@ -63,9 +104,93 @@ export interface PublicPromoSlide {
   production?: PublicProduction | string;
   relatedProduction?: PublicProduction | string;
   event?: PublicEvent | string;
+  relatedEvent?: PublicEvent | string;
   linkUrl?: string;
   linkLabel?: string;
   buttonLabel?: string;
+}
+
+export interface PublicNews {
+  id?: string;
+  title: string;
+  slug: string;
+  subtitle?: string;
+  excerpt?: string;
+  category?: string;
+  image?: PublicMedia | string | null;
+  relatedProduction?: PublicProduction | null;
+  publishedAt?: string;
+}
+
+export interface PublicSeo {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  canonicalUrl?: string;
+  noIndex?: boolean;
+}
+
+export interface HomepageSelectionConfig {
+  enabled: boolean;
+  heading?: string;
+  limit?: number;
+}
+
+export interface PublicHomepageCta {
+  id?: string;
+  title: string;
+  text?: string;
+  image?: PublicMedia | string | null;
+  linkLabel?: string;
+  url: string;
+  displayOrder?: number;
+}
+
+export interface PublicHomepageConfig {
+  hero: HomepageSelectionConfig;
+  upcomingEvents: HomepageSelectionConfig;
+  repertoireProductions: HomepageSelectionConfig;
+  featuredProductions: HomepageSelectionConfig;
+  featuredNews: HomepageSelectionConfig;
+  institutionalTeaser: HomepageSelectionConfig & {
+    text?: string;
+    image?: PublicMedia | string | null;
+    ctaLabel?: string;
+    ctaUrl?: string;
+  };
+  ctaCardsHeading?: string;
+  ctaCards: PublicHomepageCta[];
+  sections: Array<{ sectionType: string; displayOrder: number }>;
+  seo?: PublicSeo;
+}
+
+export interface PublicHomeResponse {
+  success: boolean;
+  config: PublicHomepageConfig;
+  slides: PublicPromoSlide[];
+  upcomingEvents: PublicEvent[];
+  repertoireProductions: PublicProduction[];
+  featuredProductions: PublicProduction[];
+  featuredNews: PublicNews[];
+}
+
+export interface PublicNavLink {
+  label: string;
+  url: string;
+  displayOrder?: number;
+}
+
+export interface PublicSiteSettings {
+  siteName: string;
+  shortDescription?: string;
+  mainLogo?: PublicMedia | string | null;
+  footerLogo?: PublicMedia | string | null;
+  socialLinks: Array<PublicNavLink & { platform?: string }>;
+  legalLinks: PublicNavLink[];
+  footerNavigation: Array<{ title: string; displayOrder?: number; links: PublicNavLink[] }>;
+  partnerLogos: Array<{ label?: string; media?: PublicMedia | string | null; url?: string; displayOrder?: number }>;
+  defaultSeo?: PublicSeo;
+  contact?: { address?: string; generalEmail?: string; ticketOfficeEmail?: string; phones?: string[]; ticketOfficePhones?: string[] };
 }
 
 export interface PublicSeat {

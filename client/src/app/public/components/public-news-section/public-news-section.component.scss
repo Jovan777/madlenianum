@@ -1,0 +1,135 @@
+:host {
+  display: block;
+  background: #f7f7f5;
+}
+.news-section {
+  width: min(1440px, calc(100% - 72px));
+  margin: 0 auto;
+  padding: 4rem 0;
+}
+.section-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.section-top h2 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(3rem, 4.75vw, 4.5rem);
+  font-weight: 400;
+  line-height: 1;
+}
+.filters {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  padding-top: 0.8rem;
+}
+.filters button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  color: #555;
+  background: transparent;
+  min-height: 42px;
+  font-size: 1rem;
+}
+.filters button.active {
+  color: #fff;
+  background: #9b2030;
+}
+.news-grid {
+  display: grid;
+  grid-auto-columns: calc((100% - 4.5rem) / 3);
+  grid-auto-flow: column;
+  gap: 2.25rem;
+  margin-top: 1.75rem;
+  padding: 2.25rem 4rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.news-grid::-webkit-scrollbar {
+  display: none;
+}
+.news-grid article {
+  display: flex;
+  min-height: 271px;
+  scroll-snap-align: start;
+  flex-direction: column;
+  padding: 1.5rem;
+  background: #fff;
+}
+.meta {
+  display: flex;
+  gap: 0.55rem;
+  text-transform: uppercase;
+  color: #7a352f;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.meta time {
+  color: #555;
+}
+.news-grid h3 {
+  margin: 0.55rem 0 0.45rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.85rem;
+  font-weight: 400;
+  line-height: 1.08;
+}
+.news-grid p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: #3e3e3e;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+.news-grid a {
+  align-self: flex-end;
+  margin-top: auto;
+  border: 1px solid #222;
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.9rem;
+}
+.news-empty {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: #fff;
+  color: #555;
+}
+.filters button:focus-visible,
+.news-grid a:focus-visible {
+  outline: 3px solid #9b2030;
+  outline-offset: 3px;
+}
+@media (max-width: 850px) {
+  .news-section {
+    width: calc(100% - 40px);
+  }
+  .news-grid {
+    grid-auto-columns: calc((100% - 2.25rem) / 2);
+    padding: 2rem 0;
+  }
+}
+@media (max-width: 620px) {
+  .news-section {
+    width: calc(100% - 28px);
+    padding: 4rem 0;
+  }
+  .section-top {
+    flex-direction: column;
+  }
+  .filters {
+    padding-top: 0;
+  }
+  .news-grid {
+    grid-auto-columns: 85%;
+    margin-top: 2rem;
+    padding: 0;
+  }
+}

@@ -1,0 +1,38 @@
+<section class="featured-section" *ngIf="productions().length">
+  <header>
+    <h2>{{ heading() || 'Ne propustite' }}</h2>
+    <a routerLink="/predstave">Sve najave</a>
+  </header>
+
+  <div class="feature-layout">
+    <article class="feature-card primary" *ngIf="productions()[0] as production">
+      <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title" loading="lazy" />
+      <div class="shade"></div>
+      <div class="copy">
+        <h3>{{ production.title }}</h3>
+        <p>{{ production.shortDescription || production.subtitle }}</p>
+        <div class="actions">
+          <a [routerLink]="['/predstave', production.slug]">ⓘ Saznaj više</a>
+          <button *ngIf="trailer(production) as video" type="button" (click)="activeVideo.set(video)">▷ Pogledaj trejler</button>
+        </div>
+      </div>
+    </article>
+
+    <div class="secondary-stack" *ngIf="productions().length > 1">
+      <article class="feature-card secondary" *ngFor="let production of productions().slice(1, 3)">
+        <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title" loading="lazy" />
+        <div class="shade"></div>
+        <div class="copy">
+          <h3>{{ production.title }}</h3>
+          <p>{{ production.shortDescription || production.subtitle }}</p>
+          <div class="actions">
+            <a [routerLink]="['/predstave', production.slug]">ⓘ Saznaj više</a>
+            <button *ngIf="trailer(production) as video" type="button" (click)="activeVideo.set(video)" [attr.aria-label]="'Pogledaj trejler za ' + production.title">▷</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<app-public-video-modal *ngIf="activeVideo() as video" [video]="video" (closed)="activeVideo.set(null)" />

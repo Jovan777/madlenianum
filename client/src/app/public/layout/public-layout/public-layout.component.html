@@ -1,21 +1,5 @@
 <div class="public-shell">
-  <app-public-header />
-
-  <main>
-    <router-outlet></router-outlet>
-  </main>
-
-  <footer class="site-footer">
-    <div>
-      <img src="/madlenianum/logo.png" alt="Madlenianum" />
-      <p>Opera, teatar i balet u Zemunu.</p>
-    </div>
-
-    <nav aria-label="Footer navigation">
-      <a routerLink="/repertoar">Program</a>
-      <a routerLink="/predstave">Predstave</a>
-      <a routerLink="/porudzbina">Porudzbina</a>
-      <a routerLink="/admin/login">Admin</a>
-    </nav>
-  </footer>
+  <app-public-header [settings]="settings()" />
+  <main><router-outlet /></main>
+  <app-public-footer [settings]="settings()" />
 </div>

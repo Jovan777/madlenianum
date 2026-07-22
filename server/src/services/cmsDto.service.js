@@ -110,6 +110,7 @@ const productionSummaryDto = (value) => {
     season: production.season || "",
     shortDescription: production.shortDescription || "",
     poster: mediaDto(production.poster),
+    venue: venueDto(production.venue),
   };
 };
 
@@ -137,6 +138,7 @@ const eventDto = (value) => {
     venue: venueDto(event.venue),
     startsAt: event.startsAt,
     endsAt: event.endsAt,
+    isPremiere: Boolean(event.isPremiere),
     badge: event.badge || "",
     status: event.status,
     saleStatus: event.saleStatus,
@@ -149,7 +151,31 @@ const eventDto = (value) => {
     pricePlan: idOf(event.pricePlan),
     maxTicketsPerOrder: event.maxTicketsPerOrder,
     lockDurationMinutes: event.lockDurationMinutes,
+    saleAvailability: eventSaleAvailability(event),
   };
+};
+
+const eventSaleAvailability = (event) => {
+  const now = new Date();
+  const startsAt = event.startsAt ? new Date(event.startsAt) : null;
+  const saleStartsAt = event.saleStartsAt ? new Date(event.saleStartsAt) : null;
+  const saleEndsAt = event.saleEndsAt ? new Date(event.saleEndsAt) : null;
+
+  if (event.status === "cancelled") return { state: "cancelled", canPurchase: false, label: "Otkazano" };
+  if (event.status === "postponed") return { state: "postponed", canPurchase: false, label: "Odlozeno" };
+  if (event.status === "finished" || (startsAt && startsAt <= now)) return { state: "finished", canPurchase: false, label: "Dogadjaj je zavrsen" };
+  if (event.saleStatus === "sold_out") return { state: "sold_out", canPurchase: false, label: "Rasprodato" };
+  if (event.saleStatus === "sales_closed" || (saleEndsAt && saleEndsAt <= now)) return { state: "closed", canPurchase: false, label: "Prodaja zavrsena" };
+  if (event.saleStatus === "free") return { state: "free", canPurchase: false, label: "Slobodan ulaz" };
+  if (event.saleStatus === "not_on_sale" || (saleStartsAt && saleStartsAt > now)) return { state: "upcoming", canPurchase: false, label: "Prodaja uskoro" };
+
+  const internalTicketing = event.ticketing?.enabled
+    && event.ticketing?.provider === "internal"
+    && event.seatMap
+    && event.pricePlan;
+  if (event.saleStatus === "on_sale" && internalTicketing) return { state: "on_sale", canPurchase: true, label: "Kupi karte" };
+
+  return { state: "unavailable", canPurchase: false, label: "Prodaja nije dostupna" };
 };
 
 const promoSlideDto = (value) => {
@@ -273,6 +299,7 @@ const productionDto = (value) => {
     description: item.description || "",
     synopsis: item.synopsis || "",
     poster: mediaDto(item.poster),
+    venue: venueDto(item.venue),
     gallery: galleryItems.map((entry) => entry.media),
     galleryItems,
     videos: videoItems,
@@ -496,6 +523,11 @@ const homepageConfigDto = (value) => {
       heading: item.upcomingEvents?.heading || "Repertoar",
       limit: item.upcomingEvents?.limit || 8,
     },
+    repertoireProductions: {
+      enabled: item.repertoireProductions?.enabled !== false,
+      heading: item.repertoireProductions?.heading || "Sta je na repertoaru",
+      limit: item.repertoireProductions?.limit || 8,
+    },
     featuredProductions: {
       enabled: item.featuredProductions?.enabled !== false,
       heading: item.featuredProductions?.heading || "Predstave",
@@ -514,6 +546,7 @@ const homepageConfigDto = (value) => {
       ctaLabel: item.institutionalTeaser?.ctaLabel || "",
       ctaUrl: item.institutionalTeaser?.ctaUrl || "",
     },
+    ctaCardsHeading: item.ctaCardsHeading || "Istrazite Madlenianum",
     ctaCards: (item.ctaCards || [])
       .filter((card) => card.enabled !== false)
       .sort((a, b) => a.displayOrder - b.displayOrder)

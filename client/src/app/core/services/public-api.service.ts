@@ -5,9 +5,11 @@ import { environment } from '../../../environments/environment';
 import { MediaUrlService } from './media-url.service';
 import {
   EventSeatsResponse,
+  PublicHomeResponse,
   PublicEvent,
   PublicListResponse,
   PublicProduction,
+  PublicSiteSettings,
 } from '../models/public.models';
 
 const PUBLIC_SESSION_KEY = 'madlenianum_public_session_id';
@@ -24,7 +26,11 @@ export class PublicApiService {
   ) {}
 
   getHome() {
-    return this.http.get<any>(`${this.apiUrl}/public/home`);
+    return this.http.get<PublicHomeResponse>(`${this.apiUrl}/public/home`);
+  }
+
+  getSiteSettings() {
+    return this.http.get<{ success: boolean; item: PublicSiteSettings }>(`${this.apiUrl}/public/site-settings`);
   }
 
   getRepertoire() {

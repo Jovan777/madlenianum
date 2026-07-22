@@ -45,6 +45,15 @@ const featuredProductionsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const repertoireProductionsSchema = new mongoose.Schema(
+  {
+    ...selectionSchema.obj,
+    selectedProductions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Production" }],
+    allowedTypes: [{ type: String, trim: true }],
+  },
+  { _id: false }
+);
+
 const featuredNewsSchema = new mongoose.Schema(
   {
     ...selectionSchema.obj,
@@ -84,7 +93,7 @@ const sectionSchema = new mongoose.Schema(
   {
     sectionType: {
       type: String,
-      enum: ["hero", "upcomingEvents", "featuredProductions", "featuredNews", "institutionalTeaser", "ctaCards"],
+      enum: ["hero", "upcomingEvents", "repertoireProductions", "featuredProductions", "featuredNews", "institutionalTeaser", "ctaCards"],
       required: true,
     },
     enabled: { type: Boolean, default: true },
@@ -98,9 +107,11 @@ const homepageConfigSchema = new mongoose.Schema(
     key: { type: String, enum: ["default"], unique: true, default: "default", immutable: true },
     hero: { type: heroSchema, default: () => ({}) },
     upcomingEvents: { type: upcomingEventsSchema, default: () => ({}) },
+    repertoireProductions: { type: repertoireProductionsSchema, default: () => ({ heading: "Sta je na repertoaru", limit: 8 }) },
     featuredProductions: { type: featuredProductionsSchema, default: () => ({ heading: "Predstave" }) },
     featuredNews: { type: featuredNewsSchema, default: () => ({ heading: "Aktuelno" }) },
     institutionalTeaser: { type: teaserSchema, default: () => ({}) },
+    ctaCardsHeading: { type: String, trim: true, default: "Istrazite Madlenianum" },
     ctaCards: [ctaCardSchema],
     sections: [sectionSchema],
     seo: { type: seoSchema, default: () => ({}) },

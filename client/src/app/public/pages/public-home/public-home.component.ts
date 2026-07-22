@@ -1,174 +1,81 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Meta, Title } from '@angular/platform-browser';
+import { finalize } from 'rxjs';
 
-import { PublicEvent, PublicProduction, PublicPromoSlide } from '../../../core/models/public.models';
+import {
+  PublicEvent,
+  PublicHomeResponse,
+  PublicHomepageConfig,
+  PublicNews,
+  PublicProduction,
+  PublicPromoSlide,
+} from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicCtaCardsComponent } from '../../components/public-cta-cards/public-cta-cards.component';
+import { PublicFeaturedSectionComponent } from '../../components/public-featured-section/public-featured-section.component';
+import { PublicHeroSliderComponent } from '../../components/public-hero-slider/public-hero-slider.component';
+import { PublicInstitutionalTeaserComponent } from '../../components/public-institutional-teaser/public-institutional-teaser.component';
+import { PublicNewsSectionComponent } from '../../components/public-news-section/public-news-section.component';
+import { PublicRepertoireSectionComponent } from '../../components/public-repertoire-section/public-repertoire-section.component';
+import { PublicUpcomingEventsComponent } from '../../components/public-upcoming-events/public-upcoming-events.component';
 
 @Component({
   selector: 'app-public-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    PublicHeroSliderComponent,
+    PublicUpcomingEventsComponent,
+    PublicRepertoireSectionComponent,
+    PublicFeaturedSectionComponent,
+    PublicNewsSectionComponent,
+    PublicInstitutionalTeaserComponent,
+    PublicCtaCardsComponent,
+  ],
   templateUrl: './public-home.component.html',
   styleUrl: './public-home.component.scss',
 })
 export class PublicHomeComponent implements OnInit {
-  readonly publicApi = inject(PublicApiService);
-
-  readonly isLoading = signal(true);
-  readonly errorMessage = signal('');
+  readonly loading = signal(true);
+  readonly error = signal('');
+  readonly config = signal<PublicHomepageConfig | null>(null);
   readonly slides = signal<PublicPromoSlide[]>([]);
-  readonly productions = signal<PublicProduction[]>([]);
   readonly events = signal<PublicEvent[]>([]);
-  readonly news = signal<any[]>([]);
-  readonly activeSlideIndex = signal(0);
+  readonly repertoireProductions = signal<PublicProduction[]>([]);
+  readonly featuredProductions = signal<PublicProduction[]>([]);
+  readonly news = signal<PublicNews[]>([]);
+
+  private readonly api = inject(PublicApiService);
+  private readonly title = inject(Title);
+  private readonly meta = inject(Meta);
 
   ngOnInit(): void {
-    this.publicApi.getHome().subscribe({
-      next: (response) => {
-        this.slides.set(
-          this.publicApi.extractItems<PublicPromoSlide>(response, ['slides', 'promoSlides', 'promos'])
-        );
-        this.productions.set(
-          this.publicApi.extractItems<PublicProduction>(response, [
-            'featuredProductions',
-            'productions',
-          ])
-        );
-        this.events.set(
-          this.publicApi.extractItems<PublicEvent>(response, [
-            'upcomingEvents',
-            'events',
-            'repertoire',
-          ])
-        );
-        this.news.set(this.publicApi.extractItems<any>(response, ['featuredNews', 'news', 'articles']));
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Pocetna strana trenutno nije dostupna.');
-      },
-      complete: () => {
-        this.isLoading.set(false);
-      },
-    });
+    this.load();
   }
 
-  activeSlide(): PublicPromoSlide | null {
-    return this.slides()[this.activeSlideIndex()] || null;
+  load(): void {
+    this.loading.set(true);
+    this.error.set('');
+    this.api.getHome()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (response) => this.applyResponse(response),
+        error: (error) => this.error.set(error?.error?.message || 'Početna strana trenutno nije dostupna.'),
+      });
   }
 
-  setSlide(index: number): void {
-    this.activeSlideIndex.set(index);
-  }
-
-  heroTitle(): string {
-    return this.activeSlide()?.title || this.productions()[0]?.title || 'Madlenianum';
-  }
-
-  heroSubtitle(): string {
-    return (
-      this.activeSlide()?.description ||
-      this.activeSlide()?.subtitle ||
-      this.productions()[0]?.shortDescription ||
-      'Opera, teatar i balet sa jasnim putem od programa do karte.'
-    );
-  }
-
-  heroImage(): string {
-    const slide = this.activeSlide();
-    const production = this.slideProduction(slide) || this.productions()[0];
-
-    return (
-      this.publicApi.mediaUrl(slide?.image) ||
-      this.publicApi.mediaUrl(production?.poster) ||
-      this.publicApi.fallbackImage(0)
-    );
-  }
-
-  heroBackground(): string {
-    return `url("${this.heroImage()}")`;
-  }
-
-  slideProduction(slide: PublicPromoSlide | null): PublicProduction | null {
-    const value = slide?.relatedProduction || slide?.production;
-
-    if (!value || typeof value === 'string') {
-      return null;
-    }
-
-    return value;
-  }
-
-  heroProductionSlug(): string {
-    return this.slideProduction(this.activeSlide())?.slug || this.productions()[0]?.slug || '';
-  }
-
-  heroEventId(): string {
-    const slideEvent = this.publicApi.eventId(this.activeSlide()?.event as PublicEvent | string | null | undefined);
-
-    if (slideEvent) {
-      return slideEvent;
-    }
-
-    const productionSlug = this.heroProductionSlug();
-    const matchingEvent = this.events().find((event) => {
-      return this.publicApi.productionFromEvent(event)?.slug === productionSlug;
-    });
-
-    return this.publicApi.eventId(matchingEvent || this.events()[0]);
-  }
-
-  eventId(event: PublicEvent): string {
-    return this.publicApi.eventId(event);
-  }
-
-  eventProduction(event: PublicEvent): PublicProduction | null {
-    return this.publicApi.productionFromEvent(event);
-  }
-
-  eventTitle(event: PublicEvent): string {
-    return this.eventProduction(event)?.title || 'Dogadjaj';
-  }
-
-  eventType(event: PublicEvent): string {
-    return this.publicApi.typeLabel(this.eventProduction(event)?.type);
-  }
-
-  eventDate(event: PublicEvent): string {
-    if (!event.startsAt) {
-      return 'Uskoro';
-    }
-
-    return new Date(event.startsAt).toLocaleDateString('sr-RS', {
-      day: '2-digit',
-      month: 'long',
-    });
-  }
-
-  eventTime(event: PublicEvent): string {
-    if (!event.startsAt) {
-      return '';
-    }
-
-    return new Date(event.startsAt).toLocaleTimeString('sr-RS', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  venueName(event: PublicEvent): string {
-    return event.venue?.name || event.venue?.title || 'Madlenianum';
-  }
-
-  productionImage(production: PublicProduction, index: number): string {
-    return this.publicApi.mediaUrl(production.poster) || this.publicApi.fallbackImage(index);
-  }
-
-  productionType(production: PublicProduction): string {
-    return this.publicApi.typeLabel(production.type);
-  }
-
-  newsTitle(item: any): string {
-    return item.title || item.headline || 'Vest';
+  private applyResponse(response: PublicHomeResponse): void {
+    this.config.set(response.config);
+    this.slides.set(response.slides || []);
+    this.events.set(response.upcomingEvents || []);
+    this.repertoireProductions.set(response.repertoireProductions || []);
+    this.featuredProductions.set(response.featuredProductions || []);
+    this.news.set(response.featuredNews || []);
+    const seo = response.config?.seo;
+    this.title.setTitle(seo?.title || 'Madlenianum | Opera i teatar');
+    this.meta.updateTag({ name: 'description', content: seo?.description || 'Program, predstave i ulaznice Opere i teatra Madlenianum.' });
+    this.meta.updateTag({ name: 'robots', content: seo?.noIndex ? 'noindex,nofollow' : 'index,follow' });
+    if (seo?.canonicalUrl) this.meta.updateTag({ property: 'og:url', content: seo.canonicalUrl });
   }
 }

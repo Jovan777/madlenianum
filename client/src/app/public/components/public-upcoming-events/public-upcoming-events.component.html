@@ -1,0 +1,51 @@
+<section class="upcoming-section">
+  <header class="section-header">
+    <h2>{{ heading() || 'Predstojeći događaji' }}</h2>
+    <a routerLink="/repertoar">Pogledaj ceo repertoar</a>
+  </header>
+
+  <ng-container *ngIf="groups().length; else emptyEvents">
+    <div class="date-tabs" role="tablist" aria-label="Datumi predstojećih događaja">
+      <button
+        *ngFor="let group of groups()"
+        type="button"
+        role="tab"
+        [class.active]="group.key === selectedGroup()?.key"
+        [attr.aria-selected]="group.key === selectedGroup()?.key"
+        (click)="selectedDate.set(group.key)"
+      >
+        {{ group.label }}
+      </button>
+    </div>
+
+    <div class="event-list" role="tabpanel">
+      <article class="event-card" *ngFor="let event of selectedGroup()?.events">
+        <div class="poster-wrap">
+          <img *ngIf="image(event)" [src]="image(event)" [alt]="production(event)?.title || 'Predstava'" loading="lazy" />
+          <div *ngIf="!image(event)" class="poster-fallback" aria-hidden="true"></div>
+        </div>
+
+        <div class="event-copy">
+          <strong class="time">{{ display.time(event.startsAt) }}</strong>
+          <div class="meta">
+            <span>{{ display.productionType(production(event)?.type) }}</span>
+            <span>{{ event.venue?.name || 'Madlenianum' }}</span>
+            <em *ngIf="event.isPremiere || event.badge === 'Premijera'">Premijera</em>
+          </div>
+          <h3>{{ production(event)?.title || 'Program Madlenianuma' }}</h3>
+          <p>{{ production(event)?.shortDescription || production(event)?.subtitle }}</p>
+        </div>
+
+        <div class="event-actions">
+          <a *ngIf="production(event)?.slug" class="details" [routerLink]="['/predstave', production(event)?.slug]">ⓘ <span>Saznaj više</span></a>
+          <a *ngIf="display.eventSale(event).canPurchase && eventId(event)" class="buy" [routerLink]="['/kupovina', eventId(event)]" aria-label="Kupi karte">Karte</a>
+          <span class="sale-status" *ngIf="!display.eventSale(event).canPurchase">{{ display.eventSale(event).label }}</span>
+        </div>
+      </article>
+    </div>
+  </ng-container>
+
+  <ng-template #emptyEvents>
+    <p class="section-empty">Novi termini biće uskoro objavljeni.</p>
+  </ng-template>
+</section>

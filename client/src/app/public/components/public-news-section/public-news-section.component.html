@@ -1,0 +1,31 @@
+<section class="news-section" *ngIf="items().length">
+  <div class="section-top">
+    <h2>{{ heading() || 'Iza kulisa' }}</h2>
+    <div class="filters" role="tablist" aria-label="Filtriraj objave">
+      <button
+        *ngFor="let filter of filters"
+        type="button"
+        role="tab"
+        [class.active]="filter.value === activeFilter()"
+        [attr.aria-selected]="filter.value === activeFilter()"
+        (click)="activeFilter.set(filter.value)"
+      >{{ filter.label }}</button>
+    </div>
+  </div>
+
+  <div class="news-grid" *ngIf="visibleItems().length; else emptyNews">
+    <article *ngFor="let item of visibleItems()">
+      <div class="meta">
+        <span>{{ display.newsCategory(item.category) }}</span>
+        <time *ngIf="item.publishedAt" [attr.datetime]="item.publishedAt">{{ display.dayMonth(item.publishedAt) }}</time>
+      </div>
+      <h3>{{ item.title }}</h3>
+      <p>{{ item.excerpt || item.subtitle }}</p>
+      <a *ngIf="item.relatedProduction?.slug" [routerLink]="['/predstave', item.relatedProduction?.slug]">Povezana predstava</a>
+    </article>
+  </div>
+
+  <ng-template #emptyNews>
+    <p class="news-empty">U ovoj kategoriji trenutno nema objava.</p>
+  </ng-template>
+</section>

@@ -26,6 +26,7 @@ const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
 
 const UPLOAD_ROOT = path.join(__dirname, "../../uploads/madlenianum");
+const PUBLIC_ASSET_ROOT = path.join(__dirname, "../../../client/public/madlenianum");
 
 const startOfToday = () => {
   const date = new Date();
@@ -195,6 +196,32 @@ const roleKeyFor = (role) => {
   if (value.includes("koreograf")) return "choreographer";
   if (value.includes("muzik")) return "music";
   return "other";
+};
+
+const upsertPublicMedia = async ({ fileName, title, altText }) => {
+  const absolutePath = path.join(PUBLIC_ASSET_ROOT, fileName);
+  if (!fs.existsSync(absolutePath)) {
+    console.warn(`Missing public image file: ${absolutePath}`);
+    return null;
+  }
+
+  const stats = fs.statSync(absolutePath);
+  const url = `/madlenianum/${encodeURIComponent(fileName)}`;
+  return Media.findOneAndUpdate(
+    { url },
+    {
+      title,
+      alt: altText,
+      originalName: fileName,
+      filename: fileName,
+      mimeType: "image/jpeg",
+      size: stats.size,
+      storagePath: "",
+      url,
+      fileType: "image",
+    },
+    { returnDocument: "after", upsert: true, runValidators: true }
+  );
 };
 
 const normalizeCredits = (items) => (items || []).map((entry, index) => ({
@@ -373,6 +400,8 @@ const upsertEvent = async ({
   endsAt,
   badge,
   notes,
+  isPremiere = false,
+  saleStatus = "on_sale",
 }) => {
   const saleStartsAt = startOfToday();
   const saleEndsAt = new Date(startsAt.getTime() - 30 * 60 * 1000);
@@ -387,10 +416,10 @@ const upsertEvent = async ({
       venue: venue._id,
       startsAt,
       endsAt,
-      isPremiere: false,
+      isPremiere,
       badge: badge || "",
       status: "scheduled",
-      saleStatus: "on_sale",
+      saleStatus,
       seatMap: seatMap._id,
       pricePlan: pricePlan._id,
       saleStartsAt,
@@ -439,6 +468,8 @@ const upsertPromoSlide = async ({
   image,
   production,
   event,
+  activeFrom,
+  activeUntil,
 }) => {
   const slug = slugify(title);
 
@@ -449,12 +480,12 @@ const upsertPromoSlide = async ({
       slug,
       description: subtitle || "",
       image: image?._id,
-      linkLabel: "Pogledajte vise",
+      linkLabel: "Pogledajte više",
       linkUrl: production ? `/predstave/${production.slug}` : "",
       relatedProduction: production?._id,
       relatedEvent: event?._id,
-      activeFrom: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      activeUntil: event?.startsAt ? new Date(event.startsAt.getTime() + 24 * 60 * 60 * 1000) : undefined,
+      activeFrom: activeFrom || new Date(Date.now() - 24 * 60 * 60 * 1000),
+      activeUntil: activeUntil || (event?.startsAt ? new Date(event.startsAt.getTime() + 24 * 60 * 60 * 1000) : undefined),
       language: "sr",
       status: "published",
       publishedAt: new Date(),
@@ -506,7 +537,7 @@ const upsertStaticPage = async ({
   );
 };
 
-const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, relatedProduction }) => {
+const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, relatedProduction, category = "vest" }) => {
   const slug = slugify(title);
   return News.findOneAndUpdate(
     { slug },
@@ -516,7 +547,7 @@ const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, rela
       subtitle,
       excerpt,
       body,
-      category: "premijera",
+      category,
       image: image?._id,
       gallery: (gallery || []).map((item) => item._id),
       galleryItems: galleryItems(gallery),
@@ -540,31 +571,35 @@ const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, rela
   );
 };
 
-const upsertHomepageConfig = async ({ slides, events, productions, news, teaserImage, aboutPage }) => {
+const upsertHomepageConfig = async ({ slides, events, productions, featuredProductions, news, teaserImage, aboutPage, ctaCards }) => {
   return HomepageConfig.findOneAndUpdate(
     { key: "default" },
     {
       key: "default",
       hero: { enabled: true, mode: "manual", limit: 5, selectedSlides: slides.map((item) => item._id), fallbackToAutomatic: true },
-      upcomingEvents: { enabled: true, mode: "manual", heading: "Repertoar", limit: 8, selectedEvents: events.map((item) => item._id) },
-      featuredProductions: { enabled: true, mode: "manual", heading: "Izdvajamo", limit: 6, selectedProductions: productions.map((item) => item._id), allowedTypes: [] },
-      featuredNews: { enabled: true, mode: "manual", heading: "Aktuelno", limit: 6, selectedNews: news.map((item) => item._id), category: "" },
+      upcomingEvents: { enabled: true, mode: "manual", heading: "Predstojeći događaji", limit: 8, selectedEvents: events.map((item) => item._id) },
+      repertoireProductions: { enabled: true, mode: "manual", heading: "Šta je na repertoaru", limit: 4, selectedProductions: productions.map((item) => item._id), allowedTypes: [] },
+      featuredProductions: { enabled: true, mode: "manual", heading: "Ne propustite", limit: 6, selectedProductions: featuredProductions.map((item) => item._id), allowedTypes: [] },
+      featuredNews: { enabled: true, mode: "manual", heading: "Iza kulisa", limit: 6, selectedNews: news.map((item) => item._id), category: "" },
       institutionalTeaser: {
         enabled: true,
         heading: "Madlenianum",
-        text: "<p>Opera i teatar u Zemunu, sa programom koji povezuje muziku, dramu i igru.</p>",
+        text: "<p>Madlenianum je mesto susreta opere, teatra, muzike i pokreta. U Zemunu stvaramo program koji povezuje umetnike i publiku, tradiciju i savremeni izraz.</p>",
         image: teaserImage?._id,
         ctaLabel: "O nama",
         ctaUrl: "/strana/o-nama",
         linkedPage: aboutPage?._id,
       },
-      ctaCards: [],
+      ctaCardsHeading: "Partnerstvo",
+      ctaCards,
       sections: [
         { sectionType: "hero", enabled: true, displayOrder: 0 },
         { sectionType: "upcomingEvents", enabled: true, displayOrder: 1 },
-        { sectionType: "featuredProductions", enabled: true, displayOrder: 2 },
-        { sectionType: "featuredNews", enabled: true, displayOrder: 3 },
-        { sectionType: "institutionalTeaser", enabled: true, displayOrder: 4 },
+        { sectionType: "repertoireProductions", enabled: true, displayOrder: 2 },
+        { sectionType: "featuredProductions", enabled: true, displayOrder: 3 },
+        { sectionType: "featuredNews", enabled: true, displayOrder: 4 },
+        { sectionType: "institutionalTeaser", enabled: true, displayOrder: 5 },
+        { sectionType: "ctaCards", enabled: true, displayOrder: 6 },
       ],
       seo: { title: "Madlenianum", description: "Opera i teatar Madlenianum u Zemunu", keywords: ["Madlenianum", "opera", "teatar"] },
     },
@@ -572,15 +607,15 @@ const upsertHomepageConfig = async ({ slides, events, productions, news, teaserI
   );
 };
 
-const upsertSiteSettings = async ({ logo, socialImage }) => {
+const upsertSiteSettings = async ({ socialImage }) => {
   return SiteSettings.findOneAndUpdate(
     { key: "default" },
     {
       key: "default",
       siteName: "Madlenianum",
       shortDescription: "Opera i teatar Madlenianum u Zemunu.",
-      mainLogo: logo?._id,
-      footerLogo: logo?._id,
+      mainLogo: null,
+      footerLogo: null,
       contact: {
         address: "Glavna 32, Zemun, Beograd",
         generalEmail: "office@madlenianum.rs",
@@ -592,15 +627,33 @@ const upsertSiteSettings = async ({ logo, socialImage }) => {
         { platform: "instagram", label: "Instagram", url: "https://www.instagram.com/madlenianum/", enabled: true, displayOrder: 0 },
       ],
       legalLinks: [],
-      footerNavigation: [{
-        title: "Madlenianum",
-        enabled: true,
-        displayOrder: 0,
-        links: [
-          { label: "O nama", url: "/strana/o-nama", enabled: true, displayOrder: 0 },
-          { label: "Kontakt", url: "/strana/kontakt", enabled: true, displayOrder: 1 },
-        ],
-      }],
+      footerNavigation: [
+        {
+          title: "Program",
+          enabled: true,
+          displayOrder: 0,
+          links: [
+            { label: "Repertoar", url: "/repertoar", enabled: true, displayOrder: 0 },
+            { label: "Predstave", url: "/predstave", enabled: true, displayOrder: 1 },
+          ],
+        },
+        {
+          title: "Umetnici",
+          enabled: true,
+          displayOrder: 1,
+          links: [{ label: "Svi umetnici", url: "/umetnici", enabled: true, displayOrder: 0 }],
+        },
+        {
+          title: "Madlenianum",
+          enabled: true,
+          displayOrder: 2,
+          links: [
+            { label: "O nama", url: "/strana/o-nama", enabled: true, displayOrder: 0 },
+            { label: "Kontakt", url: "/strana/kontakt", enabled: true, displayOrder: 1 },
+            { label: "Provera porudzbine", url: "/porudzbina", enabled: true, displayOrder: 2 },
+          ],
+        },
+      ],
       partnerLogos: [],
       defaultSeo: { title: "Madlenianum", description: "Opera i teatar Madlenianum", keywords: ["Madlenianum", "Zemun"] },
       socialImage: socialImage?._id,
@@ -905,6 +958,21 @@ const seedPhase3Content = async () => {
           altText: "Ivan Vuković",
         }),
       },
+      homepage: {
+        gospodinPoster: await upsertPublicMedia({ fileName: "gospodin_u_cizmama_od_dima.jpg", title: "Gospodin u čizmama od dima - plakat", altText: "Plakat predstave Gospodin u čizmama od dima" }),
+        gospodinFeature: await upsertPublicMedia({ fileName: "gospodin_u_cizmama_od_dima_u_najavi.jpg", title: "Gospodin u čizmama od dima", altText: "Scena iz predstave Gospodin u čizmama od dima" }),
+        pariskiPoster: await upsertPublicMedia({ fileName: "pariski_zivot_plakat.jpg", title: "Pariski život - plakat", altText: "Plakat predstave Pariski život" }),
+        pariskiFeature: await upsertPublicMedia({ fileName: "pariski_zivotu_u_najavi.jpg", title: "Pariski život", altText: "Scena iz predstave Pariski život" }),
+        companyPoster: await upsertPublicMedia({ fileName: "plakat_company.jpg", title: "Company - plakat", altText: "Plakat mjuzikla Company" }),
+        novaLjubavPoster: await upsertPublicMedia({ fileName: "plakat_nova_ljubav.jpg", title: "Nova ljubav - plakat", altText: "Plakat predstave Nova ljubav" }),
+        novaLjubavFeature: await upsertPublicMedia({ fileName: "nova_ljubav_u_najavi.jpg", title: "Nova ljubav", altText: "Scena iz predstave Nova ljubav" }),
+        staklenaPoster: await upsertPublicMedia({ fileName: "plakat_staklena_menazerija.jpg", title: "Staklena menazerija - plakat", altText: "Plakat predstave Staklena menazerija" }),
+        staklenaFeature: await upsertPublicMedia({ fileName: "staklena_menazerija_u_najavi.jpg", title: "Staklena menazerija", altText: "Scena iz predstave Staklena menazerija" }),
+        building: await upsertPublicMedia({ fileName: "madlenianum_zgrada.jpg", title: "Zgrada Madlenianuma", altText: "Zgrada opere i teatra Madlenianum" }),
+        guestPerformances: await upsertPublicMedia({ fileName: "gostovanja_slika.jpg", title: "Gostovanja", altText: "Velika scena Madlenianuma" }),
+        venueRental: await upsertPublicMedia({ fileName: "zakup_prostora_slika.jpg", title: "Zakup prostora", altText: "Prostor Madlenianuma" }),
+        costumeRental: await upsertPublicMedia({ fileName: "najam_kostima_i_rekvizita.jpg", title: "Najam kostima i rekvizita", altText: "Scena sa kostimima i rekvizitima" }),
+      },
     };
 
     const artists = {
@@ -1159,6 +1227,70 @@ const seedPhase3Content = async () => {
       isFeatured: false,
     });
 
+    const gospodin = await upsertProduction({
+      title: "Gospodin u čizmama od dima",
+      type: "drama",
+      authorComposer: "F. M. Dostojevski / Marko Misiraca",
+      subtitle: "Po motivima pripovetke Selo Stepančikovo i njegovi žitelji",
+      shortDescription: "Velika ansambl predstava o vlasti, sujeti i ljudskoj potrebi da bude prihvaćen.",
+      description: "Scenska adaptacija sveta Dostojevskog spaja britak humor, apsurd i prepoznatljivu ljudsku slabost u raskosnoj dramskoj predstavi.",
+      synopsis: "Dolazak jednog neobicnog gospodina pokrece niz odnosa i sukoba u zajednici koja pokusava da sacuva privid reda.",
+      poster: media.homepage.gospodinPoster,
+      gallery: [media.homepage.gospodinFeature].filter(Boolean),
+      creativeTeam: [{ role: "Reditelj", name: "Marko Misiraca", order: 0 }],
+      cast: [{ character: "Uloga", name: "Tihomir Stanic", order: 0 }],
+      tags: ["drama", "dostojevski", "velika scena"],
+      isFeatured: true,
+    });
+
+    const pariski = await upsertProduction({
+      title: "Pariski život",
+      type: "opereta",
+      authorComposer: "Zak Ofenbah",
+      subtitle: "Opereta u velikom stilu",
+      shortDescription: "Vedra, raskošna opereta o gradu svetlosti, ljubavi i uzbuđenju novog početka.",
+      description: "Pariski život donosi muziku, pokret i scenski sjaj u velikom ansambl spektaklu Madlenianuma.",
+      synopsis: "Gosti i domacini Pariza uplestace se u vrtlog zabune, ljubavi i muzike.",
+      poster: media.homepage.pariskiPoster,
+      gallery: [media.homepage.pariskiFeature].filter(Boolean),
+      creativeTeam: [{ role: "Kompozitor", name: "Zak Ofenbah", order: 0 }],
+      cast: [],
+      tags: ["opereta", "muzicki program", "velika scena"],
+      isFeatured: true,
+    });
+
+    const company = await upsertProduction({
+      title: "Company",
+      type: "mjuzikl",
+      authorComposer: "Stiven Sondhajm",
+      subtitle: "Savremeni brodvejski mjuzikl",
+      shortDescription: "Muzicka prica o odnosima, prijateljstvu i izborima koji oblikuju savremeni zivot.",
+      description: "Company kroz muziku i precizne dijaloge posmatra ljubav, brak i slobodu iz vise uglova.",
+      synopsis: "Jedan rodjendan otvara pitanja bliskosti i odluka koje se ne mogu zauvek odlagati.",
+      poster: media.homepage.companyPoster,
+      gallery: [],
+      creativeTeam: [{ role: "Kompozitor", name: "Stiven Sondhajm", order: 0 }],
+      cast: [],
+      tags: ["mjuzikl", "velika scena"],
+      isFeatured: false,
+    });
+
+    const novaLjubav = await upsertProduction({
+      title: "Nova ljubav",
+      type: "drama",
+      authorComposer: "Madlenianum",
+      subtitle: "Prica o novom pocetku",
+      shortDescription: "Topla i duhovita predstava o hrabrosti da se ljubavi pruzi jos jedna sansa.",
+      description: "Nova ljubav prati ljude koji izmedju secanja i novih odluka traze prostor za bliskost.",
+      synopsis: "Susret koji dolazi u pravom trenutku menja zivote protagonista.",
+      poster: media.homepage.novaLjubavPoster,
+      gallery: [media.homepage.novaLjubavFeature].filter(Boolean),
+      creativeTeam: [],
+      cast: [],
+      tags: ["drama", "mala scena"],
+      isFeatured: true,
+    });
+
     carmen.recommendedProductions = [staklena._id, gordost._id];
     carmen.announcement = {
       isAnnounced: true,
@@ -1172,6 +1304,10 @@ const seedPhase3Content = async () => {
     await carmen.save();
 
     const schedule = {
+      gospodin: futurePerformance({ daysFromNow: 4, hour: 17, minute: 0, durationMinutes: 120 }),
+      pariski: futurePerformance({ daysFromNow: 6, hour: 19, minute: 0, durationMinutes: 140 }),
+      company: futurePerformance({ daysFromNow: 9, hour: 19, minute: 30, durationMinutes: 130 }),
+      novaLjubav: futurePerformance({ daysFromNow: 17, hour: 20, minute: 0, durationMinutes: 100 }),
       staklena: futurePerformance({
         daysFromNow: 7,
         hour: 17,
@@ -1199,6 +1335,49 @@ const seedPhase3Content = async () => {
     };
 
     const events = {
+      gospodin: await upsertEvent({
+        production: gospodin,
+        venue,
+        seatMap,
+        pricePlan: dramaRegularPlan,
+        startsAt: schedule.gospodin.startsAt,
+        endsAt: schedule.gospodin.endsAt,
+        badge: "Premijera",
+        notes: "Seeded event for Gospodin u cizmama od dima.",
+        isPremiere: true,
+      }),
+      pariski: await upsertEvent({
+        production: pariski,
+        venue,
+        seatMap,
+        pricePlan: balletRegularPlan,
+        startsAt: schedule.pariski.startsAt,
+        endsAt: schedule.pariski.endsAt,
+        badge: eventBadge(schedule.pariski.startsAt),
+        notes: "Seeded event for Pariski zivot.",
+        saleStatus: "sold_out",
+      }),
+      company: await upsertEvent({
+        production: company,
+        venue,
+        seatMap,
+        pricePlan: balletRegularPlan,
+        startsAt: schedule.company.startsAt,
+        endsAt: schedule.company.endsAt,
+        badge: eventBadge(schedule.company.startsAt),
+        notes: "Seeded event for Company.",
+      }),
+      novaLjubav: await upsertEvent({
+        production: novaLjubav,
+        venue,
+        seatMap,
+        pricePlan: dramaRegularPlan,
+        startsAt: schedule.novaLjubav.startsAt,
+        endsAt: schedule.novaLjubav.endsAt,
+        badge: eventBadge(schedule.novaLjubav.startsAt),
+        notes: "Seeded event for Nova ljubav.",
+        saleStatus: "not_on_sale",
+      }),
       staklena: await upsertEvent({
         production: staklena,
         venue,
@@ -1245,7 +1424,41 @@ const seedPhase3Content = async () => {
       $or: [{ slug: null }, { slug: "" }, { slug: "x-y-0" }],
     });
 
-    await upsertPromoSlide({
+    const gospodinSlide = await upsertPromoSlide({
+      title: "Gospodin u čizmama od dima",
+      subtitle: "Velika dramska predstava po motivima Dostojevskog",
+      image: media.homepage.gospodinFeature,
+      production: gospodin,
+      event: events.gospodin,
+    });
+
+    const expiredSlide = await upsertPromoSlide({
+      title: "ARHIVSKI HERO TEST",
+      subtitle: "Ovaj slajd ne sme biti javno vidljiv",
+      image: media.homepage.gospodinFeature,
+      production: gospodin,
+      event: events.gospodin,
+      activeFrom: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      activeUntil: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    });
+
+    const pariskiSlide = await upsertPromoSlide({
+      title: "Pariski život",
+      subtitle: "Opereta u velikom stilu",
+      image: media.homepage.pariskiFeature,
+      production: pariski,
+      event: events.pariski,
+    });
+
+    const novaLjubavSlide = await upsertPromoSlide({
+      title: "Nova ljubav",
+      subtitle: "Priča o novom početku",
+      image: media.homepage.novaLjubavFeature,
+      production: novaLjubav,
+      event: events.novaLjubav,
+    });
+
+    const carmenSlide = await upsertPromoSlide({
       title: "CARMEN SUITE & BOLERO",
       subtitle: "Doživite balet kao nikad pre",
       image: media.main.carmen,
@@ -1253,7 +1466,7 @@ const seedPhase3Content = async () => {
       event: events.carmen,
     });
 
-    await upsertPromoSlide({
+    const gordostSlide = await upsertPromoSlide({
       title: "GORDOST I PREDRASUDE",
       subtitle: "Klasik u novom ruhu",
       image: media.main.gordost,
@@ -1261,7 +1474,7 @@ const seedPhase3Content = async () => {
       event: events.gordost,
     });
 
-    await upsertPromoSlide({
+    const plucaSlide = await upsertPromoSlide({
       title: "PLUĆA",
       subtitle: "Drama o svima nama",
       image: media.main.pluca,
@@ -1269,10 +1482,10 @@ const seedPhase3Content = async () => {
       event: events.pluca,
     });
 
-    await upsertPromoSlide({
+    const staklenaSlide = await upsertPromoSlide({
       title: "STAKLENA MENAŽERIJA",
       subtitle: "Drama o krhkosti snova",
-      image: media.main.staklena,
+      image: media.homepage.staklenaFeature || media.main.staklena,
       production: staklena,
       event: events.staklena,
     });
@@ -1282,7 +1495,7 @@ const seedPhase3Content = async () => {
         title: "O nama",
         slug: "o-nama",
         pageType: "about",
-        image: media.main.staklena,
+        image: media.homepage.building || media.main.staklena,
         body:
           "Madlenianum je scena posvecena operi, baletu, drami, mjuziklu i koncertnom programu. Ova demo stranica se kreira kroz seed kako bi javni sajt uvek imao osnovni institucionalni sadrzaj za lokalno testiranje.",
         sections: [
@@ -1292,7 +1505,7 @@ const seedPhase3Content = async () => {
             heading: "Madlenianum",
             subtitle: "Opera i teatar u Zemunu",
             body: "<p>Scena posvecena operi, baletu, drami, mjuziklu i koncertnom programu.</p>",
-            backgroundImage: media.main.staklena?._id,
+            backgroundImage: media.homepage.building?._id,
             displayOrder: 0,
           },
           {
@@ -1300,7 +1513,7 @@ const seedPhase3Content = async () => {
             enabled: true,
             heading: "Kuca umetnosti",
             body: "<p>Madlenianum okuplja umetnike i publiku kroz repertoar koji povezuje tradiciju i savremeni izraz.</p>",
-            image: media.main.gordost?._id,
+            image: media.homepage.building?._id,
             imagePosition: "right",
             displayOrder: 1,
           },
@@ -1352,25 +1565,60 @@ const seedPhase3Content = async () => {
       image: media.main.carmen,
       gallery: media.gallery.carmen,
       relatedProduction: carmen,
+      category: "najava",
     });
 
-    const seededSlides = await PromoSlide.find({
-      slug: { $in: [carmen.slug, gordost.slug, pluca.slug, staklena.slug] },
+    const pressNews = await upsertNews({
+      title: "Gospodin u cizmama od dima pred publikom",
+      subtitle: "Nova velika dramska produkcija",
+      excerpt: "Ansambl Madlenianuma donosi scenski svet Dostojevskog pred publiku Velike scene.",
+      body: "<p>Nova dramska predstava okuplja veliki ansambl i donosi spoj humora, apsurda i snazne glumacke igre.</p>",
+      image: media.homepage.gospodinFeature,
+      gallery: [media.homepage.gospodinFeature].filter(Boolean),
+      relatedProduction: gospodin,
+      category: "press",
     });
+
+    const announcementNews = await upsertNews({
+      title: "Pariski zivot uskoro na Velikoj sceni",
+      subtitle: "Opereta koja donosi duh grada svetlosti",
+      excerpt: "Muzika, pokret i raskosna scena susrecu se u novom terminu Pariskog zivota.",
+      body: "<p>Ulaznice za Pariski zivot dostupne su kroz javni repertoar Madlenianuma.</p>",
+      image: media.homepage.pariskiFeature,
+      gallery: [media.homepage.pariskiFeature].filter(Boolean),
+      relatedProduction: pariski,
+      category: "najava",
+    });
+
+    const noticeNews = await upsertNews({
+      title: "Informacije o radu biletarnice",
+      subtitle: "Planirajte posetu Madlenianumu",
+      excerpt: "Biletarnica je otvorena radnim danima i na dane izvodjenja prema objavljenom programu.",
+      body: "<p>Za sva pitanja o ulaznicama obratite se biletarnici putem kontakt podataka na sajtu.</p>",
+      image: media.homepage.building,
+      gallery: [],
+      relatedProduction: null,
+      category: "obavestenje",
+    });
+
+    const seededSlides = [expiredSlide, gospodinSlide, pariskiSlide, novaLjubavSlide, staklenaSlide, carmenSlide, gordostSlide, plucaSlide].filter(Boolean);
 
     const homepageConfig = await upsertHomepageConfig({
       slides: seededSlides,
       events: Object.values(events),
-      productions: [carmen, staklena, gordost, pluca],
-      news: [seededNews],
-      teaserImage: media.main.staklena,
+      productions: [gospodin, pariski, company, novaLjubav, staklena, gordost, carmen, pluca],
+      featuredProductions: [gospodin, pariski, carmen, novaLjubav],
+      news: [pressNews, announcementNews, noticeNews, seededNews],
+      teaserImage: media.homepage.building,
       aboutPage: staticPages.about,
+      ctaCards: [
+        { title: "Gostovanja", text: "Programi i saradnje koje Madlenianum ostvaruje sa umetnicima i institucijama.", image: media.homepage.guestPerformances?._id, linkLabel: "Kontaktirajte nas", url: "/strana/kontakt", enabled: true, displayOrder: 0 },
+        { title: "Zakup prostora", text: "Saznajte više o mogućnostima organizovanja događaja u prostorima Madlenianuma.", image: media.homepage.venueRental?._id, linkLabel: "Kontaktirajte nas", url: "/strana/kontakt", enabled: true, displayOrder: 1 },
+        { title: "Najam kostima i rekvizita", text: "Pošaljite upit timu Madlenianuma za dostupne kostime i scenske rekvizite.", image: media.homepage.costumeRental?._id, linkLabel: "Kontaktirajte nas", url: "/strana/kontakt", enabled: true, displayOrder: 2 },
+      ],
     });
 
-    const siteSettings = await upsertSiteSettings({
-      logo: media.main.staklena,
-      socialImage: media.main.carmen,
-    });
+    const siteSettings = await upsertSiteSettings({ socialImage: media.main.carmen });
 
     const customers = {
       milica: await upsertCustomer({

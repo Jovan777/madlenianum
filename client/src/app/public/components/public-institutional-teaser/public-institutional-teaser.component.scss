@@ -1,0 +1,83 @@
+:host {
+  display: block;
+  background: #fff;
+}
+.institutional-section {
+  width: min(1440px, calc(100% - 72px));
+  margin: 0 auto;
+  padding: 4rem 0;
+}
+.institutional-section > h2 {
+  margin: 0 0 1.75rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(3rem, 4.75vw, 4.5rem);
+  font-weight: 400;
+  line-height: 1;
+}
+.institutional-layout {
+  display: grid;
+  grid-template-columns: 474px minmax(0, 938px);
+  gap: 1.75rem;
+  align-items: stretch;
+}
+.copy {
+  padding: 4.5rem 1.5rem;
+}
+.rich-text {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.35rem, 2vw, 2rem);
+  line-height: 1.35;
+}
+.rich-text :first-child {
+  margin-top: 0;
+}
+.copy > a {
+  display: inline-flex;
+  margin-top: 1.5rem;
+  border: 1px solid #222;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
+}
+.image-wrap {
+  aspect-ratio: 938/623;
+  overflow: hidden;
+  background: #e3e1dc;
+}
+.image-wrap img,
+.image-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.copy > a:focus-visible {
+  outline: 3px solid #9b2030;
+  outline-offset: 3px;
+}
+@media (max-width: 1050px) {
+  .institutional-layout {
+    grid-template-columns: minmax(250px, 0.75fr) minmax(0, 1.8fr);
+  }
+  .copy {
+    padding: 2rem 1rem;
+  }
+}
+@media (max-width: 760px) {
+  .institutional-section {
+    width: calc(100% - 28px);
+    padding: 4rem 0;
+  }
+  .institutional-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .copy {
+    padding: 0;
+  }
+  .image-wrap {
+    grid-row: 1;
+  }
+  .institutional-section > h2 {
+    margin-bottom: 2rem;
+  }
+}

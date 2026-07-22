@@ -1,32 +1,79 @@
 <header class="site-header">
-  <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Madlenianum home">
-    <img src="/madlenianum/logo.png" alt="Madlenianum" />
-  </a>
-
-  <nav class="desktop-nav" aria-label="Glavna navigacija">
-    <a
-      *ngFor="let item of navItems"
-      [routerLink]="item.path"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-    >
-      {{ item.label }}
+  <div class="header-inner">
+    <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Madlenianum početna strana">
+      <img [src]="logo()" [alt]="settings()?.siteName || 'Madlenianum'" />
     </a>
-  </nav>
 
-  <div class="header-actions">
-    <a class="lookup" routerLink="/porudzbina">Porudzbina</a>
-    <a class="buy" routerLink="/repertoar">Kupi karte</a>
-    <button class="menu-button" type="button" (click)="toggleMenu()" [class.open]="menuOpen()" aria-label="Menu">
-      <span></span>
-      <span></span>
+    <nav class="desktop-nav" aria-label="Glavna navigacija">
+      <button
+        #repertoireTrigger
+        class="nav-trigger"
+        type="button"
+        aria-haspopup="true"
+        aria-controls="repertoire-mega-menu"
+        [attr.aria-expanded]="repertoireMenuOpen()"
+        [class.active]="repertoireRouteIsActive() || repertoireMenuOpen()"
+        (click)="toggleRepertoireMenu()"
+      >
+        Repertoar
+        <span class="chevron" aria-hidden="true">⌄</span>
+      </button>
+      <a
+        *ngFor="let item of navItems.slice(1)"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+      >{{ item.label }}</a>
+    </nav>
+
+    <button
+      class="menu-button"
+      type="button"
+      [attr.aria-label]="menuOpen() ? 'Zatvori navigaciju' : 'Otvori navigaciju'"
+      aria-controls="mobile-navigation"
+      [attr.aria-expanded]="menuOpen()"
+      [class.open]="menuOpen()"
+      (click)="toggleMenu()"
+    >
+      <span></span><span></span><span></span>
     </button>
   </div>
 </header>
 
-<nav class="mobile-panel" *ngIf="menuOpen()" aria-label="Mobilna navigacija">
-  <a *ngFor="let item of navItems" [routerLink]="item.path" (click)="closeMenu()">
-    {{ item.label }}
-  </a>
-  <a routerLink="/porudzbina" (click)="closeMenu()">Porudzbina</a>
+<nav
+  id="repertoire-mega-menu"
+  class="mega-menu"
+  *ngIf="repertoireMenuOpen()"
+  aria-label="Repertoar"
+>
+  <div class="mega-menu-inner">
+    <h2>Aktuelno</h2>
+    <div class="mega-menu-grid">
+      <a
+        class="mega-menu-card"
+        *ngFor="let item of repertoireItems"
+        [routerLink]="item.path"
+        [queryParams]="item.queryParams || null"
+        (click)="closeMenu()"
+      >
+        <span class="mega-image"><img [src]="item.image" alt="" aria-hidden="true" /></span>
+        <span class="mega-label">{{ item.label }}</span>
+      </a>
+      <div class="mega-secondary">
+        <a routerLink="/predstave" (click)="closeMenu()">Sve predstave</a>
+        <a routerLink="/repertoar" (click)="closeMenu()">Predstojeći događaji</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="menu-backdrop" *ngIf="menuOpen() || repertoireMenuOpen()" (click)="closeMenu()"></div>
+<nav id="mobile-navigation" class="mobile-panel" *ngIf="menuOpen()" aria-label="Mobilna navigacija">
+  <a
+    *ngFor="let item of navItems"
+    [routerLink]="item.path"
+    routerLinkActive="active"
+    (click)="closeMenu()"
+  >{{ item.label }}</a>
+  <a routerLink="/porudzbina" routerLinkActive="active" (click)="closeMenu()">Provera porudžbine</a>
 </nav>

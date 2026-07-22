@@ -1,0 +1,13 @@
+<section class="institutional-section">
+  <h2>{{ teaser().heading || 'Madlenianum' }}</h2>
+  <div class="institutional-layout">
+    <div class="copy">
+      <div class="rich-text" [innerHTML]="teaser().text"></div>
+      <a [routerLink]="destination()">▣ {{ teaser().ctaLabel || 'Naša priča' }}</a>
+    </div>
+    <div class="image-wrap">
+      <img *ngIf="media.resolve(teaser().image)" [src]="media.resolve(teaser().image)" alt="Opera i teatar Madlenianum" loading="lazy" />
+      <div *ngIf="!media.resolve(teaser().image)" class="image-fallback" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>

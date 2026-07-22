@@ -1,0 +1,17 @@
+<div class="modal-backdrop" role="presentation" (mousedown)="close()">
+  <section class="video-dialog" role="dialog" aria-modal="true" [attr.aria-label]="video().title || 'Trejler'" (mousedown)="$event.stopPropagation()">
+    <header>
+      <h2>{{ video().title || 'Trejler' }}</h2>
+      <button #closeButton type="button" (click)="close()" aria-label="Zatvori video">×</button>
+    </header>
+    <div class="video-frame" *ngIf="embedUrl(); else externalVideo">
+      <iframe [src]="embedUrl()" [title]="video().title || 'Trejler'" allow="fullscreen; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <ng-template #externalVideo>
+      <div class="external-video">
+        <p>Video je dostupan na spoljnoj platformi.</p>
+        <a [href]="video().url" target="_blank" rel="noopener noreferrer">Otvori video</a>
+      </div>
+    </ng-template>
+  </section>
+</div>

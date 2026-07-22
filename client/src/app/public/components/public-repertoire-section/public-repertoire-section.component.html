@@ -1,0 +1,36 @@
+<section class="repertoire-section">
+  <div class="section-top">
+    <h2>{{ heading() || 'Šta je na repertoaru' }}</h2>
+    <div class="filters" role="tablist" aria-label="Filtriraj repertoar">
+      <button
+        *ngFor="let filter of filters"
+        type="button"
+        role="tab"
+        [class.active]="filter.value === activeFilter()"
+        [attr.aria-selected]="filter.value === activeFilter()"
+        (click)="activeFilter.set(filter.value)"
+      >{{ filter.label }}</button>
+    </div>
+  </div>
+
+  <div class="production-grid" *ngIf="visibleProductions().length; else emptyFilter">
+    <article *ngFor="let production of visibleProductions()">
+      <a class="image-link" [routerLink]="['/predstave', production.slug]">
+        <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title" loading="lazy" />
+        <div *ngIf="!image(production)" class="image-fallback" aria-hidden="true"></div>
+      </a>
+      <div class="card-meta">
+        <span>{{ display.productionType(production.type) }}</span>
+        <span *ngIf="production.venue?.name">{{ production.venue?.name }}</span>
+      </div>
+      <h3>{{ production.title }}</h3>
+      <a class="details" [routerLink]="['/predstave', production.slug]">ⓘ Saznaj više</a>
+    </article>
+  </div>
+
+  <ng-template #emptyFilter>
+    <p class="filter-empty">U ovoj kategoriji trenutno nema objavljenih predstava.</p>
+  </ng-template>
+
+  <a class="all-link" routerLink="/predstave">Pogledaj sve predstave</a>
+</section>

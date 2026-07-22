@@ -1,0 +1,15 @@
+<section class="cta-section" *ngIf="visibleCards().length">
+  <h2>{{ heading() || 'Partnerstvo' }}</h2>
+  <div class="cta-grid">
+    <article *ngFor="let card of visibleCards()">
+      <img *ngIf="media.resolve(card.image)" [src]="media.resolve(card.image)" [alt]="card.title" loading="lazy" />
+      <div class="shade"></div>
+      <div class="copy">
+        <h3>{{ card.title }}</h3>
+        <p>{{ card.text }}</p>
+        <a *ngIf="isExternal(card.url); else internalLink" [href]="card.url" target="_blank" rel="noopener noreferrer">ⓘ {{ card.linkLabel || 'Saznaj više' }}</a>
+        <ng-template #internalLink><a [routerLink]="card.url">ⓘ {{ card.linkLabel || 'Saznaj više' }}</a></ng-template>
+      </div>
+    </article>
+  </div>
+</section>

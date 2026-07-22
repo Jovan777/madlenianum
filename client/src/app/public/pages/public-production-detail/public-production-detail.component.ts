@@ -85,6 +85,10 @@ export class PublicProductionDetailComponent implements OnInit {
   }
 
   castNames(item: any): string {
+    if (item.name) {
+      return item.name;
+    }
+
     if (Array.isArray(item.names) && item.names.length > 0) {
       return item.names.join(', ');
     }
