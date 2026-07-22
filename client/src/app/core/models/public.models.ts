@@ -5,6 +5,7 @@ export interface PublicMedia {
   alt?: string;
   altText?: string;
   caption?: string;
+  credit?: string;
   url?: string;
   path?: string;
 }
@@ -28,7 +29,7 @@ export interface PublicProduction {
   trailer?: PublicVideo | null;
   creativeTeam?: PublicProductionCredit[];
   primaryCredits?: PublicProductionCredit[];
-  cast?: any[];
+  cast?: PublicCastMember[];
   announcement?: PublicProductionAnnouncement | null;
   venue?: PublicVenue | null;
   season?: string;
@@ -39,6 +40,7 @@ export interface PublicProduction {
   tags?: string[];
   isFeatured?: boolean;
   status?: string;
+  seo?: PublicSeo;
 }
 
 export interface PublicProductionCredit {
@@ -51,7 +53,25 @@ export interface PublicProductionCredit {
     id?: string;
     displayName?: string;
     slug?: string;
+    image?: PublicMedia | string | null;
   } | null;
+  note?: string;
+  displayOrder?: number;
+}
+
+export interface PublicCastMember {
+  id?: string;
+  artist?: {
+    id?: string;
+    displayName?: string;
+    slug?: string;
+    image?: PublicMedia | string | null;
+  } | null;
+  name?: string;
+  role?: string;
+  character?: string;
+  note?: string;
+  displayOrder?: number;
 }
 
 export interface PublicProductionAnnouncement {

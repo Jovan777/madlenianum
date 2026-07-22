@@ -1,67 +1,166 @@
-<div class="loading-state" *ngIf="isLoading()">Ucitavanje predstave...</div>
+<div class="loading-state" *ngIf="isLoading()">Učitavanje predstave...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <ng-container *ngIf="!isLoading() && production() as item">
-  <section class="detail-hero">
-    <img [src]="image(item.poster)" [alt]="item.title" />
+  <section class="production-hero">
+    <img class="hero-image" [src]="heroImage(item)" [alt]="item.title" />
+    <div class="hero-shade"></div>
 
-    <div class="hero-copy">
-      <p class="eyebrow">{{ typeLabel(item) }}</p>
+    <div class="hero-content">
+      <p class="production-meta">{{ heroMeta(item) }}</p>
       <h1>{{ item.title }}</h1>
-      <p>{{ item.subtitle || item.shortDescription || item.authorComposer }}</p>
+
       <div class="hero-actions">
-        <a class="btn btn-gold" *ngIf="events().length" [routerLink]="['/kupovina', eventId(events()[0])]">Kupi karte</a>
-        <a class="btn btn-light" routerLink="/repertoar">Termini</a>
+        <button class="action action-outline" type="button" *ngIf="trailer(item) as video" (click)="openTrailer(video)">
+          <span class="icon icon-play" aria-hidden="true"></span>
+          Pogledaj trejler
+        </button>
+
+        <a
+          class="action action-light"
+          *ngIf="ticketEvent() as event"
+          [class.is-disabled]="!canPurchase(event)"
+          [routerLink]="canPurchase(event) ? ['/kupovina', eventId(event)] : null"
+          [attr.aria-disabled]="!canPurchase(event)"
+        >
+          <span class="icon icon-bag" aria-hidden="true"></span>
+          {{ canPurchase(event) ? 'Kupi karte' : saleLabel(event) }}
+        </a>
       </div>
     </div>
   </section>
 
-  <section class="story">
-    <aside>
-      <span *ngFor="let meta of metaItems(item)">{{ meta }}</span>
-      <span>{{ typeLabel(item) }}</span>
-    </aside>
+  <main class="production-page">
+    <section class="synopsis-section">
+      <article class="synopsis-copy">
+        <h2>Sinopis</h2>
+        <div class="rule"></div>
+        <div class="rich-copy" [innerHTML]="synopsisHtml(item)"></div>
+      </article>
 
-    <article>
-      <h2>{{ item.subtitle || item.originalTitle || item.title }}</h2>
-      <p>{{ item.description || item.synopsis || item.shortDescription || 'Detaljan opis ce biti dodat uskoro.' }}</p>
-    </article>
-  </section>
+      <aside class="production-card" aria-label="Informacije o predstavi">
+        <p class="production-meta">{{ heroMeta(item) }}</p>
+        <h2>{{ item.title }}</h2>
 
-  <section class="dates" *ngIf="events().length">
-    <div class="section-head">
-      <p class="eyebrow">Termini</p>
-      <h2 class="section-title">Kada se igra</h2>
-    </div>
+        <div class="card-body">
+          <img class="poster" [src]="posterImage(item)" [alt]="item.title" loading="lazy" />
 
-    <article *ngFor="let event of events()">
-      <div>
-        <strong>{{ eventDate(event) }}</strong>
-        <span>{{ venueName(event) }}</span>
+          <div class="facts">
+            <div class="fact" *ngFor="let fact of detailFacts(item)">
+              <span class="fact-icon" [attr.data-icon]="fact.icon" aria-hidden="true"></span>
+              <div>
+                <span>{{ fact.label }}</span>
+                <strong>{{ fact.value }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="action action-outline" type="button" *ngIf="trailer(item) as video" (click)="openTrailer(video)">
+            <span class="icon icon-play" aria-hidden="true"></span>
+            Pogledaj trejler
+          </button>
+
+          <a
+            class="action action-light"
+            *ngIf="ticketEvent() as event"
+            [class.is-disabled]="!canPurchase(event)"
+            [routerLink]="canPurchase(event) ? ['/kupovina', eventId(event)] : null"
+            [attr.aria-disabled]="!canPurchase(event)"
+          >
+            <span class="icon icon-bag" aria-hidden="true"></span>
+            {{ canPurchase(event) ? 'Kupi karte' : saleLabel(event) }}
+          </a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="performances-section" *ngIf="events().length">
+      <header class="section-header">
+        <h2>Sledeća izvođenja</h2>
+        <div class="rule"></div>
+      </header>
+
+      <div class="performance-track" aria-label="Sledeća izvođenja">
+        <article class="performance-card" *ngFor="let event of events()">
+          <div class="performance-date">
+            <strong>{{ eventDayMonth(event) }}</strong>
+            <span>{{ eventTime(event) }}</span>
+          </div>
+
+          <div class="performance-info">
+            <p>
+              <span>{{ typeLabel(item) }}</span>
+              <span>{{ venueName(event) }}</span>
+              <span class="premiere" *ngIf="isPremiere(event)">Premijera</span>
+            </p>
+            <h3>{{ item.title }}</h3>
+          </div>
+
+          <a
+            class="buy-pill"
+            *ngIf="canPurchase(event); else saleStatus"
+            [routerLink]="['/kupovina', eventId(event)]"
+          >
+            <span class="icon icon-bag" aria-hidden="true"></span>
+            Kupi karte
+          </a>
+
+          <ng-template #saleStatus>
+            <span class="sale-status">{{ saleLabel(event) }}</span>
+          </ng-template>
+        </article>
       </div>
-      <a [routerLink]="['/kupovina', eventId(event)]">Kupi</a>
-    </article>
-  </section>
+    </section>
 
-  <section class="people" *ngIf="item.creativeTeam?.length || item.cast?.length">
-    <div *ngIf="item.creativeTeam?.length">
-      <h3>Kreativni tim</h3>
-      <p *ngFor="let member of item.creativeTeam">
-        <span>{{ member.role || 'Uloga' }}</span>
-        <strong>{{ creditName(member) }}</strong>
-      </p>
-    </div>
+    <section class="photo-section" *ngIf="galleryItems(item).length">
+      <header class="section-header section-header-invert">
+        <h2>Fotografije</h2>
+        <div class="rule"></div>
+      </header>
 
-    <div *ngIf="item.cast?.length">
-      <h3>Podela</h3>
-      <p *ngFor="let cast of item.cast">
-        <span>{{ cast.character || 'Uloga' }}</span>
-        <strong>{{ castNames(cast) }}</strong>
-      </p>
-    </div>
-  </section>
+      <div class="photo-track">
+        <figure *ngFor="let media of galleryItems(item); let index = index">
+          <img [src]="galleryImage(media, index)" [alt]="galleryAlt(media, item)" loading="lazy" />
+        </figure>
+      </div>
 
-  <section class="gallery" *ngIf="gallery(item).length">
-    <img *ngFor="let media of gallery(item); let index = index" [src]="image(media, index)" [alt]="item.title" />
-  </section>
+      <p class="photo-credit" *ngIf="galleryCredit(item)">Foto: {{ galleryCredit(item) }}</p>
+    </section>
+
+    <section class="cast-section" *ngIf="castCards(item).length">
+      <header class="section-header">
+        <h2>Glumci</h2>
+        <div class="rule"></div>
+      </header>
+
+      <div class="cast-grid">
+        <article class="cast-card" *ngFor="let member of castCards(item); let index = index">
+          <a class="cast-photo" *ngIf="artistSlug(member); else castPhotoOnly" [routerLink]="['/umetnici', artistSlug(member)]">
+            <img [src]="castImage(member, index)" [alt]="castName(member)" loading="lazy" />
+          </a>
+
+          <ng-template #castPhotoOnly>
+            <div class="cast-photo" [class.no-image]="!hasCastImage(member)">
+              <img *ngIf="hasCastImage(member)" [src]="castImage(member, index)" [alt]="castName(member)" loading="lazy" />
+              <span *ngIf="!hasCastImage(member)">{{ castName(member).slice(0, 1) }}</span>
+            </div>
+          </ng-template>
+
+          <h3>
+            <a *ngIf="artistSlug(member); else plainName" [routerLink]="['/umetnici', artistSlug(member)]">{{ castName(member) }}</a>
+            <ng-template #plainName>{{ castName(member) }}</ng-template>
+          </h3>
+          <p>{{ castRole(member) }}</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <app-public-video-modal
+    *ngIf="selectedVideo() as video"
+    [video]="video"
+    (closed)="closeTrailer()"
+  ></app-public-video-modal>
 </ng-container>

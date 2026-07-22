@@ -321,6 +321,7 @@ const upsertProduction = async ({
   isFeatured,
   videos = [],
   reviews = [],
+  durationMinutes = 90,
 }) => {
   const slug = slugify(title);
 
@@ -337,7 +338,7 @@ const upsertProduction = async ({
     premiereDate: null,
     isPremiere: false,
     isOnRepertoire: true,
-    durationMinutes: 90,
+    durationMinutes,
     performanceLanguage: "sr",
     subtitles: "",
     poster: poster?._id,
@@ -1218,14 +1219,23 @@ const seedPhase3Content = async () => {
       authorComposer: "F. M. Dostojevski / Marko Misiraca",
       subtitle: "Po motivima pripovetke Selo Stepančikovo i njegovi žitelji",
       shortDescription: "Velika ansambl predstava o vlasti, sujeti i ljudskoj potrebi da bude prihvaćen.",
-      description: "Scenska adaptacija sveta Dostojevskog spaja britak humor, apsurd i prepoznatljivu ljudsku slabost u raskosnoj dramskoj predstavi.",
+      description: "<p>Prva dramska premijera u Operi i teatru Madlenianum otvara scenski svet Dostojevskog kroz zajednicu koja pokusava da sacuva privid reda dok se pred njom pojavljuje neobicni gospodar sopstvenih slabosti.</p><p>GOSPODIN U CIZMAMA OD DIMA spaja britak humor, apsurd i prepoznatljivu ljudsku potrebu za prihvatanjem. U centru price su odnosi moci, sujete i zanosa, ali i pitanje koliko daleko covek ide da bi bio voljen, priznat ili bar primecen.</p><p>Rediteljski rukopis predstavu gradi kao ansambl igru u kojoj se komedija i nelagoda neprestano dodiruju, pa Dostojevski ostaje ziv, savremen i uzbudljiv za danasnju publiku.</p>",
       synopsis: "Dolazak jednog neobicnog gospodina pokrece niz odnosa i sukoba u zajednici koja pokusava da sacuva privid reda.",
       poster: media.homepage.gospodinPoster,
       gallery: [media.homepage.gospodinFeature].filter(Boolean),
-      creativeTeam: [{ role: "Reditelj", name: "Marko Misiraca", order: 0 }],
-      cast: [{ character: "Uloga", name: "Tihomir Stanic", order: 0 }],
+      creativeTeam: [
+        { role: "Tekst", name: "Marko Misiraca", order: 0 },
+        { role: "Reditelj", name: "Marko Misiraca", order: 1 },
+      ],
+      cast: [
+        { character: "Foma Fomic", name: "Tihomir Stanic", order: 0 },
+        { character: "Gospodja", artists: [artists.tamara._id], names: ["Tamara Aleksic"], order: 1 },
+        { character: "Mizincikov", artists: [artists.nikola._id], names: ["Nikola Rakocevic"], order: 2 },
+        { character: "Gost", name: "Sasa Torlakovic", order: 3 },
+      ],
       tags: ["drama", "dostojevski", "velika scena"],
       isFeatured: true,
+      durationMinutes: 150,
     });
 
     const pariski = await upsertProduction({
@@ -1313,7 +1323,9 @@ const seedPhase3Content = async () => {
     await Promise.all([carmen.save(), gospodin.save(), pariski.save(), staklena.save()]);
 
     const schedule = {
-      gospodin: futurePerformance({ daysFromNow: 4, hour: 17, minute: 0, durationMinutes: 120 }),
+      gospodin: futurePerformance({ daysFromNow: 4, hour: 17, minute: 0, durationMinutes: 150 }),
+      gospodinSecond: futurePerformance({ daysFromNow: 6, hour: 21, minute: 0, durationMinutes: 150 }),
+      gospodinThird: futurePerformance({ daysFromNow: 12, hour: 19, minute: 0, durationMinutes: 150 }),
       pariski: futurePerformance({ daysFromNow: 6, hour: 19, minute: 0, durationMinutes: 140 }),
       company: futurePerformance({ daysFromNow: 9, hour: 19, minute: 30, durationMinutes: 130 }),
       novaLjubav: futurePerformance({ daysFromNow: 17, hour: 20, minute: 0, durationMinutes: 100 }),
@@ -1429,9 +1441,32 @@ const seedPhase3Content = async () => {
       }),
     };
 
+    await Promise.all([
+      upsertEvent({
+        production: gospodin,
+        venue,
+        seatMap,
+        pricePlan: dramaRegularPlan,
+        startsAt: schedule.gospodinSecond.startsAt,
+        endsAt: schedule.gospodinSecond.endsAt,
+        badge: eventBadge(schedule.gospodinSecond.startsAt),
+        notes: "Seeded event for Gospodin u cizmama od dima - second performance.",
+      }),
+      upsertEvent({
+        production: gospodin,
+        venue,
+        seatMap,
+        pricePlan: dramaRegularPlan,
+        startsAt: schedule.gospodinThird.startsAt,
+        endsAt: schedule.gospodinThird.endsAt,
+        badge: eventBadge(schedule.gospodinThird.startsAt),
+        notes: "Seeded event for Gospodin u cizmama od dima - third performance.",
+      }),
+    ]);
+
     const archiveSchedule = {
       pariski: futurePerformance({ daysFromNow: -140, hour: 19, minute: 0, durationMinutes: 140 }),
-      gospodin: futurePerformance({ daysFromNow: -112, hour: 20, minute: 0, durationMinutes: 120 }),
+      gospodin: futurePerformance({ daysFromNow: -112, hour: 20, minute: 0, durationMinutes: 150 }),
       novaLjubav: futurePerformance({ daysFromNow: -84, hour: 19, minute: 30, durationMinutes: 100 }),
       company: futurePerformance({ daysFromNow: -56, hour: 19, minute: 30, durationMinutes: 130 }),
       staklena: futurePerformance({ daysFromNow: -28, hour: 20, minute: 0, durationMinutes: 120 }),
