@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AdminApiService } from '../../../core/services/admin-api.service';
+import { UnsavedChangesAware } from '../../../core/guards/unsaved-changes.guard';
 
 @Component({
   selector: 'app-admin-event-form',
@@ -12,7 +13,7 @@ import { AdminApiService } from '../../../core/services/admin-api.service';
   templateUrl: './admin-event-form.component.html',
   styleUrl: './admin-event-form.component.scss',
 })
-export class AdminEventFormComponent implements OnInit {
+export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -54,10 +55,20 @@ export class AdminEventFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     this.eventId.set(id);
     this.loadOptions();
+    this.form.controls.venue.valueChanges.subscribe(() => this.clearMismatchedTicketingOptions());
 
     if (id) {
       this.loadEvent(id);
     }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty && !this.isSaving();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  preventAccidentalClose(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) event.preventDefault();
   }
 
   get isEditMode(): boolean {
@@ -120,9 +131,10 @@ export class AdminEventFormComponent implements OnInit {
     this.api.getEventFormOptions().subscribe({
       next: (response) => {
         this.options.set(response.options || {});
+        this.clearMismatchedTicketingOptions();
       },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Event options could not be loaded.');
+        this.errorMessage.set(error?.error?.message || 'Opcije za termin nisu dostupne.');
       },
     });
   }
@@ -136,7 +148,7 @@ export class AdminEventFormComponent implements OnInit {
         this.patchForm(response.item);
       },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Event could not be loaded.');
+        this.errorMessage.set(error?.error?.message || 'Termin nije moguće učitati.');
       },
       complete: () => {
         this.isLoading.set(false);
@@ -169,11 +181,18 @@ export class AdminEventFormComponent implements OnInit {
         note: item.ticketing?.note || '',
       },
     });
+    this.form.markAsPristine();
   }
 
   submit(): void {
     if (this.form.invalid || this.isSaving()) {
       this.form.markAllAsTouched();
+      return;
+    }
+
+    const functionalError = this.functionalValidationError();
+    if (functionalError) {
+      this.errorMessage.set(functionalError);
       return;
     }
 
@@ -188,14 +207,15 @@ export class AdminEventFormComponent implements OnInit {
     request.subscribe({
       next: (response) => {
         const savedId = this.getId(response.item);
-        this.successMessage.set('Event saved.');
+        this.form.markAsPristine();
+        this.successMessage.set('Termin je sačuvan.');
 
         if (!id && savedId) {
           this.router.navigate(['/admin/events', savedId, 'edit']);
         }
       },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Event save failed.');
+        this.errorMessage.set(error?.error?.message || 'Čuvanje termina nije uspelo.');
       },
       complete: () => {
         this.isSaving.set(false);
@@ -210,15 +230,15 @@ export class AdminEventFormComponent implements OnInit {
       production: raw.production,
       venue: raw.venue,
       startsAt: raw.startsAt ? new Date(raw.startsAt).toISOString() : undefined,
-      endsAt: raw.endsAt ? new Date(raw.endsAt).toISOString() : undefined,
+      endsAt: raw.endsAt ? new Date(raw.endsAt).toISOString() : null,
       isPremiere: raw.isPremiere,
       badge: raw.badge,
       status: raw.status,
       saleStatus: raw.saleStatus,
-      seatMap: raw.seatMap || undefined,
-      pricePlan: raw.pricePlan || undefined,
-      saleStartsAt: raw.saleStartsAt ? new Date(raw.saleStartsAt).toISOString() : undefined,
-      saleEndsAt: raw.saleEndsAt ? new Date(raw.saleEndsAt).toISOString() : undefined,
+      seatMap: raw.seatMap || null,
+      pricePlan: raw.pricePlan || null,
+      saleStartsAt: raw.saleStartsAt ? new Date(raw.saleStartsAt).toISOString() : null,
+      saleEndsAt: raw.saleEndsAt ? new Date(raw.saleEndsAt).toISOString() : null,
       maxTicketsPerOrder: Number(raw.maxTicketsPerOrder),
       lockDurationMinutes: Number(raw.lockDurationMinutes),
       notes: raw.notes,
@@ -230,6 +250,44 @@ export class AdminEventFormComponent implements OnInit {
         note: raw.ticketing.note,
       },
     };
+  }
+
+  private functionalValidationError(): string {
+    const raw = this.form.getRawValue();
+    const startsAt = raw.startsAt ? new Date(raw.startsAt).getTime() : 0;
+    const endsAt = raw.endsAt ? new Date(raw.endsAt).getTime() : 0;
+    const saleStartsAt = raw.saleStartsAt ? new Date(raw.saleStartsAt).getTime() : 0;
+    const saleEndsAt = raw.saleEndsAt ? new Date(raw.saleEndsAt).getTime() : 0;
+
+    if (endsAt && endsAt <= startsAt) return 'Kraj događaja mora biti posle početka.';
+    if (saleStartsAt && saleEndsAt && saleEndsAt <= saleStartsAt) return 'Kraj prodaje mora biti posle početka prodaje.';
+    if (saleEndsAt && saleEndsAt >= startsAt) return 'Prodaja mora da se završi pre početka događaja.';
+
+    if (raw.ticketing.enabled && raw.ticketing.provider === 'internal') {
+      if (!raw.seatMap || !raw.pricePlan) {
+        return 'Interna prodaja zahteva mapu sedišta i cenovnik.';
+      }
+    }
+
+    if (raw.ticketing.enabled && ['external', 'legacy_php'].includes(raw.ticketing.provider) && !raw.ticketing.externalCheckoutUrl) {
+      return 'Spoljna prodaja zahteva URL za kupovinu.';
+    }
+
+    return '';
+  }
+
+  private clearMismatchedTicketingOptions(): void {
+    const selectedSeatMap = this.form.controls.seatMap.value;
+    const selectedPricePlan = this.form.controls.pricePlan.value;
+    const allSeatMaps = this.options()['seatMaps'] || [];
+    const allPricePlans = this.options()['pricePlans'] || [];
+
+    if (selectedSeatMap && allSeatMaps.length && !this.seatMaps.some((item) => this.getId(item) === selectedSeatMap)) {
+      this.form.controls.seatMap.setValue('');
+    }
+    if (selectedPricePlan && allPricePlans.length && !this.pricePlans.some((item) => this.getId(item) === selectedPricePlan)) {
+      this.form.controls.pricePlan.setValue('');
+    }
   }
 
   getId(value: any): string {

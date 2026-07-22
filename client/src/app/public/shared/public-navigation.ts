@@ -22,24 +22,24 @@ export const PUBLIC_REPERTOIRE_MENU: PublicRepertoireMenuItem[] = [
   {
     label: 'Ceo repertoar',
     path: '/repertoar',
-    image: '/madlenianum/gospodin_u_cizmama_od_dima.jpg',
+    image: '/uploads/madlenianum/gospodin_u_cizmama_od_dima.jpg',
   },
   {
     label: 'Dramski',
-    path: '/predstave',
-    image: '/madlenianum/gordost_i_predrasude_main.jpg',
+    path: '/repertoar',
+    image: '/uploads/madlenianum/gordost_i_predrasude_main.jpg',
     queryParams: { group: 'dramski' },
   },
   {
     label: 'Muzički',
-    path: '/predstave',
-    image: '/madlenianum/pariski_zivotu_u_najavi.jpg',
+    path: '/repertoar',
+    image: '/uploads/madlenianum/pariski_zivotu_u_najavi.jpg',
     queryParams: { group: 'muzicki' },
   },
   {
     label: 'Gostovanja',
-    path: '/predstave',
-    image: '/madlenianum/gostovanja_slika.jpg',
+    path: '/repertoar',
+    image: '/uploads/madlenianum/gostovanja_slika.jpg',
     queryParams: { group: 'gostovanja' },
   },
 ];

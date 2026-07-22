@@ -1,0 +1,43 @@
+<article class="event-card">
+  <a class="poster" [routerLink]="['/predstave', slug()]" [attr.aria-label]="'Detalji predstave ' + title()">
+    <img [src]="image()" [alt]="title()" loading="lazy" />
+  </a>
+
+  <div class="event-content">
+    <strong class="time">{{ display.time(event().startsAt) }}</strong>
+
+    <div class="meta">
+      <span>{{ display.productionType(production()?.type) }}</span>
+      <span>{{ venue() }}</span>
+      <em *ngIf="event().isPremiere">Premijera</em>
+    </div>
+
+    <h3><a [routerLink]="['/predstave', slug()]">{{ title() }}</a></h3>
+    <div class="credits" *ngIf="credits().length">
+      <span *ngFor="let credit of credits()">
+        {{ credit.label }}: <strong>{{ credit.name }}</strong>
+      </span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a class="details" [routerLink]="['/predstave', slug()]">
+      <span aria-hidden="true">&#9432;</span>
+      Saznaj više
+    </a>
+
+    <a
+      class="buy"
+      *ngIf="sale().canPurchase; else saleStatus"
+      [routerLink]="['/kupovina', eventId()]"
+      [attr.aria-label]="'Kupi karte za ' + title()"
+      title="Kupi karte"
+    >
+      <span class="ticket-icon" aria-hidden="true"></span>
+    </a>
+
+    <ng-template #saleStatus>
+      <span class="sale-status" [attr.data-state]="sale().state">{{ sale().label }}</span>
+    </ng-template>
+  </div>
+</article>

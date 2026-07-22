@@ -1,0 +1,6 @@
+<article>
+  <a class="poster" [routerLink]="['/predstave', production().slug]" [attr.aria-label]="'Detalji predstave ' + production().title">
+    <img [src]="image()" [alt]="production().title" loading="lazy" />
+  </a>
+  <h2><a [routerLink]="['/predstave', production().slug]">{{ production().title }}</a></h2>
+</article>

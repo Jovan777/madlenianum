@@ -1,4 +1,5 @@
 import { HttpClient } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
@@ -9,6 +10,7 @@ import {
   PublicEvent,
   PublicListResponse,
   PublicProduction,
+  PublicRepertoireResponse,
   PublicSiteSettings,
 } from '../models/public.models';
 
@@ -33,8 +35,14 @@ export class PublicApiService {
     return this.http.get<{ success: boolean; item: PublicSiteSettings }>(`${this.apiUrl}/public/site-settings`);
   }
 
-  getRepertoire() {
-    return this.http.get<any>(`${this.apiUrl}/public/repertoire`);
+  getRepertoire(filters: { month?: number; year?: number; view?: 'current' | 'announced' | 'archive' } = {}) {
+    let params = new HttpParams();
+
+    if (filters.month) params = params.set('month', String(filters.month));
+    if (filters.year) params = params.set('year', String(filters.year));
+    if (filters.view && filters.view !== 'current') params = params.set('view', filters.view);
+
+    return this.http.get<PublicRepertoireResponse>(`${this.apiUrl}/public/repertoire`, { params });
   }
 
   getProductions() {
@@ -200,14 +208,14 @@ export class PublicApiService {
 
   fallbackImage(index = 0): string {
     const images = [
-      '/madlenianum/pluca_main.jpg',
-      '/madlenianum/CARMEN%20SUITE%20%26%20BOLERO_main.jpg',
-      '/madlenianum/gordost_i_predrasude_main.jpg',
-      '/madlenianum/STAKLENA%20MENA%C5%BDERIJA_main.jpg',
-      '/madlenianum/X%20%2B%20Y%20%3D%200_main.jpg',
+      '/uploads/madlenianum/pluca_main.jpg',
+      '/uploads/madlenianum/CARMEN%20SUITE%20%26%20BOLERO_main.jpg',
+      '/uploads/madlenianum/gordost_i_predrasude_main.jpg',
+      '/uploads/madlenianum/STAKLENA%20MENA%C5%BDERIJA_main.jpg',
+      '/uploads/madlenianum/X%20%2B%20Y%20%3D%200_main.jpg',
     ];
 
-    return images[Math.abs(index) % images.length];
+    return this.mediaUrls.resolve(images[Math.abs(index) % images.length]);
   }
 
   typeLabel(type: string | undefined | null): string {

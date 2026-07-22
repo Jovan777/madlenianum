@@ -66,10 +66,12 @@ export const routes: Routes = [
       {
         path: 'events/new',
         component: AdminEventFormComponent,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: 'events/:id/edit',
         component: AdminEventFormComponent,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: 'events/:id',

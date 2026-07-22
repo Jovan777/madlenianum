@@ -4,7 +4,11 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { PublicSiteSettings } from '../../../core/models/public.models';
 import { MediaUrlService } from '../../../core/services/media-url.service';
-import { PUBLIC_NAVIGATION, PUBLIC_REPERTOIRE_MENU } from '../../shared/public-navigation';
+import {
+  PUBLIC_NAVIGATION,
+  PUBLIC_REPERTOIRE_MENU,
+  PublicRepertoireMenuItem,
+} from '../../shared/public-navigation';
 
 @Component({
   selector: 'app-public-header',
@@ -26,6 +30,10 @@ export class PublicHeaderComponent {
 
   logo(): string {
     return this.media.resolve(this.settings()?.mainLogo) || '/madlenianum/logo.png';
+  }
+
+  menuImage(item: PublicRepertoireMenuItem): string {
+    return this.media.resolve(item.image);
   }
 
   toggleMenu(): void {

@@ -15,26 +15,26 @@ const { CREATIVE_ROLE_KEYS } = require("../models/Production");
 const { NEWS_CATEGORIES } = require("../models/News");
 
 const EVENT_STATUSES = [
-  { value: "draft", label: "Draft" },
-  { value: "scheduled", label: "Scheduled" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "postponed", label: "Postponed" },
-  { value: "finished", label: "Finished" },
+  { value: "draft", label: "Nacrt" },
+  { value: "scheduled", label: "Zakazano" },
+  { value: "cancelled", label: "Otkazano" },
+  { value: "postponed", label: "Odloženo" },
+  { value: "finished", label: "Završeno" },
 ];
 
 const SALE_STATUSES = [
-  { value: "not_on_sale", label: "Not on sale" },
-  { value: "on_sale", label: "On sale" },
-  { value: "sold_out", label: "Sold out" },
-  { value: "sales_closed", label: "Sales closed" },
-  { value: "free", label: "Free" },
+  { value: "not_on_sale", label: "Prodaja još nije počela" },
+  { value: "on_sale", label: "U prodaji" },
+  { value: "sold_out", label: "Rasprodato" },
+  { value: "sales_closed", label: "Prodaja završena" },
+  { value: "free", label: "Slobodan ulaz" },
 ];
 
 const TICKETING_PROVIDERS = [
-  { value: "internal", label: "Internal ticketing" },
-  { value: "legacy_php", label: "Legacy PHP checkout" },
-  { value: "external", label: "External checkout" },
-  { value: "manual", label: "Manual / no online sales" },
+  { value: "internal", label: "Interna prodaja sedišta" },
+  { value: "legacy_php", label: "Postojeći PHP sistem" },
+  { value: "external", label: "Spoljni sistem prodaje" },
+  { value: "manual", label: "Bez online prodaje" },
 ];
 
 const PRODUCTION_TYPES = [

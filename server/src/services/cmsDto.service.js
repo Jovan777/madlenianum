@@ -100,17 +100,32 @@ const productionSummaryDto = (value) => {
   const production = plain(value);
   if (!production) return null;
   if (typeof production === "string" || !production.title) return { id: idOf(production) };
+  const primaryCredits = creativeTeamDto(production)
+    .filter((credit) => ["writer", "director", "composer", "conductor", "choreographer"].includes(credit.roleKey));
 
   return {
     id: idOf(production),
     title: production.title,
     slug: production.slug,
     type: production.type,
+    authorComposer: production.authorComposer || "",
     subtitle: production.subtitle || "",
     season: production.season || "",
     shortDescription: production.shortDescription || "",
     poster: mediaDto(production.poster),
     venue: venueDto(production.venue),
+    primaryCredits,
+    announcement: production.announcement
+      ? {
+          isAnnounced: Boolean(production.announcement.isAnnounced),
+          month: production.announcement.month,
+          year: production.announcement.year,
+          text: production.announcement.text || "",
+          image: mediaDto(production.announcement.image),
+          startsAt: production.announcement.startsAt,
+          endsAt: production.announcement.endsAt,
+        }
+      : null,
   };
 };
 
@@ -317,7 +332,17 @@ const productionDto = (value) => {
       displayOrder: review.displayOrder ?? index,
     })),
     recommendedProductions: (item.recommendedProductions || []).map(productionSummaryDto).filter(Boolean),
-    announcement: item.announcement || {},
+    announcement: item.announcement
+      ? {
+          isAnnounced: Boolean(item.announcement.isAnnounced),
+          month: item.announcement.month,
+          year: item.announcement.year,
+          text: item.announcement.text || "",
+          image: mediaDto(item.announcement.image),
+          startsAt: item.announcement.startsAt,
+          endsAt: item.announcement.endsAt,
+        }
+      : {},
     isFeatured: Boolean(item.isFeatured),
     isOnRepertoire: item.isOnRepertoire !== false,
     seo: seoDto(item.seo),

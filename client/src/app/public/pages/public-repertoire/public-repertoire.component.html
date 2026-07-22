@@ -1,50 +1,134 @@
-<div class="loading-state" *ngIf="isLoading()">Ucitavanje repertoara...</div>
-<div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
-
-<section class="repertoire" *ngIf="!isLoading()">
-  <header class="page-head">
-    <div>
-      <p class="eyebrow">Program</p>
+<section class="repertoire-page">
+  <header class="repertoire-hero">
+    <img [src]="heroImage()" alt="Velika scena Madlenianuma" />
+    <div class="hero-shade"></div>
+    <div class="hero-content">
       <h1>Repertoar</h1>
-    </div>
-
-    <div class="filters" *ngIf="events().length">
-      <button
-        *ngFor="let type of filters()"
-        type="button"
-        [class.active]="activeType() === type"
-        (click)="setType(type)"
-      >
-        {{ filterLabel(type) }}
-      </button>
+      <nav class="view-tabs" aria-label="Delovi repertoara">
+        <button
+          *ngFor="let view of views"
+          type="button"
+          [class.active]="view.value === activeView()"
+          [attr.aria-current]="view.value === activeView() ? 'page' : null"
+          (click)="selectView(view.value)"
+        >{{ view.label }}</button>
+      </nav>
     </div>
   </header>
 
-  <div class="empty-state" *ngIf="filteredEvents().length === 0">
-    Nema objavljenih termina za izabrani filter.
+  <div class="loading-panel" *ngIf="isLoading()" aria-live="polite">
+    <span></span><span></span><span></span>
+    <p>Učitavanje repertoara...</p>
   </div>
 
-  <div class="date-list" *ngIf="filteredEvents().length > 0">
-    <article class="date-card" *ngFor="let event of filteredEvents(); let index = index">
-      <a class="image" [routerLink]="['/predstave', productionSlug(event)]">
-        <img [src]="productionImage(event, index)" [alt]="productionTitle(event)" />
-      </a>
-
-      <div class="date-mark">
-        <strong>{{ dateDay(event) }}</strong>
-        <span>{{ dateMonth(event) }}</span>
-      </div>
-
-      <div class="date-copy">
-        <span>{{ dateFull(event) }} / {{ timeLabel(event) }} / {{ venueName(event) }}</span>
-        <h2>{{ productionTitle(event) }}</h2>
-        <p>{{ productionTypeLabel(event) }}</p>
-      </div>
-
-      <div class="date-actions">
-        <a [routerLink]="['/predstave', productionSlug(event)]">Detalji</a>
-        <a class="buy" *ngIf="canBuy(event)" [routerLink]="['/kupovina', eventId(event)]">Kupi</a>
-      </div>
-    </article>
+  <div class="error-panel" *ngIf="errorMessage()">
+    <p>{{ errorMessage() }}</p>
+    <button type="button" (click)="retry()">Pokušaj ponovo</button>
   </div>
+
+  <main *ngIf="!isLoading() && !errorMessage()">
+    <section class="current-programme" *ngIf="activeView() === 'current'">
+      <div class="filter-row">
+        <label class="filter-control">
+          <span class="sr-only">Scena</span>
+          <select [value]="activeVenue()" (change)="setVenue($any($event.target).value)">
+            <option value="all">Scena</option>
+            <option *ngFor="let venue of venueOptions()" [value]="venue">{{ venue }}</option>
+          </select>
+        </label>
+
+        <label class="filter-control">
+          <span class="sr-only">Žanr</span>
+          <select [value]="activeGenre()" (change)="setGenre($any($event.target).value)">
+            <option value="all">Žanr</option>
+            <option *ngFor="let genre of genreFilters" [value]="genre.value">{{ genre.label }}</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="empty-panel" *ngIf="monthGroups().length === 0">
+        <h2>Nema termina za izabrane filtere.</h2>
+        <p>Promenite scenu ili žanr da biste videli druge događaje.</p>
+      </div>
+
+      <section class="month-group" *ngFor="let month of monthGroups(); let monthIndex = index">
+        <h2 class="month-name">{{ month.label }}</h2>
+        <div class="month-events">
+          <section class="date-group" *ngFor="let date of month.dateGroups; let dateIndex = index">
+            <h2 class="date-heading">{{ date.label }}</h2>
+            <div class="event-list">
+              <app-public-repertoire-event-card
+                *ngFor="let event of date.events; let eventIndex = index"
+                [event]="event"
+                [imageIndex]="monthIndex + dateIndex + eventIndex"
+              />
+            </div>
+          </section>
+        </div>
+      </section>
+    </section>
+
+    <section class="announcements" *ngIf="activeView() === 'announced'">
+      <app-public-repertoire-announcement
+        *ngFor="let production of announcements(); let index = index"
+        [production]="production"
+        [imageIndex]="index"
+        [alignRight]="index % 2 === 1"
+      />
+
+      <div class="empty-panel dark" *ngIf="announcements().length === 0">
+        <h2>Trenutno nema novih najava.</h2>
+        <p>Novi naslovi biće objavljeni čim program bude potvrđen.</p>
+      </div>
+    </section>
+
+    <section class="archive" *ngIf="activeView() === 'archive'">
+      <div class="archive-filters">
+        <label class="filter-control">
+          <span class="sr-only">Scena</span>
+          <select [value]="activeVenue()" (change)="setVenue($any($event.target).value)">
+            <option value="all">Scena</option>
+            <option *ngFor="let venue of venueOptions()" [value]="venue">{{ venue }}</option>
+          </select>
+        </label>
+
+        <label class="filter-control">
+          <span class="sr-only">Žanr</span>
+          <select [value]="activeGenre()" (change)="setGenre($any($event.target).value)">
+            <option value="all">Žanr</option>
+            <option *ngFor="let genre of genreFilters" [value]="genre.value">{{ genre.label }}</option>
+          </select>
+        </label>
+
+        <label class="filter-control">
+          <span class="sr-only">Režija</span>
+          <select [value]="activeDirector()" (change)="setDirector($any($event.target).value)">
+            <option value="all">Režija</option>
+            <option *ngFor="let director of directorOptions()" [value]="director">{{ director }}</option>
+          </select>
+        </label>
+
+        <label class="filter-control">
+          <span class="sr-only">Tekst</span>
+          <select [value]="activeWriter()" (change)="setWriter($any($event.target).value)">
+            <option value="all">Tekst</option>
+            <option *ngFor="let writer of writerOptions()" [value]="writer">{{ writer }}</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="archive-grid" *ngIf="archiveEntries().length">
+        <app-public-repertoire-archive-card
+          *ngFor="let entry of archiveEntries(); let index = index"
+          [production]="entry.production"
+          [imageIndex]="index"
+        />
+      </div>
+
+      <div class="empty-panel" *ngIf="archiveEntries().length === 0">
+        <h2>Nema arhivskih predstava za izabrane filtere.</h2>
+        <p>Promenite neki od filtera da biste videli druge naslove.</p>
+      </div>
+    </section>
+  </main>
 </section>

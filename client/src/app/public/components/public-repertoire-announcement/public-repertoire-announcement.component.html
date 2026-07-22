@@ -1,0 +1,32 @@
+<article class="announcement" [class.align-right]="alignRight()">
+  <img [src]="image()" [alt]="production().title" loading="lazy" />
+  <div class="shade"></div>
+
+  <div class="content">
+    <p class="meta">
+      <span>{{ display.productionType(production().type) }}</span>
+      {{ period() }}
+    </p>
+    <h2>{{ production().title }}</h2>
+    <p class="description" *ngIf="production().announcement?.text">
+      {{ production().announcement?.text }}
+    </p>
+
+    <div class="actions">
+      <a [routerLink]="['/predstave', production().slug]">
+        <span aria-hidden="true">&#9432;</span>
+        Saznaj više
+      </a>
+      <button *ngIf="trailer() as video" type="button" (click)="activeVideo.set(video)">
+        <span aria-hidden="true">&#9655;</span>
+        Pogledaj trejler
+      </button>
+    </div>
+  </div>
+</article>
+
+<app-public-video-modal
+  *ngIf="activeVideo() as video"
+  [video]="video"
+  (closed)="activeVideo.set(null)"
+/>

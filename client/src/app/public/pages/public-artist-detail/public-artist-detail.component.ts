@@ -39,7 +39,8 @@ export class PublicArtistDetailComponent implements OnInit {
   }
 
   image(artist: any): string {
-    return this.publicApi.mediaUrl(artist?.image) || '/madlenianum/umetnici/nikola_rakocevic.jpg';
+    return this.publicApi.mediaUrl(artist?.image)
+      || this.publicApi.mediaUrl('/uploads/madlenianum/umetnici/nikola_rakocevic.jpg');
   }
 
   name(artist: any): string {

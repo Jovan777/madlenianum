@@ -56,7 +56,7 @@
         [queryParams]="item.queryParams || null"
         (click)="closeMenu()"
       >
-        <span class="mega-image"><img [src]="item.image" alt="" aria-hidden="true" /></span>
+        <span class="mega-image"><img [src]="menuImage(item)" alt="" aria-hidden="true" /></span>
         <span class="mega-label">{{ item.label }}</span>
       </a>
       <div class="mega-secondary">

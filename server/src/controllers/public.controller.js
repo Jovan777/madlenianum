@@ -30,24 +30,107 @@ const getHome = asyncHandler(async (req, res) => {
   res.json({ success: true, ...data, data });
 });
 
+const activeAnnouncementFilter = (now) => ({
+  ...publicPublishedFilter(now),
+  "announcement.isAnnounced": true,
+  $and: [
+    { $or: [{ "announcement.startsAt": null }, { "announcement.startsAt": { $exists: false } }, { "announcement.startsAt": { $lte: now } }] },
+    { $or: [{ "announcement.endsAt": null }, { "announcement.endsAt": { $exists: false } }, { "announcement.endsAt": { $gte: now } }] },
+  ],
+});
+
 const getRepertoire = asyncHandler(async (req, res) => {
   const now = new Date();
+  const view = ["current", "announced", "archive"].includes(req.query.view)
+    ? req.query.view
+    : "current";
   const hasExplicitMonth = req.query.month !== undefined || req.query.year !== undefined;
   const month = hasExplicitMonth ? Number(req.query.month) || now.getMonth() + 1 : now.getMonth() + 1;
   const year = hasExplicitMonth ? Number(req.query.year) || now.getFullYear() : now.getFullYear();
-  const from = hasExplicitMonth
-    ? new Date(year, month - 1, 1, 0, 0, 0)
-    : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  const to = hasExplicitMonth
-    ? new Date(year, month, 1, 0, 0, 0)
-    : new Date(from.getTime() + 120 * 24 * 60 * 60 * 1000);
+  const monthStart = new Date(year, month - 1, 1, 0, 0, 0);
+  const monthEnd = new Date(year, month, 1, 0, 0, 0);
 
-  const events = await Event.find({ status: "scheduled", startsAt: { $gte: from, $lt: to } })
+  if (view === "announced") {
+    const announcementFilter = activeAnnouncementFilter(now);
+    const monthFilter = hasExplicitMonth
+      ? { "announcement.month": month, "announcement.year": year }
+      : {};
+    const [announcements, allAnnouncements] = await Promise.all([
+      populateProduction(Production.find({ ...announcementFilter, ...monthFilter })
+        .sort("announcement.year announcement.month title")),
+      Production.find(announcementFilter)
+        .select("announcement.month announcement.year")
+        .sort("announcement.year announcement.month"),
+    ]);
+    const monthCounts = new Map();
+    allAnnouncements.forEach((production) => {
+      const announcementMonth = production.announcement?.month;
+      const announcementYear = production.announcement?.year;
+      if (!announcementMonth || !announcementYear) return;
+      const key = `${announcementYear}-${announcementMonth}`;
+      const item = monthCounts.get(key) || { year: announcementYear, month: announcementMonth, count: 0 };
+      item.count += 1;
+      monthCounts.set(key, item);
+    });
+    const availableMonths = Array.from(monthCounts.values()).slice(0, 18);
+    const announcementItems = announcements.map(productionDto);
+    const data = { view, month, year, events: [], announcements: announcementItems, availableMonths };
+    res.json({ success: true, view, events: [], announcements: announcementItems, availableMonths, data });
+    return;
+  }
+
+  const isArchive = view === "archive";
+  const defaultFrom = isArchive
+    ? new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const from = hasExplicitMonth ? monthStart : defaultFrom;
+  const to = hasExplicitMonth
+    ? monthEnd
+    : (isArchive ? now : new Date(from.getTime() + 120 * 24 * 60 * 60 * 1000));
+  const eventStatus = isArchive ? { $in: ["scheduled", "finished"] } : "scheduled";
+  const dateRange = isArchive
+    ? { $gte: from, $lt: new Date(Math.min(to.getTime(), now.getTime())) }
+    : { $gte: new Date(Math.max(from.getTime(), now.getTime())), $lt: to };
+  const availableDateFilter = isArchive ? { $lt: now } : { $gte: now };
+
+  const [events, availableEventDates] = await Promise.all([
+    Event.find({ status: eventStatus, startsAt: dateRange })
     .sort("startsAt")
-    .populate({ path: "production", match: publicPublishedFilter(now), populate: { path: "poster" } })
-    .populate("venue");
+    .populate({
+      path: "production",
+      match: publicPublishedFilter(now),
+      populate: [{ path: "poster" }, { path: "creativeTeam.artist", populate: { path: "image" } }],
+    })
+    .populate("venue"),
+    Event.find({ status: eventStatus, startsAt: availableDateFilter })
+      .sort("startsAt")
+      .select("startsAt production")
+      .populate({ path: "production", match: publicPublishedFilter(now), select: "_id" }),
+  ]);
   const items = events.filter((event) => event.production).map(eventDto);
-  res.json({ success: true, events: items, data: { month, year, events: items } });
+  const monthCounts = new Map();
+
+  availableEventDates
+    .filter((event) => event.production)
+    .forEach((event) => {
+      const eventDate = new Date(event.startsAt);
+      const key = `${eventDate.getFullYear()}-${eventDate.getMonth() + 1}`;
+      const current = monthCounts.get(key) || {
+        year: eventDate.getFullYear(),
+        month: eventDate.getMonth() + 1,
+        count: 0,
+      };
+      current.count += 1;
+      monthCounts.set(key, current);
+    });
+
+  const availableMonths = Array.from(monthCounts.values())
+    .sort((a, b) => isArchive
+      ? (b.year - a.year || b.month - a.month)
+      : (a.year - b.year || a.month - b.month))
+    .slice(0, 18);
+  const data = { view, month, year, events: items, announcements: [], availableMonths };
+  res.json({ success: true, view, events: items, announcements: [], availableMonths, data });
 });
 
 const listProductions = asyncHandler(async (req, res) => {

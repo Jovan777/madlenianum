@@ -106,10 +106,10 @@ const buildEventFilter = (query) => {
 const validateEventPayload = async (payload, existingEvent = null) => {
   const errors = [];
 
-  const productionId = payload.production ?? existingEvent?.production;
-  const venueId = payload.venue ?? existingEvent?.venue;
-  const seatMapId = payload.seatMap ?? existingEvent?.seatMap;
-  const pricePlanId = payload.pricePlan ?? existingEvent?.pricePlan;
+  const productionId = payload.production !== undefined ? payload.production : existingEvent?.production;
+  const venueId = payload.venue !== undefined ? payload.venue : existingEvent?.venue;
+  const seatMapId = payload.seatMap !== undefined ? payload.seatMap : existingEvent?.seatMap;
+  const pricePlanId = payload.pricePlan !== undefined ? payload.pricePlan : existingEvent?.pricePlan;
 
   if (!productionId) {
     errors.push("Production is required.");
@@ -167,6 +167,13 @@ const validateEventPayload = async (payload, existingEvent = null) => {
     errors.push("saleEndsAt must be after saleStartsAt.");
   }
 
+  const effectiveStartsAt = payload.startsAt !== undefined ? startsAt : existingEvent?.startsAt;
+  const effectiveSaleEndsAt = payload.saleEndsAt !== undefined ? saleEndsAt : existingEvent?.saleEndsAt;
+
+  if (effectiveStartsAt && effectiveSaleEndsAt && effectiveSaleEndsAt >= effectiveStartsAt) {
+    errors.push("saleEndsAt must be before startsAt.");
+  }
+
   if (payload.maxTicketsPerOrder !== undefined) {
     const value = Number(payload.maxTicketsPerOrder);
 
@@ -219,8 +226,12 @@ const validateEventPayload = async (payload, existingEvent = null) => {
     }
   }
 
-  if (payload.ticketing?.enabled) {
-    const provider = payload.ticketing.provider || existingEvent?.ticketing?.provider || "manual";
+  const ticketingEnabled = payload.ticketing?.enabled !== undefined
+    ? Boolean(payload.ticketing.enabled)
+    : Boolean(existingEvent?.ticketing?.enabled);
+
+  if (ticketingEnabled) {
+    const provider = payload.ticketing?.provider || existingEvent?.ticketing?.provider || "manual";
 
     if (provider === "internal") {
       if (!seatMapId) {

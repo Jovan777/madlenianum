@@ -26,8 +26,10 @@ export interface PublicProduction {
   galleryItems?: PublicGalleryItem[];
   videos?: PublicVideo[];
   trailer?: PublicVideo | null;
-  creativeTeam?: any[];
+  creativeTeam?: PublicProductionCredit[];
+  primaryCredits?: PublicProductionCredit[];
   cast?: any[];
+  announcement?: PublicProductionAnnouncement | null;
   venue?: PublicVenue | null;
   season?: string;
   durationMinutes?: number;
@@ -37,6 +39,29 @@ export interface PublicProduction {
   tags?: string[];
   isFeatured?: boolean;
   status?: string;
+}
+
+export interface PublicProductionCredit {
+  id?: string;
+  roleKey?: string;
+  label?: string;
+  role?: string;
+  name?: string;
+  artist?: {
+    id?: string;
+    displayName?: string;
+    slug?: string;
+  } | null;
+}
+
+export interface PublicProductionAnnouncement {
+  isAnnounced?: boolean;
+  month?: number;
+  year?: number;
+  text?: string;
+  image?: PublicMedia | string | null;
+  startsAt?: string;
+  endsAt?: string;
 }
 
 export interface PublicGalleryItem {
@@ -92,6 +117,28 @@ export interface PublicEvent {
   saleStartsAt?: string;
   saleEndsAt?: string;
   saleAvailability?: PublicSaleAvailability;
+}
+
+export interface PublicRepertoireMonth {
+  year: number;
+  month: number;
+  count: number;
+}
+
+export interface PublicRepertoireResponse {
+  success: boolean;
+  view?: 'current' | 'announced' | 'archive';
+  events: PublicEvent[];
+  announcements?: PublicProduction[];
+  availableMonths: PublicRepertoireMonth[];
+  data?: {
+    view?: 'current' | 'announced' | 'archive';
+    month: number;
+    year: number;
+    events: PublicEvent[];
+    announcements?: PublicProduction[];
+    availableMonths: PublicRepertoireMonth[];
+  };
 }
 
 export interface PublicPromoSlide {

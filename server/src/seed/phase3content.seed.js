@@ -26,7 +26,6 @@ const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
 
 const UPLOAD_ROOT = path.join(__dirname, "../../uploads/madlenianum");
-const PUBLIC_ASSET_ROOT = path.join(__dirname, "../../../client/public/madlenianum");
 
 const startOfToday = () => {
   const date = new Date();
@@ -137,32 +136,33 @@ const getFileMeta = (relativePath) => {
   };
 };
 
-const upsertMedia = async ({ relativePath, title, altText }) => {
+const upsertMedia = async ({ relativePath, title, altText, legacyUrls = [] }) => {
   const meta = getFileMeta(relativePath);
 
   if (!meta) {
     return null;
   }
 
-  return Media.findOneAndUpdate(
-    { url: meta.url },
-    {
-      title,
-      alt: altText,
-      originalName: meta.originalName,
-      filename: meta.fileName,
-      mimeType: meta.mimeType,
-      size: meta.size,
-      storagePath: meta.storagePath.replace(/^uploads\//, ""),
-      url: meta.url,
-      fileType: "image",
-    },
-    {
-      returnDocument: "after",
-      upsert: true,
-      runValidators: true,
-    }
-  );
+  let media = await Media.findOne({ url: meta.url });
+
+  if (!media && legacyUrls.length) {
+    media = await Media.findOne({ url: { $in: legacyUrls } });
+  }
+
+  media ||= new Media();
+  Object.assign(media, {
+    title,
+    alt: altText,
+    originalName: meta.originalName,
+    filename: meta.fileName,
+    mimeType: meta.mimeType,
+    size: meta.size,
+    storagePath: meta.storagePath.replace(/^uploads\//, ""),
+    url: meta.url,
+    fileType: "image",
+  });
+
+  return media.save();
 };
 
 const upsertMediaMany = async (items) => {
@@ -198,31 +198,12 @@ const roleKeyFor = (role) => {
   return "other";
 };
 
-const upsertPublicMedia = async ({ fileName, title, altText }) => {
-  const absolutePath = path.join(PUBLIC_ASSET_ROOT, fileName);
-  if (!fs.existsSync(absolutePath)) {
-    console.warn(`Missing public image file: ${absolutePath}`);
-    return null;
-  }
-
-  const stats = fs.statSync(absolutePath);
-  const url = `/madlenianum/${encodeURIComponent(fileName)}`;
-  return Media.findOneAndUpdate(
-    { url },
-    {
-      title,
-      alt: altText,
-      originalName: fileName,
-      filename: fileName,
-      mimeType: "image/jpeg",
-      size: stats.size,
-      storagePath: "",
-      url,
-      fileType: "image",
-    },
-    { returnDocument: "after", upsert: true, runValidators: true }
-  );
-};
+const upsertHomepageMedia = ({ fileName, title, altText }) => upsertMedia({
+  relativePath: fileName,
+  title,
+  altText,
+  legacyUrls: [`/madlenianum/${encodeURIComponent(fileName)}`],
+});
 
 const normalizeCredits = (items) => (items || []).map((entry, index) => ({
   roleKey: entry.roleKey || roleKeyFor(entry.label || entry.role),
@@ -402,8 +383,12 @@ const upsertEvent = async ({
   notes,
   isPremiere = false,
   saleStatus = "on_sale",
+  status = "scheduled",
+  ticketingEnabled = true,
 }) => {
-  const saleStartsAt = startOfToday();
+  const saleStartsAt = startsAt > new Date()
+    ? startOfToday()
+    : new Date(startsAt.getTime() - 30 * 24 * 60 * 60 * 1000);
   const saleEndsAt = new Date(startsAt.getTime() - 30 * 60 * 1000);
 
   const event = await Event.findOneAndUpdate(
@@ -418,7 +403,7 @@ const upsertEvent = async ({
       endsAt,
       isPremiere,
       badge: badge || "",
-      status: "scheduled",
+      status,
       saleStatus,
       seatMap: seatMap._id,
       pricePlan: pricePlan._id,
@@ -427,7 +412,7 @@ const upsertEvent = async ({
       maxTicketsPerOrder: 4,
       lockDurationMinutes: 15,
       ticketing: {
-        enabled: true,
+        enabled: ticketingEnabled,
         provider: "internal",
         legacyEventId: "",
         externalCheckoutUrl: "",
@@ -959,19 +944,19 @@ const seedPhase3Content = async () => {
         }),
       },
       homepage: {
-        gospodinPoster: await upsertPublicMedia({ fileName: "gospodin_u_cizmama_od_dima.jpg", title: "Gospodin u čizmama od dima - plakat", altText: "Plakat predstave Gospodin u čizmama od dima" }),
-        gospodinFeature: await upsertPublicMedia({ fileName: "gospodin_u_cizmama_od_dima_u_najavi.jpg", title: "Gospodin u čizmama od dima", altText: "Scena iz predstave Gospodin u čizmama od dima" }),
-        pariskiPoster: await upsertPublicMedia({ fileName: "pariski_zivot_plakat.jpg", title: "Pariski život - plakat", altText: "Plakat predstave Pariski život" }),
-        pariskiFeature: await upsertPublicMedia({ fileName: "pariski_zivotu_u_najavi.jpg", title: "Pariski život", altText: "Scena iz predstave Pariski život" }),
-        companyPoster: await upsertPublicMedia({ fileName: "plakat_company.jpg", title: "Company - plakat", altText: "Plakat mjuzikla Company" }),
-        novaLjubavPoster: await upsertPublicMedia({ fileName: "plakat_nova_ljubav.jpg", title: "Nova ljubav - plakat", altText: "Plakat predstave Nova ljubav" }),
-        novaLjubavFeature: await upsertPublicMedia({ fileName: "nova_ljubav_u_najavi.jpg", title: "Nova ljubav", altText: "Scena iz predstave Nova ljubav" }),
-        staklenaPoster: await upsertPublicMedia({ fileName: "plakat_staklena_menazerija.jpg", title: "Staklena menazerija - plakat", altText: "Plakat predstave Staklena menazerija" }),
-        staklenaFeature: await upsertPublicMedia({ fileName: "staklena_menazerija_u_najavi.jpg", title: "Staklena menazerija", altText: "Scena iz predstave Staklena menazerija" }),
-        building: await upsertPublicMedia({ fileName: "madlenianum_zgrada.jpg", title: "Zgrada Madlenianuma", altText: "Zgrada opere i teatra Madlenianum" }),
-        guestPerformances: await upsertPublicMedia({ fileName: "gostovanja_slika.jpg", title: "Gostovanja", altText: "Velika scena Madlenianuma" }),
-        venueRental: await upsertPublicMedia({ fileName: "zakup_prostora_slika.jpg", title: "Zakup prostora", altText: "Prostor Madlenianuma" }),
-        costumeRental: await upsertPublicMedia({ fileName: "najam_kostima_i_rekvizita.jpg", title: "Najam kostima i rekvizita", altText: "Scena sa kostimima i rekvizitima" }),
+        gospodinPoster: await upsertHomepageMedia({ fileName: "gospodin_u_cizmama_od_dima.jpg", title: "Gospodin u čizmama od dima - plakat", altText: "Plakat predstave Gospodin u čizmama od dima" }),
+        gospodinFeature: await upsertHomepageMedia({ fileName: "gospodin_u_cizmama_od_dima_u_najavi.jpg", title: "Gospodin u čizmama od dima", altText: "Scena iz predstave Gospodin u čizmama od dima" }),
+        pariskiPoster: await upsertHomepageMedia({ fileName: "pariski_zivot_plakat.jpg", title: "Pariski život - plakat", altText: "Plakat predstave Pariski život" }),
+        pariskiFeature: await upsertHomepageMedia({ fileName: "pariski_zivotu_u_najavi.jpg", title: "Pariski život", altText: "Scena iz predstave Pariski život" }),
+        companyPoster: await upsertHomepageMedia({ fileName: "plakat_company.jpg", title: "Company - plakat", altText: "Plakat mjuzikla Company" }),
+        novaLjubavPoster: await upsertHomepageMedia({ fileName: "plakat_nova_ljubav.jpg", title: "Nova ljubav - plakat", altText: "Plakat predstave Nova ljubav" }),
+        novaLjubavFeature: await upsertHomepageMedia({ fileName: "nova_ljubav_u_najavi.jpg", title: "Nova ljubav", altText: "Scena iz predstave Nova ljubav" }),
+        staklenaPoster: await upsertHomepageMedia({ fileName: "plakat_staklena_menazerija.jpg", title: "Staklena menazerija - plakat", altText: "Plakat predstave Staklena menazerija" }),
+        staklenaFeature: await upsertHomepageMedia({ fileName: "staklena_menazerija_u_najavi.jpg", title: "Staklena menazerija", altText: "Scena iz predstave Staklena menazerija" }),
+        building: await upsertHomepageMedia({ fileName: "madlenianum_zgrada.jpg", title: "Zgrada Madlenianuma", altText: "Zgrada opere i teatra Madlenianum" }),
+        guestPerformances: await upsertHomepageMedia({ fileName: "gostovanja_slika.jpg", title: "Gostovanja", altText: "Velika scena Madlenianuma" }),
+        venueRental: await upsertHomepageMedia({ fileName: "zakup_prostora_slika.jpg", title: "Zakup prostora", altText: "Prostor Madlenianuma" }),
+        costumeRental: await upsertHomepageMedia({ fileName: "najam_kostima_i_rekvizita.jpg", title: "Najam kostima i rekvizita", altText: "Scena sa kostimima i rekvizitima" }),
       },
     };
 
@@ -1291,17 +1276,41 @@ const seedPhase3Content = async () => {
       isFeatured: true,
     });
 
-    carmen.recommendedProductions = [staklena._id, gordost._id];
-    carmen.announcement = {
-      isAnnounced: true,
-      month: new Date().getMonth() + 1,
-      year: new Date().getFullYear(),
-      text: "Baletski naslov aktuelne sezone.",
-      image: media.main.carmen?._id,
-      startsAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      endsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+    const announcementWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const announcementWindowEnd = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000);
+    const announcementPeriod = (daysFromNow) => {
+      const date = startOfToday();
+      date.setDate(date.getDate() + daysFromNow);
+      return { month: date.getMonth() + 1, year: date.getFullYear() };
     };
-    await carmen.save();
+
+    carmen.recommendedProductions = [staklena._id, gordost._id];
+    carmen.announcement = { isAnnounced: false };
+    gospodin.announcement = {
+      isAnnounced: true,
+      ...announcementPeriod(45),
+      text: "Velika ansambl predstava po motivima sveta Dostojevskog.",
+      image: media.homepage.gospodinFeature?._id,
+      startsAt: announcementWindowStart,
+      endsAt: announcementWindowEnd,
+    };
+    pariski.announcement = {
+      isAnnounced: true,
+      ...announcementPeriod(75),
+      text: "Opereta u velikom stilu stiže na Veliku scenu Madlenianuma.",
+      image: media.homepage.pariskiFeature?._id,
+      startsAt: announcementWindowStart,
+      endsAt: announcementWindowEnd,
+    };
+    staklena.announcement = {
+      isAnnounced: true,
+      ...announcementPeriod(110),
+      text: "Nova sezona donosi snažnu priču o krhkosti snova i porodičnim odnosima.",
+      image: media.homepage.staklenaFeature?._id,
+      startsAt: announcementWindowStart,
+      endsAt: announcementWindowEnd,
+    };
+    await Promise.all([carmen.save(), gospodin.save(), pariski.save(), staklena.save()]);
 
     const schedule = {
       gospodin: futurePerformance({ daysFromNow: 4, hour: 17, minute: 0, durationMinutes: 120 }),
@@ -1419,6 +1428,72 @@ const seedPhase3Content = async () => {
         notes: "Seeded event for Pluća on Velika scena.",
       }),
     };
+
+    const archiveSchedule = {
+      pariski: futurePerformance({ daysFromNow: -140, hour: 19, minute: 0, durationMinutes: 140 }),
+      gospodin: futurePerformance({ daysFromNow: -112, hour: 20, minute: 0, durationMinutes: 120 }),
+      novaLjubav: futurePerformance({ daysFromNow: -84, hour: 19, minute: 30, durationMinutes: 100 }),
+      company: futurePerformance({ daysFromNow: -56, hour: 19, minute: 30, durationMinutes: 130 }),
+      staklena: futurePerformance({ daysFromNow: -28, hour: 20, minute: 0, durationMinutes: 120 }),
+    };
+
+    await Promise.all([
+      upsertEvent({
+        production: pariski,
+        venue,
+        seatMap,
+        pricePlan: balletRegularPlan,
+        ...archiveSchedule.pariski,
+        notes: "[seed:phase3content:archive] Pariski zivot.",
+        saleStatus: "sales_closed",
+        status: "finished",
+        ticketingEnabled: false,
+      }),
+      upsertEvent({
+        production: gospodin,
+        venue,
+        seatMap,
+        pricePlan: dramaRegularPlan,
+        ...archiveSchedule.gospodin,
+        notes: "[seed:phase3content:archive] Gospodin u cizmama od dima.",
+        saleStatus: "sales_closed",
+        status: "finished",
+        ticketingEnabled: false,
+      }),
+      upsertEvent({
+        production: novaLjubav,
+        venue,
+        seatMap,
+        pricePlan: dramaRegularPlan,
+        ...archiveSchedule.novaLjubav,
+        notes: "[seed:phase3content:archive] Nova ljubav.",
+        saleStatus: "sales_closed",
+        status: "finished",
+        ticketingEnabled: false,
+      }),
+      upsertEvent({
+        production: company,
+        venue,
+        seatMap,
+        pricePlan: balletRegularPlan,
+        ...archiveSchedule.company,
+        notes: "[seed:phase3content:archive] Company.",
+        saleStatus: "sales_closed",
+        status: "finished",
+        ticketingEnabled: false,
+      }),
+      upsertEvent({
+        production: staklena,
+        venue,
+        seatMap,
+        pricePlan: dramaRegularPlan,
+        ...archiveSchedule.staklena,
+        notes: "[seed:phase3content:archive] Staklena menazerija.",
+        saleStatus: "sales_closed",
+        status: "finished",
+        ticketingEnabled: false,
+      }),
+    ]);
 
     await PromoSlide.deleteMany({
       $or: [{ slug: null }, { slug: "" }, { slug: "x-y-0" }],

@@ -47,11 +47,11 @@ export class PublicArtistsComponent implements OnInit {
 
   private artistFallback(index: number): string {
     const images = [
-      '/madlenianum/umetnici/nikola_rakocevic.jpg',
-      '/madlenianum/umetnici/Tamara_Aleksic.jpg',
-      '/madlenianum/umetnici/ivan_vukovic.jpg',
+      '/uploads/madlenianum/umetnici/nikola_rakocevic.jpg',
+      '/uploads/madlenianum/umetnici/Tamara_Aleksic.jpg',
+      '/uploads/madlenianum/umetnici/ivan_vukovic.jpg',
     ];
 
-    return images[Math.abs(index) % images.length];
+    return this.publicApi.mediaUrl(images[Math.abs(index) % images.length]);
   }
 }

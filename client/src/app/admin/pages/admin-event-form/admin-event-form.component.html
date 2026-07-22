@@ -1,31 +1,31 @@
 <div class="event-form-page">
-  <a class="back" routerLink="/admin/events">← Events</a>
+  <a class="back" routerLink="/admin/events">&larr; Repertoar</a>
 
   <header class="page-hero">
     <div>
-      <p>Central ticketing form</p>
-      <h1>{{ isEditMode ? 'Edit event' : 'Create event' }}</h1>
-      <span>Production + venue + date + seat map + price plan + ticketing provider.</span>
+      <p>Termin i prodaja ulaznica</p>
+      <h1>{{ isEditMode ? 'Izmeni termin' : 'Dodaj termin' }}</h1>
+      <span>Predstava, scena, datum, mapa sedišta, cenovnik i način prodaje.</span>
     </div>
 
     <a *ngIf="eventId()" class="ghost-link" [routerLink]="['/admin/events', eventId()]">
-      Details
+      Detalji
     </a>
   </header>
 
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
   <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Loading event...</p>
+  <p class="loading" *ngIf="isLoading()">Učitavanje termina...</p>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="event-form">
     <section class="card">
-      <h2>Main data</h2>
+      <h2>Osnovni podaci</h2>
 
       <div class="form-grid">
         <label>
-          Production
+          Predstava
           <select formControlName="production">
-            <option value="">Select production...</option>
+            <option value="">Izaberite predstavu...</option>
             <option *ngFor="let item of productions" [value]="item._id">
               {{ item.title }} · {{ item.type }}
             </option>
@@ -33,64 +33,58 @@
         </label>
 
         <label>
-          Venue
+          Scena
           <select formControlName="venue">
-            <option value="">Select venue...</option>
-            <option *ngFor="let item of venues" [value]="item._id">
-              {{ item.name }}
-            </option>
+            <option value="">Izaberite scenu...</option>
+            <option *ngFor="let item of venues" [value]="item._id">{{ item.name }}</option>
           </select>
         </label>
 
         <label>
-          Starts at
+          Početak
           <input type="datetime-local" formControlName="startsAt" />
         </label>
 
         <label>
-          Ends at
+          Kraj
           <input type="datetime-local" formControlName="endsAt" />
         </label>
 
         <label>
-          Badge
-          <input type="text" formControlName="badge" placeholder="PREMIJERA, 24. jun..." />
+          Oznaka
+          <input type="text" formControlName="badge" placeholder="Premijera, gostovanje..." />
         </label>
 
         <label>
-          Status
+          Status termina
           <select formControlName="status">
-            <option *ngFor="let item of eventStatuses" [value]="item.value">
-              {{ item.label }}
-            </option>
+            <option *ngFor="let item of eventStatuses" [value]="item.value">{{ item.label }}</option>
           </select>
         </label>
 
         <label>
-          Sale status
+          Status prodaje
           <select formControlName="saleStatus">
-            <option *ngFor="let item of saleStatuses" [value]="item.value">
-              {{ item.label }}
-            </option>
+            <option *ngFor="let item of saleStatuses" [value]="item.value">{{ item.label }}</option>
           </select>
         </label>
 
         <label class="check-row">
           <input type="checkbox" formControlName="isPremiere" />
-          <span>Premiere</span>
+          <span>Premijera</span>
         </label>
       </div>
     </section>
 
     <section class="card">
-      <h2>Ticketing setup</h2>
-      <p class="hint">For internal sales, select a seat map and a price plan. Public seat selection uses these rules.</p>
+      <h2>Prodaja ulaznica</h2>
+      <p class="hint">Za internu prodaju obavezno izaberite mapu sedišta i cenovnik za izabranu scenu.</p>
 
       <div class="form-grid">
         <label>
-          Seat map
+          Mapa sedišta
           <select formControlName="seatMap">
-            <option value="">No seat map</option>
+            <option value="">Bez mape sedišta</option>
             <option *ngFor="let item of seatMaps" [value]="item._id">
               {{ item.name }} · {{ item.venue?.name }}
             </option>
@@ -98,54 +92,52 @@
         </label>
 
         <label>
-          Price plan
+          Cenovnik
           <select formControlName="pricePlan">
-            <option value="">No price plan</option>
-            <option *ngFor="let item of pricePlans" [value]="item._id">
-              {{ item.name }}
-            </option>
+            <option value="">Bez cenovnika</option>
+            <option *ngFor="let item of pricePlans" [value]="item._id">{{ item.name }}</option>
           </select>
         </label>
 
         <div class="setup-summary" *ngIf="selectedSeatMap() as map">
-          <strong>Seat map</strong>
+          <strong>Mapa sedišta</strong>
           <span>{{ map.name }}</span>
-          <small>{{ map.sections?.length || 0 }} sections / {{ map.canvas?.width || '-' }} x {{ map.canvas?.height || '-' }}</small>
+          <small>{{ map.sections?.length || 0 }} sekcija · {{ map.canvas?.width || '-' }} × {{ map.canvas?.height || '-' }}</small>
         </div>
 
         <div class="setup-summary" *ngIf="selectedPricePlan() as plan">
-          <strong>Price plan</strong>
-          <span>{{ plan.name }} / {{ plan.currency || 'RSD' }}</span>
-          <small>{{ pricePlanRules().length }} category prices</small>
+          <strong>Cenovnik</strong>
+          <span>{{ plan.name }} · {{ plan.currency || 'RSD' }}</span>
+          <small>{{ pricePlanRules().length }} cena po kategorijama</small>
           <ul>
             <li *ngFor="let rule of pricePlanRules()">{{ formatRule(rule) }}</li>
           </ul>
-          <a [routerLink]="['/admin/price-plans', plan._id, 'edit']">Edit price plan</a>
+          <a [routerLink]="['/admin/price-plans', plan._id, 'edit']">Izmeni cenovnik</a>
         </div>
 
         <div class="setup-summary muted" *ngIf="!selectedPricePlan()">
-          <strong>No price plan selected</strong>
-          <span>Ticketing can be configured after creating a price plan.</span>
-          <a routerLink="/admin/price-plans/new">Create price plan</a>
+          <strong>Cenovnik nije izabran</strong>
+          <span>Interna prodaja postaje dostupna nakon izbora cenovnika.</span>
+          <a routerLink="/admin/price-plans/new">Napravi cenovnik</a>
         </div>
 
         <label>
-          Sale starts
+          Početak prodaje
           <input type="datetime-local" formControlName="saleStartsAt" />
         </label>
 
         <label>
-          Sale ends
+          Kraj prodaje
           <input type="datetime-local" formControlName="saleEndsAt" />
         </label>
 
         <label>
-          Max tickets per order
+          Najviše ulaznica po porudžbini
           <input type="number" formControlName="maxTicketsPerOrder" min="1" max="20" />
         </label>
 
         <label>
-          Lock duration minutes
+          Trajanje rezervacije u minutima
           <input type="number" formControlName="lockDurationMinutes" min="1" max="60" />
         </label>
       </div>
@@ -153,47 +145,45 @@
       <div class="nested" formGroupName="ticketing">
         <label class="check-row">
           <input type="checkbox" formControlName="enabled" />
-          <span>Ticketing enabled</span>
+          <span>Prodaja ulaznica je omogućena</span>
         </label>
 
         <label>
-          Provider
+          Način prodaje
           <select formControlName="provider">
-            <option *ngFor="let item of ticketingProviders" [value]="item.value">
-              {{ item.label }}
-            </option>
+            <option *ngFor="let item of ticketingProviders" [value]="item.value">{{ item.label }}</option>
           </select>
         </label>
 
         <label>
-          Legacy event id
+          ID starog događaja
           <input type="text" formControlName="legacyEventId" />
         </label>
 
         <label>
-          External checkout URL
+          Spoljni URL za kupovinu
           <input type="url" formControlName="externalCheckoutUrl" />
         </label>
 
         <label class="wide">
-          Ticketing note
+          Napomena za prodaju
           <textarea rows="3" formControlName="note"></textarea>
         </label>
       </div>
     </section>
 
     <section class="card">
-      <h2>Notes</h2>
+      <h2>Interne napomene</h2>
       <label>
-        Internal notes
+        Napomena
         <textarea rows="4" formControlName="notes"></textarea>
       </label>
     </section>
 
     <footer class="actions">
-      <a class="ghost-link" routerLink="/admin/events">Cancel</a>
+      <a class="ghost-link" routerLink="/admin/events">Otkaži</a>
       <button class="primary" type="submit" [disabled]="isSaving()">
-        {{ isSaving() ? 'Saving...' : 'Save event' }}
+        {{ isSaving() ? 'Čuvanje...' : 'Sačuvaj termin' }}
       </button>
     </footer>
   </form>
