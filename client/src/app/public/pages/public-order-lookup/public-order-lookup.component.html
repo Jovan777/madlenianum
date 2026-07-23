@@ -1,39 +1,44 @@
 <section class="order-page">
   <header>
     <p class="eyebrow">Ulaznice</p>
-    <h1>Porudzbina</h1>
-    <p>Unesite kod porudzbine da proverite rezervaciju i sedista.</p>
+    <h1>Pregled potvrde</h1>
+    <p>Otvorite bezbedan link iz emaila ili unesite broj potvrde i email adresu.</p>
   </header>
 
-  <form class="lookup" (ngSubmit)="lookup()">
-    <input placeholder="MDL-..." [ngModel]="identifier()" name="identifier" (ngModelChange)="identifier.set($event)">
-    <button class="btn btn-primary" type="submit" [disabled]="isLoading()">Pronadji</button>
+  <form class="lookup" [formGroup]="lookupForm" (ngSubmit)="lookup()">
+    <input aria-label="Broj potvrde" placeholder="MDL-..." formControlName="reference">
+    <input aria-label="Email" type="email" placeholder="Email adresa" formControlName="email">
+    <button class="btn btn-primary" type="submit" [disabled]="isLoading()">Pronađi</button>
   </form>
 
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Trazenje porudzbine...</p>
+  <p class="loading" *ngIf="isLoading()">Traženje potvrde...</p>
 
   <article class="order-card" *ngIf="order() as item">
     <div class="order-head">
-      <span>{{ item.status }}</span>
-      <h2>{{ item.orderCode || item._id }}</h2>
+      <span>{{ item.orderTypeLabel }} · {{ item.statusLabel }}</span>
+      <h2>{{ item.reference }}</h2>
       <strong>{{ item.totalAmount | number }} {{ item.currency || 'RSD' }}</strong>
     </div>
 
-    <p class="confirmation-note">
-      Rezervacija je evidentirana u sistemu. Integracija placanja bice dodata kasnije; za sada ova potvrda cuva izabrana sedista.
-    </p>
+    <p class="confirmation-note">{{ statusExplanation(item) }}</p>
 
     <div class="event-summary">
-      <p>{{ eventTitle(item) }}</p>
-      <span>{{ eventDate(item) }}</span>
-      <small>{{ venueName(item) }}</small>
+      <p>{{ item.event.productionTitle || 'Događaj' }}</p>
+      <span>{{ formatEventDate(item.event.startsAt) }}</span>
+      <small>{{ item.event.venueName || 'Madlenianum' }}</small>
+    </div>
+
+    <div class="order-meta">
+      <div><span>Gost</span><strong>{{ item.customer.firstName }} {{ item.customer.lastName }}</strong></div>
+      <div><span>Email</span><strong>{{ item.customer.email }}</strong></div>
+      <div *ngIf="item.expiresAt"><span>Rok</span><strong>{{ item.expiresAt | date:'dd.MM.yyyy. HH:mm' }}</strong></div>
     </div>
 
     <div class="ticket-list" *ngIf="tickets(item).length">
       <div *ngFor="let ticket of tickets(item)">
         <strong>{{ ticket.seatLabel }}</strong>
-        <span>{{ ticket.priceCategoryName || ticket.priceCategoryCode || 'Karta' }} / red {{ ticket.row || '-' }} / broj {{ ticket.number || '-' }}</span>
+        <span>{{ ticket.priceCategoryName || ticket.priceCategoryCode || 'Karta' }} · red {{ ticket.row || '-' }} · broj {{ ticket.number || '-' }}</span>
         <small>{{ ticket.finalPrice | number }} {{ ticket.currency || item.currency || 'RSD' }}</small>
       </div>
     </div>

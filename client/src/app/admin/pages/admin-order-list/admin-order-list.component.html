@@ -1,0 +1,105 @@
+<section class="orders-page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Operativa ulaznica</p>
+      <h1>Porudžbine i rezervacije</h1>
+      <p>Pregled po događaju, statusu i gostu. Prihod obuhvata samo stvarno plaćene porudžbine.</p>
+    </div>
+    <div class="view-switch">
+      <button type="button" [class.active]="mode() === 'events'" (click)="showEvents()">Po događaju</button>
+      <button type="button" [class.active]="mode() === 'orders'" (click)="showAllOrders()">Sve porudžbine</button>
+    </div>
+  </header>
+
+  <form class="filters" [formGroup]="searchForm" (ngSubmit)="applySearch()">
+    <label>
+      Pretraga
+      <input formControlName="q" placeholder="Referenca, gost, email ili predstava">
+    </label>
+    <label>
+      Period događaja
+      <select formControlName="time">
+        <option value="upcoming">Predstojeći</option>
+        <option value="past">Prošli</option>
+        <option value="all">Svi</option>
+      </select>
+    </label>
+    <button type="submit">Primeni</button>
+  </form>
+
+  <p class="state error" *ngIf="errorMessage()">{{ errorMessage() }} <button type="button" (click)="load()">Pokušaj ponovo</button></p>
+  <p class="state" *ngIf="isLoading()">Učitavanje...</p>
+
+  <ng-container *ngIf="!isLoading() && mode() === 'events'">
+    <div class="event-grid" *ngIf="overview().length; else noEvents">
+      <article class="event-card" *ngFor="let item of overview()">
+        <header>
+          <div>
+            <span>{{ item.event.startsAt | date:'dd.MM.yyyy. HH:mm' }}</span>
+            <h2>{{ item.event.productionTitle }}</h2>
+            <p>{{ item.event.venueName }}</p>
+          </div>
+          <strong>{{ item.stats.occupancyPercentage }}%</strong>
+        </header>
+
+        <div class="metrics">
+          <div><span>Slobodno</span><b>{{ item.stats.availableSeats }}</b></div>
+          <div><span>Rezervisano</span><b>{{ item.stats.reservedSeats }}</b></div>
+          <div><span>Kupovina u toku</span><b>{{ item.stats.pendingPaymentSeats }}</b></div>
+          <div><span>Prodato</span><b>{{ item.stats.paidSeats }}</b></div>
+        </div>
+
+        <div class="finance">
+          <span>Plaćeni prihod</span>
+          <strong>{{ item.stats.paidRevenue | number:'1.0-2' }} {{ item.stats.currency }}</strong>
+        </div>
+
+        <div class="warnings" *ngIf="item.stats.failedEmails || item.stats.expiringSoon">
+          <span *ngIf="item.stats.failedEmails">{{ item.stats.failedEmails }} neuspelih emailova</span>
+          <span *ngIf="item.stats.expiringSoon">{{ item.stats.expiringSoon }} uskoro ističe</span>
+        </div>
+
+        <button class="open-event" type="button" (click)="openEvent(item.event.id)">Otvori evidenciju</button>
+      </article>
+    </div>
+    <ng-template #noEvents><p class="empty">Nema događaja za izabrane filtere.</p></ng-template>
+  </ng-container>
+
+  <ng-container *ngIf="!isLoading() && mode() === 'orders'">
+    <nav class="tabs" aria-label="Status porudžbine">
+      <button type="button" *ngFor="let tab of tabs"
+        [class.active]="activeTab() === tab.value"
+        (click)="selectTab(tab.value)">{{ tab.label }}</button>
+    </nav>
+
+    <div class="order-list" *ngIf="orders().length; else noOrders">
+      <article class="order-row" *ngFor="let item of orders()">
+        <div class="identity">
+          <span class="badge" [ngClass]="statusClass(item.status)">{{ item.statusLabel }}</span>
+          <a [routerLink]="['/admin/orders', item.id]">{{ item.reference }}</a>
+          <small>{{ item.orderTypeLabel }} · {{ item.createdAt | date:'dd.MM.yyyy. HH:mm' }}</small>
+        </div>
+        <div>
+          <strong>{{ item.customer.fullName }}</strong>
+          <span>{{ item.customer.email }}<ng-container *ngIf="item.customer.phone"> · {{ item.customer.phone }}</ng-container></span>
+        </div>
+        <div>
+          <strong>{{ item.event.productionTitle }}</strong>
+          <span>{{ item.event.startsAt | date:'dd.MM.yyyy. HH:mm' }} · {{ item.event.venueName }}</span>
+        </div>
+        <div class="amount">
+          <strong>{{ item.totalAmount | number:'1.0-2' }} {{ item.currency }}</strong>
+          <span>{{ item.items.length }} sedišta · {{ item.emailDelivery.statusLabel }}</span>
+        </div>
+        <a class="open" [routerLink]="['/admin/orders', item.id]">Otvori</a>
+      </article>
+    </div>
+    <ng-template #noOrders><p class="empty">Nema porudžbina za izabrane filtere.</p></ng-template>
+  </ng-container>
+
+  <footer class="pagination" *ngIf="pages() > 1">
+    <button type="button" [disabled]="page() <= 1" (click)="changePage(page() - 1)">Prethodna</button>
+    <span>Strana {{ page() }} od {{ pages() }} · {{ total() }} zapisa</span>
+    <button type="button" [disabled]="page() >= pages()" (click)="changePage(page() + 1)">Sledeća</button>
+  </footer>
+</section>

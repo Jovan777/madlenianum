@@ -48,9 +48,10 @@ const cleanup = async () => {
 
 const lockAndCreate = async ({ eventId, seatId, action, suffix }) => {
   const sessionId = `${TEST_SESSION}-${suffix}`;
+  const checkoutKey = `${sessionId}-checkout`;
   const lock = await request(`/public/events/${eventId}/seats/lock`, {
     method: "POST",
-    body: { sessionId, seatIds: [seatId] },
+    body: { sessionId, seatIds: [seatId], checkoutKey },
   });
   assert.equal(lock.response.status, 200, JSON.stringify(lock.payload));
 
@@ -61,6 +62,8 @@ const lockAndCreate = async ({ eventId, seatId, action, suffix }) => {
       seatIds: [seatId],
       action,
       sessionId,
+      checkoutKey,
+      idempotencyKey: checkoutKey,
       customerSnapshot: {
         firstName: "Test",
         lastName: suffix,
@@ -74,7 +77,8 @@ const lockAndCreate = async ({ eventId, seatId, action, suffix }) => {
     },
   });
   assert.equal(result.response.status, 201, JSON.stringify(result.payload));
-  cleanupOrderIds.push(result.payload.order._id);
+  const createdOrder = await Order.findOne({ orderCode: result.payload.order.reference });
+  cleanupOrderIds.push(createdOrder._id);
   return result.payload;
 };
 
@@ -116,10 +120,10 @@ const run = async () => {
   assert.equal(reservation.action, "reserve");
   assert.equal(reservation.order.status, "reserved");
   assert.equal(reservation.order.items[0].status, "reserved");
-  assert.equal(reservation.order.customerSnapshot.firstName, "Test");
-  assert.equal(reservation.order.customerSnapshot.lastName, "Reservation");
-  assert.ok(!("address" in reservation.order.customerSnapshot));
-  assert.ok(!("postalCode" in reservation.order.customerSnapshot));
+  assert.equal(reservation.order.customer.firstName, "Test");
+  assert.equal(reservation.order.customer.lastName, "Reservation");
+  assert.ok(!("address" in reservation.order.customer));
+  assert.ok(!("postalCode" in reservation.order.customer));
 
   const purchase = await lockAndCreate({
     eventId: event._id,
@@ -128,18 +132,18 @@ const run = async () => {
     suffix: "Purchase",
   });
   assert.equal(purchase.action, "purchase");
-  assert.equal(purchase.order.status, "paid");
-  assert.equal(purchase.order.paymentStatus, "paid");
-  assert.equal(purchase.order.items[0].status, "paid");
+  assert.equal(purchase.order.status, "pending_payment");
+  assert.equal(purchase.order.paymentStatus, "pending");
+  assert.equal(purchase.order.items[0].status, "pending_payment");
 
   const updatedSeats = await request(`/public/events/${event._id}/seats`);
   const byId = new Map(updatedSeats.payload.seats.map((seat) => [String(seat.id), seat]));
   assert.equal(byId.get(String(available[0].id)).availabilityStatus, "reserved");
-  assert.equal(byId.get(String(available[1].id)).availabilityStatus, "sold");
+  assert.equal(byId.get(String(available[1].id)).availabilityStatus, "reserved");
 
   await cleanup();
   cleanupOrderIds.length = 0;
-  console.log("Guest reservation/purchase smoke tests passed (reserved, sold, minimal snapshot).");
+  console.log("Guest reservation/purchase smoke tests passed (reserved, pending payment, minimal snapshot).");
   if (serverErrors) console.log(serverErrors.trim());
 };
 

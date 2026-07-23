@@ -266,6 +266,7 @@ export interface AdminEventStats {
   cancelledOrExpiredItemsCount: number;
   occupancyPercentage: number;
   reservedOrdersCount: number;
+  pendingPaymentOrdersCount: number;
   paidOrdersCount: number;
   cancelledOrdersCount: number;
   paidRevenue: number;
@@ -276,6 +277,116 @@ export interface AdminEventSummary {
   event: AdminEvent;
   warnings: AdminValidationIssue[];
   stats: AdminEventStats;
+}
+
+export type AdminOrderStatus =
+  | 'pending'
+  | 'reserved'
+  | 'pending_payment'
+  | 'paid'
+  | 'expired'
+  | 'cancelled'
+  | 'refunded';
+
+export interface AdminOrderItem {
+  id: string;
+  seatId: string;
+  seatLabel: string;
+  section?: string;
+  row?: string;
+  number?: number | null;
+  priceCategoryCode?: string;
+  priceCategoryName?: string;
+  unitPrice: number;
+  finalPrice: number;
+  currency: string;
+  status: string;
+}
+
+export interface AdminOrder {
+  id: string;
+  reference: string;
+  orderType: 'reservation' | 'purchase';
+  orderTypeLabel: string;
+  status: AdminOrderStatus;
+  statusLabel: string;
+  paymentStatus: string;
+  paymentStatusLabel: string;
+  event: {
+    id: string;
+    productionId: string;
+    productionTitle: string;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    venueId: string;
+    venueName: string;
+    venueStage?: string;
+  };
+  customer: {
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    email: string;
+    phone?: string;
+  };
+  items: AdminOrderItem[];
+  subtotalAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+  currency: string;
+  expiresAt?: string | null;
+  emailDelivery: {
+    status: string;
+    statusLabel: string;
+    messageType: string;
+    sentAt?: string | null;
+    lastAttemptAt?: string | null;
+    lastError?: string;
+    resendCount: number;
+    lastResendAt?: string | null;
+  };
+  paidAt?: string | null;
+  cancelledAt?: string | null;
+  expiredAt?: string | null;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  statusHistory?: Array<{
+    fromStatus?: string;
+    toStatus: string;
+    reason?: string;
+    source: string;
+    changedAt: string;
+    changedBy?: { id: string; username: string; email: string } | null;
+  }>;
+}
+
+export interface AdminOrderEventOverview {
+  event: {
+    id: string;
+    productionTitle: string;
+    startsAt: string;
+    venueName: string;
+    status: string;
+    saleStatus: string;
+  };
+  stats: {
+    totalSeats: number;
+    availableSeats: number;
+    reservedSeats: number;
+    reservedOrders: number;
+    pendingPaymentSeats: number;
+    pendingPaymentOrders: number;
+    paidSeats: number;
+    paidOrders: number;
+    cancelledOrders: number;
+    expiredOrders: number;
+    occupancyPercentage: number;
+    paidRevenue: number;
+    currency: string;
+    failedEmails: number;
+    expiringSoon: number;
+  };
 }
 
 export interface AdminOption<T = string> {
@@ -315,7 +426,7 @@ export interface AdminSystemStatusResponse {
   counts: Record<string, number>;
   warnings: Record<string, number>;
   warningItems?: Array<AdminValidationIssue & {
-    targetType: 'event' | 'pricePlan' | 'seatMap';
+    targetType: 'event' | 'pricePlan' | 'seatMap' | 'order';
     targetId: string;
     targetLabel: string;
     link: string;

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -7,6 +7,8 @@ import {
   AdminEventFormOptions,
   AdminEventSeatPreview,
   AdminEventSummary,
+  AdminOrder,
+  AdminOrderEventOverview,
   AdminPricePlanFormOptions,
   AdminSeat,
   AdminSeatMapPreview,
@@ -91,9 +93,59 @@ export class AdminApiService {
   }
 
   updateOrderStatus(id: string, payload: unknown) {
-    return this.http.patch<ApiItemResponse<unknown>>(
+    return this.http.patch<ApiItemResponse<AdminOrder>>(
       `${this.apiUrl}/admin/orders/${id}/status`,
       payload
+    );
+  }
+
+  getOrderEventOverview(params: Record<string, string | number> = {}) {
+    return this.http.get<ApiListResponse<AdminOrderEventOverview>>(
+      `${this.apiUrl}/admin/orders/overview`,
+      { params: this.toHttpParams(params) }
+    );
+  }
+
+  getOrders(params: Record<string, string | number> = {}) {
+    return this.http.get<ApiListResponse<AdminOrder>>(
+      `${this.apiUrl}/admin/orders`,
+      { params: this.toHttpParams(params) }
+    );
+  }
+
+  getOrder(id: string) {
+    return this.http.get<ApiItemResponse<AdminOrder>>(
+      `${this.apiUrl}/admin/orders/${id}`
+    );
+  }
+
+  cancelOrder(id: string, reason = '') {
+    return this.http.post<ApiItemResponse<AdminOrder>>(
+      `${this.apiUrl}/admin/orders/${id}/cancel`,
+      { reason }
+    );
+  }
+
+  markOrderPaid(id: string, reason = '') {
+    return this.http.post<ApiItemResponse<AdminOrder>>(
+      `${this.apiUrl}/admin/orders/${id}/mark-paid`,
+      { reason }
+    );
+  }
+
+  resendOrderConfirmation(id: string) {
+    return this.http.post<{
+      success: boolean;
+      sent: boolean;
+      emailStatus: string;
+      message: string;
+    }>(`${this.apiUrl}/admin/orders/${id}/resend-confirmation`, {});
+  }
+
+  createOrderPublicLink(id: string) {
+    return this.http.post<{ success: boolean; url: string }>(
+      `${this.apiUrl}/admin/orders/${id}/public-link`,
+      {}
     );
   }
 
@@ -195,5 +247,15 @@ export class AdminApiService {
       `${this.apiUrl}/admin/events/${eventId}/seat-overrides/type/${type}`,
       { body: { confirmActiveSale } }
     );
+  }
+
+  private toHttpParams(params: Record<string, string | number>): HttpParams {
+    let result = new HttpParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== '' && value !== undefined && value !== null) {
+        result = result.set(key, String(value));
+      }
+    });
+    return result;
   }
 }

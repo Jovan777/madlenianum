@@ -272,15 +272,22 @@ const getEventTicketingSummary = asyncHandler(async (req, res) => {
   const now = new Date();
   const [seats, orders, orderItems, activeLocks, validation] = await Promise.all([
     event.seatMap ? Seat.find({ seatMap: event.seatMap._id, isActive: true }).populate("priceCategory") : [],
-    Order.find({ event: event._id }).select("_id status paymentStatus totalAmount expiresAt"),
+      Order.find({ event: event._id }).select(
+        "_id status paymentStatus totalAmount expiresAt reservationExpiresAt paymentExpiresAt"
+      ),
     OrderItem.find({ event: event._id }).select("seat order status finalPrice"),
     SeatLock.find({ event: event._id, status: "active", expiresAt: { $gt: now } }).select("seat"),
     validateEventConfiguration({}, { existingEvent: event }),
   ]);
 
   const orderById = new Map(orders.map((order) => [String(order._id), order]));
-  const activeReservedOrder = (order) => order?.status === "reserved"
-    && (!order.expiresAt || new Date(order.expiresAt) > now);
+    const activeReservedOrder = (order) => order?.status === "reserved"
+      && (
+        !order.reservationExpiresAt && !order.expiresAt
+        || new Date(order.reservationExpiresAt || order.expiresAt) > now
+      );
+    const activePendingPaymentOrder = (order) => order?.status === "pending_payment"
+      && new Date(order.paymentExpiresAt || order.expiresAt || 0) > now;
   const reservedSeatIds = new Set();
   const paidSeatIds = new Set();
   let cancelledOrExpiredItemsCount = 0;
@@ -288,7 +295,10 @@ const getEventTicketingSummary = asyncHandler(async (req, res) => {
     const order = orderById.get(String(item.order));
     if (item.status === "paid" || order?.status === "paid" || order?.paymentStatus === "paid") {
       paidSeatIds.add(String(item.seat));
-    } else if (item.status === "reserved" && activeReservedOrder(order)) {
+      } else if (
+        ["reserved", "pending_payment"].includes(item.status)
+        && (activeReservedOrder(order) || activePendingPaymentOrder(order))
+      ) {
       reservedSeatIds.add(String(item.seat));
     } else if (["cancelled", "refunded"].includes(item.status) || ["cancelled", "expired", "refunded"].includes(order?.status)) {
       cancelledOrExpiredItemsCount += 1;
@@ -325,7 +335,8 @@ const getEventTicketingSummary = asyncHandler(async (req, res) => {
         paidSeatsCount: paidSeatIds.size,
         cancelledOrExpiredItemsCount,
         occupancyPercentage: occupancy,
-        reservedOrdersCount: orders.filter(activeReservedOrder).length,
+          reservedOrdersCount: orders.filter(activeReservedOrder).length,
+          pendingPaymentOrdersCount: orders.filter(activePendingPaymentOrder).length,
         paidOrdersCount: paidOrders.length,
         cancelledOrdersCount: orders.filter((order) => ["cancelled", "expired", "refunded"].includes(order.status)).length,
         paidRevenue: revenue,

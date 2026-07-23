@@ -306,7 +306,7 @@ export interface PublicGuestSnapshot {
   lastName: string;
   fullName?: string;
   email: string;
-  phone: string;
+  phone?: string;
 }
 
 export interface PublicOrderItem {
@@ -325,21 +325,40 @@ export interface PublicOrderItem {
   status: string;
 }
 
+export interface PublicOrderEvent {
+  id?: string;
+  productionId?: string;
+  productionTitle: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  venueId?: string;
+  venueName?: string;
+  venueStage?: string;
+}
+
 export interface PublicOrder {
-  _id: string;
-  orderCode?: string;
-  customerSnapshot?: PublicGuestSnapshot;
-  event?: PublicEvent | string | null;
-  items?: PublicOrderItem[];
+  reference: string;
+  orderType: 'reservation' | 'purchase';
+  orderTypeLabel: string;
+  status: 'pending' | 'reserved' | 'pending_payment' | 'paid' | 'expired' | 'cancelled' | 'refunded' | string;
+  statusLabel: string;
+  paymentStatus?: string;
+  paymentStatusLabel?: string;
+  customer: PublicGuestSnapshot;
+  event: PublicOrderEvent;
+  items: PublicOrderItem[];
+  subtotalAmount?: number;
+  discountAmount?: number;
   totalAmount: number;
   currency: string;
-  status: string;
-  paymentStatus?: string;
+  expiresAt?: string | null;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SeatLockResponse {
   success: boolean;
+  checkoutKey: string;
   expiresAt: string;
   lockDurationMinutes: number;
   seats: Array<{
@@ -354,6 +373,10 @@ export interface SeatLockResponse {
   }>;
 }
 
+export interface RestoredSeatLockResponse extends SeatLockResponse {
+  restored: boolean;
+}
+
 export interface SeatReleaseResponse {
   success: boolean;
   releasedCount: number;
@@ -364,12 +387,18 @@ export interface CreateGuestOrderPayload {
   seatIds: string[];
   action: 'reserve' | 'purchase';
   customerSnapshot: PublicGuestSnapshot;
+  checkoutKey: string;
+  idempotencyKey: string;
 }
 
 export interface CreateGuestOrderResponse {
   success: boolean;
   action: 'reserve' | 'purchase';
   order: PublicOrder;
+  idempotent?: boolean;
+  accessToken?: string;
+  secureOrderUrl?: string;
+  emailStatus?: 'pending' | 'sent' | 'failed' | 'not_configured' | string;
 }
 
 export interface PublicListResponse<T> {

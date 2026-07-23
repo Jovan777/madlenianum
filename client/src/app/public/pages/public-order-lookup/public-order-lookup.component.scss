@@ -23,7 +23,7 @@ header p:last-child {
 
 .lookup {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 1fr auto;
   gap: 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -37,6 +37,10 @@ header p:last-child {
   color: var(--ink);
   background: transparent;
   outline: none;
+}
+
+.lookup input + input {
+  border-left: 1px solid var(--line);
 }
 
 .error,
@@ -102,6 +106,28 @@ header p:last-child {
   border-top: 1px solid var(--line-invert);
 }
 
+.order-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  border-top: 1px solid var(--line-invert);
+  background: var(--line-invert);
+}
+
+.order-meta div {
+  display: grid;
+  gap: 5px;
+  padding: 18px 24px;
+  background: var(--night);
+}
+
+.order-meta span {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .confirmation-note {
   margin: 0;
   border-top: 1px solid var(--line-invert);
@@ -145,6 +171,7 @@ header p:last-child {
   }
 
   .lookup,
+  .order-meta,
   .ticket-list div {
     grid-template-columns: 1fr;
     border-radius: 8px;
@@ -152,5 +179,10 @@ header p:last-child {
 
   .lookup input {
     min-height: 54px;
+  }
+
+  .lookup input + input {
+    border-top: 1px solid var(--line);
+    border-left: 0;
   }
 }

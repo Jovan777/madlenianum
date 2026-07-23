@@ -3,7 +3,7 @@
 <section class="ticket-page" *ngIf="!isLoading() && event() as currentEvent">
   <app-public-ticket-event-card [event]="currentEvent" />
 
-  <nav class="stepper" aria-label="Koraci kupovine">
+  <nav class="stepper" aria-label="Koraci rezervacije i kupovine">
     <span [class.active]="step() === 1" [class.done]="step() > 1"><b>1</b> Sedišta</span>
     <span [class.active]="step() === 2" [class.done]="step() > 2"><b>2</b> Podaci</span>
     <span [class.active]="step() === 3" [class.done]="step() > 3"><b>3</b> Potvrda</span>
@@ -64,30 +64,15 @@
       </div>
 
       <div class="checkout-actions">
-        <button
-          class="btn btn-ghost"
-          type="button"
+        <button class="btn btn-ghost" type="button"
           [disabled]="isWorking() || selectedSeatIds().length === 0"
-          (click)="beginCheckout('reserve')"
-        >
-          Rezerviši
-        </button>
-        <button
-          class="btn btn-gold"
-          type="button"
+          (click)="beginCheckout('reserve')">Rezerviši</button>
+        <button class="btn btn-gold" type="button"
           [disabled]="isWorking() || selectedSeatIds().length === 0"
-          (click)="beginCheckout('purchase')"
-        >
-          Kupi
-        </button>
-        <button
-          class="clear-selection"
-          type="button"
+          (click)="beginCheckout('purchase')">Kupi</button>
+        <button class="clear-selection" type="button"
           [disabled]="isWorking() || selectedSeatIds().length === 0"
-          (click)="resetSelection()"
-        >
-          Poništi izbor
-        </button>
+          (click)="resetSelection()">Poništi izbor</button>
       </div>
     </aside>
   </div>
@@ -96,7 +81,7 @@
     <form class="customer-card" [formGroup]="customerForm" (ngSubmit)="continueToReview()">
       <p class="eyebrow">Podaci gosta</p>
       <h2>Kontakt podaci</h2>
-      <p class="form-intro">Nalog nije potreban. Ovi podaci se vezuju samo za rezervaciju ili kupovinu.</p>
+      <p class="form-intro">Nalog nije potreban. Podaci se koriste samo za ovu rezervaciju ili kupovinu.</p>
 
       <div class="form-grid">
         <label>
@@ -115,7 +100,7 @@
           <small *ngIf="fieldError('email')">{{ fieldError('email') }}</small>
         </label>
         <label>
-          Telefon
+          Telefon <span class="optional">(opciono)</span>
           <input type="tel" formControlName="phone" autocomplete="tel" />
           <small *ngIf="fieldError('phone')">{{ fieldError('phone') }}</small>
         </label>
@@ -141,7 +126,9 @@
 
       <div class="review-contact">
         <strong>{{ customerForm.controls.firstName.value }} {{ customerForm.controls.lastName.value }}</strong>
-        <span>{{ customerForm.controls.email.value }} · {{ customerForm.controls.phone.value }}</span>
+        <span>{{ customerForm.controls.email.value }}
+          <ng-container *ngIf="customerForm.controls.phone.value"> · {{ customerForm.controls.phone.value }}</ng-container>
+        </span>
       </div>
 
       <div class="review-seats">
@@ -157,25 +144,18 @@
       </div>
 
       <p class="hold-line">Sedišta su sačuvana još {{ holdExpiresLabel() }}</p>
+      <p class="payment-note">Opcija „Kupi“ pokreće kupovinu, ali bez povezanog platnog provajdera ne označava porudžbinu kao plaćenu.</p>
 
       <div class="review-actions">
         <button class="btn btn-ghost" type="button" (click)="backToCustomer()" [disabled]="isWorking()">Izmeni podatke</button>
-        <button
-          class="btn btn-light-action"
-          type="button"
+        <button class="btn btn-light-action" type="button"
           [class.recommended]="desiredAction() === 'reserve'"
-          (click)="submitOrder('reserve')"
-          [disabled]="isWorking()"
-        >
+          (click)="submitOrder('reserve')" [disabled]="isWorking()">
           {{ isWorking() && desiredAction() === 'reserve' ? 'Potvrđivanje...' : 'Rezerviši' }}
         </button>
-        <button
-          class="btn btn-gold"
-          type="button"
+        <button class="btn btn-gold" type="button"
           [class.recommended]="desiredAction() === 'purchase'"
-          (click)="submitOrder('purchase')"
-          [disabled]="isWorking()"
-        >
+          (click)="submitOrder('purchase')" [disabled]="isWorking()">
           {{ isWorking() && desiredAction() === 'purchase' ? 'Potvrđivanje...' : 'Kupi' }}
         </button>
       </div>
@@ -185,35 +165,39 @@
   <section class="confirmation" *ngIf="step() === 4 && order() as completedOrder">
     <span class="confirmation-mark" aria-hidden="true">✓</span>
     <p class="eyebrow">{{ completedStatusLabel() }}</p>
-    <h2>Hvala, potvrda je uspešno kreirana.</h2>
+    <h2>Hvala, potvrda je kreirana.</h2>
+    <p class="confirmation-copy" *ngIf="completedOrder.status === 'reserved'">
+      Sedišta su rezervisana do navedenog roka.
+    </p>
+    <p class="confirmation-copy" *ngIf="completedOrder.status === 'pending_payment'">
+      Kupovina je pokrenuta, ali plaćanje još nije potvrđeno.
+    </p>
     <p class="reference-label">Broj potvrde</p>
     <strong class="reference">{{ orderReference() }}</strong>
 
     <div class="confirmation-grid">
-      <div>
-        <span>Događaj</span>
-        <strong>{{ publicApi.productionFromEvent(currentEvent)?.title || 'Događaj' }}</strong>
-      </div>
-      <div>
-        <span>Status</span>
-        <strong>{{ completedStatusLabel() }}</strong>
-      </div>
-      <div>
-        <span>Sedišta</span>
-        <strong>{{ confirmedSeats().length }}</strong>
-      </div>
-      <div>
-        <span>Ukupno</span>
-        <strong>{{ selectedTotal(confirmedSeats()) | number }} {{ selectedCurrency(confirmedSeats()) }}</strong>
-      </div>
+      <div><span>Događaj</span><strong>{{ completedOrder.event.productionTitle || 'Događaj' }}</strong></div>
+      <div><span>Status</span><strong>{{ completedOrder.statusLabel }}</strong></div>
+      <div><span>Sedišta</span><strong>{{ confirmedSeats().length }}</strong></div>
+      <div><span>Ukupno</span><strong>{{ completedOrder.totalAmount | number }} {{ completedOrder.currency }}</strong></div>
     </div>
+
+    <p class="expiry" *ngIf="completedOrder.expiresAt">
+      Rok važi do {{ completedOrder.expiresAt | date:'dd.MM.yyyy. HH:mm' }}.
+    </p>
+    <p class="email-note" *ngIf="emailStatus() === 'sent'">Potvrda je poslata na {{ completedOrder.customer.email }}.</p>
+    <p class="email-note warning" *ngIf="emailStatus() === 'failed' || emailStatus() === 'not_configured'">
+      Porudžbina je sačuvana, ali email trenutno nije poslat. Sačuvajte broj potvrde.
+    </p>
 
     <div class="confirmed-seats">
       <span *ngFor="let seat of confirmedSeats()">{{ seat.label }}</span>
     </div>
 
     <div class="confirmation-actions">
-      <a class="btn btn-primary" [routerLink]="['/porudzbina', orderReference()]">Detalji potvrde</a>
+      <a class="btn btn-primary"
+        [routerLink]="['/porudzbina', orderReference()]"
+        [queryParams]="publicAccessToken() ? { token: publicAccessToken() } : {}">Detalji potvrde</a>
       <a class="btn btn-ghost" routerLink="/repertoar">Nazad na program</a>
     </div>
   </section>

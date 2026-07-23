@@ -12,6 +12,21 @@ const orderItemSchema = new mongoose.Schema(
       ref: "Event",
       required: true,
     },
+    production: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Production",
+    },
+    productionTitle: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    eventStartsAt: Date,
+    venueName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     seat: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Seat",
@@ -72,7 +87,7 @@ const orderItemSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "reserved", "paid", "cancelled", "refunded"],
+      enum: ["pending", "reserved", "pending_payment", "paid", "cancelled", "refunded"],
       default: "reserved",
     },
   },

@@ -1,4 +1,10 @@
 const mongoose = require("mongoose");
+const {
+  EMAIL_STATUSES,
+  ORDER_STATUSES,
+  ORDER_TYPES,
+  PAYMENT_STATUSES,
+} = require("../constants/order.constants");
 
 const customerSnapshotSchema = new mongoose.Schema(
   {
@@ -32,6 +38,59 @@ const customerSnapshotSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const eventSnapshotSchema = new mongoose.Schema(
+  {
+    productionId: mongoose.Schema.Types.ObjectId,
+    productionTitle: { type: String, default: "", trim: true },
+    eventStartsAt: Date,
+    eventEndsAt: Date,
+    venueId: mongoose.Schema.Types.ObjectId,
+    venueName: { type: String, default: "", trim: true },
+    venueStage: { type: String, default: "", trim: true },
+  },
+  { _id: false }
+);
+
+const emailDeliverySchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: EMAIL_STATUSES,
+      default: "pending",
+    },
+    messageType: {
+      type: String,
+      enum: ["reservation", "pending_payment", "paid", "cancelled", "expired"],
+      default: "reservation",
+    },
+    sentAt: Date,
+    lastAttemptAt: Date,
+    lastError: { type: String, default: "", trim: true },
+    resendCount: { type: Number, default: 0, min: 0 },
+    lastResendAt: Date,
+  },
+  { _id: false }
+);
+
+const statusHistorySchema = new mongoose.Schema(
+  {
+    fromStatus: { type: String, default: "", trim: true },
+    toStatus: { type: String, required: true, trim: true },
+    reason: { type: String, default: "", trim: true },
+    changedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AdminUser",
+    },
+    source: {
+      type: String,
+      enum: ["public", "admin", "system", "migration"],
+      default: "system",
+    },
+    changedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
   {
     orderCode: {
@@ -44,16 +103,34 @@ const orderSchema = new mongoose.Schema(
       ref: "Customer",
     },
     customerSnapshot: customerSnapshotSchema,
+    orderType: {
+      type: String,
+      enum: ORDER_TYPES,
+      default: "reservation",
+    },
     sessionId: {
       type: String,
       default: "",
       trim: true,
+      select: false,
+    },
+    idempotencyKey: {
+      type: String,
+      default: undefined,
+      trim: true,
+      select: false,
+    },
+    publicAccessTokenHash: {
+      type: String,
+      default: undefined,
+      select: false,
     },
     event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
       required: true,
     },
+    eventSnapshot: eventSnapshotSchema,
     items: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -83,12 +160,12 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "reserved", "paid", "cancelled", "expired", "refunded"],
+      enum: ORDER_STATUSES,
       default: "pending",
     },
     paymentStatus: {
       type: String,
-      enum: ["unpaid", "pending", "paid", "failed", "cancelled", "refunded"],
+      enum: PAYMENT_STATUSES,
       default: "unpaid",
     },
     paymentProvider: {
@@ -97,8 +174,19 @@ const orderSchema = new mongoose.Schema(
       default: "none",
     },
     expiresAt: Date,
+    reservationExpiresAt: Date,
+    paymentExpiresAt: Date,
     paidAt: Date,
     cancelledAt: Date,
+    expiredAt: Date,
+    emailDelivery: {
+      type: emailDeliverySchema,
+      default: () => ({}),
+    },
+    statusHistory: {
+      type: [statusHistorySchema],
+      default: [],
+    },
     notes: {
       type: String,
       default: "",
@@ -120,5 +208,10 @@ orderSchema.index({ customer: 1, createdAt: -1 });
 orderSchema.index({ event: 1, status: 1 });
 orderSchema.index({ sessionId: 1 });
 orderSchema.index({ expiresAt: 1 });
+orderSchema.index({ reservationExpiresAt: 1 });
+orderSchema.index({ paymentExpiresAt: 1 });
+orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true });
+orderSchema.index({ publicAccessTokenHash: 1 }, { sparse: true });
+orderSchema.index({ "customerSnapshot.email": 1, createdAt: -1 });
 
 module.exports = mongoose.model("Order", orderSchema, "orders");

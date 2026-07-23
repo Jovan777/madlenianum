@@ -779,8 +779,18 @@ const createSeedOrder = async ({
       email: customer.email,
       phone: customer.phone,
     },
+    orderType: status === "paid" ? "purchase" : "reservation",
     sessionId: "",
     event: event._id,
+    eventSnapshot: {
+      productionId: event.production?._id,
+      productionTitle: event.production?.title || "",
+      eventStartsAt: event.startsAt,
+      eventEndsAt: event.endsAt,
+      venueId: event.venue?._id,
+      venueName: event.venue?.name || "",
+      venueStage: event.venue?.name || "",
+    },
     items: [],
     subtotalAmount: 0,
     discountAmount: 0,
@@ -790,8 +800,20 @@ const createSeedOrder = async ({
     paymentStatus: status === "paid" ? "paid" : "unpaid",
     paymentProvider: status === "paid" ? "manual" : "none",
     expiresAt,
+    reservationExpiresAt: status === "reserved" ? expiresAt : undefined,
     paidAt: status === "paid" ? new Date() : undefined,
     notes: "[seed:phase3content] Seeded order.",
+    emailDelivery: {
+      status: "not_configured",
+      messageType: status === "reserved" ? "reservation" : "paid",
+    },
+    statusHistory: [{
+      fromStatus: "",
+      toStatus: status,
+      reason: "Seeded test record.",
+      source: "system",
+      changedAt: new Date(),
+    }],
   });
 
   const orderItemsPayload = seats.map((seat) => {
@@ -806,6 +828,10 @@ const createSeedOrder = async ({
     return {
       order: order._id,
       event: event._id,
+      production: event.production?._id,
+      productionTitle: event.production?.title || "",
+      eventStartsAt: event.startsAt,
+      venueName: event.venue?.name || "",
       seat: seat._id,
       seatLabel: seat.label,
       section: seat.section,

@@ -15,6 +15,7 @@ import {
   PublicProduction,
   PublicRepertoireResponse,
   PublicSiteSettings,
+  RestoredSeatLockResponse,
   SeatLockResponse,
   SeatReleaseResponse,
 } from '../models/public.models';
@@ -74,17 +75,27 @@ export class PublicApiService {
     return this.http.get<EventSeatsResponse>(`${this.apiUrl}/public/events/${eventId}/seats`);
   }
 
-  lockSeats(eventId: string, seatIds: string[]) {
+  lockSeats(eventId: string, seatIds: string[], checkoutKey: string) {
     return this.http.post<SeatLockResponse>(`${this.apiUrl}/public/events/${eventId}/seats/lock`, {
       sessionId: this.getSessionId(),
       seatIds,
+      checkoutKey,
     });
   }
 
-  releaseSeats(eventId: string, seatIds: string[]) {
+  restoreSeatLocks(eventId: string) {
+    const params = new HttpParams().set('sessionId', this.getSessionId());
+    return this.http.get<RestoredSeatLockResponse>(
+      `${this.apiUrl}/public/events/${eventId}/seats/locks/current`,
+      { params }
+    );
+  }
+
+  releaseSeats(eventId: string, seatIds: string[], checkoutKey = '') {
     return this.http.post<SeatReleaseResponse>(`${this.apiUrl}/public/events/${eventId}/seats/release`, {
       sessionId: this.getSessionId(),
       seatIds,
+      checkoutKey,
     });
   }
 
@@ -95,10 +106,19 @@ export class PublicApiService {
     });
   }
 
-  getPublicOrder(identifier: string) {
-    const sessionId = encodeURIComponent(this.getSessionId());
-    return this.http.get<{ success: boolean; order?: PublicOrder; item?: PublicOrder }>(
-      `${this.apiUrl}/public/orders/${identifier}?sessionId=${sessionId}`
+  getPublicOrder(identifier: string, token = '') {
+    let params = new HttpParams().set('sessionId', this.getSessionId());
+    if (token) params = params.set('token', token);
+    return this.http.get<{ success: boolean; order: PublicOrder }>(
+      `${this.apiUrl}/public/orders/${encodeURIComponent(identifier)}`,
+      { params }
+    );
+  }
+
+  lookupPublicOrder(reference: string, email: string) {
+    return this.http.post<{ success: boolean; order: PublicOrder }>(
+      `${this.apiUrl}/public/orders/lookup`,
+      { reference, email }
     );
   }
 

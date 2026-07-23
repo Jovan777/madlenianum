@@ -21,6 +21,8 @@ const {
   releaseSeats,
   createOrder,
   getPublicOrder,
+  lookupPublicOrder,
+  restoreSeatLocks,
 } = require("../controllers/ticketingPublic.controller");
 
 const router = express.Router();
@@ -44,8 +46,10 @@ router.get("/site-settings", getPublicSiteSettings);
 router.get("/events/:eventId/seats", getEventSeats);
 router.post("/events/:eventId/seats/lock", lockSeats);
 router.post("/events/:eventId/seats/release", releaseSeats);
+router.get("/events/:eventId/seats/locks/current", restoreSeatLocks);
 
 router.post("/orders", createOrder);
+router.post("/orders/lookup", lookupPublicOrder);
 router.get("/orders/:identifier", getPublicOrder);
 
 router.post("/newsletter/subscribe", subscribeNewsletter);

@@ -23,7 +23,7 @@ export class AdminLayoutComponent {
     { label: 'Seat maps', path: '/admin/seat-maps', icon: 'M' },
     { label: 'Price plans', path: '/admin/price-plans', icon: 'L' },
     { label: 'Price categories', path: '/admin/price-categories', icon: 'C' },
-    { label: 'Orders', path: '/admin/orders', icon: 'O' },
+    { label: 'Porudžbine i rezervacije', path: '/admin/orders', icon: 'O' },
     { label: 'Media Library', path: '/admin/media', icon: 'I' },
     { label: 'Pages / Content', path: '/admin/pages', icon: 'G' },
     { label: 'News', path: '/admin/news', icon: 'N' },

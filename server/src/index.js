@@ -13,6 +13,8 @@ const adminRoutes = require("./routes/admin.routes");
 const publicRoutes = require("./routes/public.routes");
 
 const { notFound, errorHandler } = require("./middleware/error.middleware");
+const { processExpiredOrders } = require("./services/orderLifecycle.service");
+const SeatLock = require("./models/SeatLock");
 
 const app = express();
 
@@ -62,9 +64,28 @@ const PORT = process.env.PORT || 5000;
 
 connectDB()
   .then(() => {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+
+    const cleanupIntervalMs = Math.max(
+      30000,
+      Number(process.env.ORDER_EXPIRY_INTERVAL_MS || 60000)
+    );
+    const expiryTimer = setInterval(async () => {
+      try {
+        const now = new Date();
+        await SeatLock.updateMany(
+          { status: "active", expiresAt: { $lte: now } },
+          { $set: { status: "expired" } }
+        );
+        await processExpiredOrders();
+      } catch (error) {
+        console.error("Ticketing expiry cleanup failed:", error.message);
+      }
+    }, cleanupIntervalMs);
+    expiryTimer.unref();
+    server.on("close", () => clearInterval(expiryTimer));
   })
   .catch((error) => {
     console.error("MongoDB connection error:", error.message);

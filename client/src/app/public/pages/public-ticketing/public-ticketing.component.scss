@@ -270,6 +270,12 @@
   font-weight: 850;
 }
 
+.optional {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 .form-grid input {
   width: 100%;
   min-height: 50px;
@@ -341,6 +347,26 @@
   color: #5b4116;
   background: #f8e8b8;
   font-weight: 750;
+}
+
+.payment-note,
+.confirmation-copy,
+.expiry,
+.email-note {
+  max-width: 720px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.payment-note {
+  margin: 12px 0 0;
+}
+
+.email-note.warning {
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #6b4510;
+  background: #f8e8b8;
 }
 
 .btn-light-action {

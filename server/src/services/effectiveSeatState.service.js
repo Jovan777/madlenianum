@@ -35,8 +35,16 @@ const loadOrderState = async (eventId) => {
       {
         status: "reserved",
         $or: [
+          { reservationExpiresAt: { $gt: now } },
           { expiresAt: { $exists: false } },
           { expiresAt: null },
+          { expiresAt: { $gt: now } },
+        ],
+      },
+      {
+        status: "pending_payment",
+        $or: [
+          { paymentExpiresAt: { $gt: now } },
           { expiresAt: { $gt: now } },
         ],
       },
@@ -49,7 +57,7 @@ const loadOrderState = async (eventId) => {
     ? await OrderItem.find({
         event: eventId,
         order: { $in: orders.map((order) => order._id) },
-        status: { $in: ["reserved", "paid"] },
+        status: { $in: ["reserved", "pending_payment", "paid"] },
       }).select("seat order status")
     : [];
   const soldSeatIds = new Set();

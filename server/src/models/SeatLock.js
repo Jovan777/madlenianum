@@ -21,6 +21,11 @@ const seatLockSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    checkoutKey: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
@@ -51,6 +56,7 @@ seatLockSchema.index(
 );
 
 seatLockSchema.index({ event: 1, sessionId: 1, status: 1 });
+seatLockSchema.index({ event: 1, sessionId: 1, checkoutKey: 1, status: 1 });
 seatLockSchema.index({ event: 1, customer: 1, status: 1 });
 seatLockSchema.index({ expiresAt: 1 });
 

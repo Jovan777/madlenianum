@@ -36,7 +36,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     priceCategoriesCount,
     pricePlans,
     customersCount,
-    ordersCount,
+    orders,
     orderItemsCount,
     activeLocksCount,
     overrides,
@@ -53,7 +53,9 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     PriceCategory.countDocuments(),
     PricePlan.find().populate("venue").populate("rules.priceCategory"),
     Customer.countDocuments(),
-    Order.countDocuments(),
+    Order.find()
+      .select("orderCode status emailDelivery eventSnapshot reservationExpiresAt paymentExpiresAt expiresAt items")
+      .populate("event", "startsAt production venue"),
     OrderItem.countDocuments(),
     SeatLock.countDocuments({ status: "active", expiresAt: { $gt: now } }),
     EventSeatOverride.find()
@@ -71,10 +73,14 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       message: problem.message,
       targetType,
       targetId: String(target._id),
-      targetLabel: targetType === "event"
+      targetLabel: targetType === "order"
+        ? target.orderCode
+        : targetType === "event"
         ? `${target.production?.title || "Termin"} - ${new Date(target.startsAt).toLocaleString("sr-RS")}`
         : target.name,
-      link: targetType === "event"
+      link: targetType === "order"
+        ? `/admin/orders/${target._id}`
+        : targetType === "event"
         ? `/admin/events/${target._id}`
         : targetType === "seatMap"
           ? `/admin/seat-maps/${target._id}/map`
@@ -135,6 +141,67 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     }
   }
 
+  for (const order of orders) {
+    if (order.emailDelivery?.status === "failed") {
+      addWarning({
+        code: "order_confirmation_email_failed",
+        field: "emailDelivery",
+        message: "Potvrda porudzbine nije poslata. Proverite konfiguraciju i posaljite ponovo.",
+      }, "order", order);
+    }
+    const expiry = order.status === "reserved"
+      ? order.reservationExpiresAt || order.expiresAt
+      : order.paymentExpiresAt || order.expiresAt;
+    if (["reserved", "pending_payment"].includes(order.status) && expiry && expiry <= now) {
+      addWarning({
+        code: "active_order_past_expiry",
+        field: "expiresAt",
+        message: "Aktivna rezervacija ili kupovina je prosla rok isteka.",
+      }, "order", order);
+    }
+    if (!order.eventSnapshot?.productionTitle || !order.eventSnapshot?.eventStartsAt) {
+      addWarning({
+        code: "missing_order_snapshot",
+        field: "eventSnapshot",
+        message: "Porudzbini nedostaje istorijski snapshot dogadjaja.",
+      }, "order", order);
+    }
+  }
+
+  const activeOrderIds = orders
+    .filter((order) => ["reserved", "pending_payment", "paid"].includes(order.status))
+    .map((order) => order._id);
+  const duplicateActiveSeats = activeOrderIds.length
+    ? await OrderItem.aggregate([
+        {
+          $match: {
+            order: { $in: activeOrderIds },
+            status: { $in: ["reserved", "pending_payment", "paid"] },
+          },
+        },
+        {
+          $group: {
+            _id: { event: "$event", seat: "$seat" },
+            count: { $sum: 1 },
+            orders: { $addToSet: "$order" },
+          },
+        },
+        { $match: { count: { $gt: 1 } } },
+      ])
+    : [];
+  for (const duplicate of duplicateActiveSeats) {
+    const target = orders.find((order) =>
+      duplicate.orders.some((orderId) => String(orderId) === String(order._id))
+    );
+    if (target) {
+      addWarning({
+        code: "duplicate_active_order_seat",
+        field: "items",
+        message: "Isto sediste postoji u vise aktivnih porudzbina.",
+      }, "order", target);
+    }
+  }
+
   const eventsOnSale = events.filter((event) => event.saleStatus === "on_sale").length;
   const eventsMissingSeatMap = events.filter((event) => event.saleStatus === "on_sale" && !event.seatMap).length;
   const eventsMissingPricePlan = events.filter((event) => event.saleStatus === "on_sale" && !event.pricePlan).length;
@@ -152,7 +219,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       priceCategories: priceCategoriesCount,
       pricePlans: pricePlans.length,
       customers: customersCount,
-      orders: ordersCount,
+      orders: orders.length,
       orderItems: orderItemsCount,
       activeLocks: activeLocksCount,
       eventSeatOverrides: overrides.length,

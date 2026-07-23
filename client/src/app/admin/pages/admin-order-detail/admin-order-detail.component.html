@@ -1,78 +1,89 @@
-<div class="order-page">
-  <a class="back" routerLink="/admin/orders">Back to orders</a>
+<section class="order-page">
+  <a class="back" routerLink="/admin/orders">Nazad na porudžbine i rezervacije</a>
 
-  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Loading order...</p>
+  <p class="message error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="message success" *ngIf="successMessage()">{{ successMessage() }}</p>
+  <p class="message" *ngIf="isLoading()">Učitavanje porudžbine...</p>
 
   <ng-container *ngIf="order() as item">
     <header class="hero">
       <div>
-        <span>{{ item.status }}</span>
-        <h2>{{ item.orderCode }}</h2>
-        <p>{{ item.customerSnapshot?.fullName }} / {{ item.customerSnapshot?.email }}</p>
+        <span class="status" [attr.data-status]="item.status">{{ item.orderTypeLabel }} · {{ item.statusLabel }}</span>
+        <h1>{{ item.reference }}</h1>
+        <p>{{ item.customer.fullName }} · {{ item.customer.email }}</p>
       </div>
-
-      <strong>{{ item.totalAmount | number }} {{ item.currency }}</strong>
+      <strong>{{ item.totalAmount | number:'1.0-2' }} {{ item.currency }}</strong>
     </header>
 
-    <section class="status-card">
+    <section class="actions">
       <div>
-        <h3>Manual status update</h3>
-        <p>Use this control while payment and legacy integrations are handled manually.</p>
+        <h2>Operativne akcije</h2>
+        <p>Promene se proveravaju na serveru i beleže u istoriji.</p>
       </div>
-
-      <div class="status-actions">
-        <select [(ngModel)]="selectedStatus">
-          <option value="reserved">reserved</option>
-          <option value="paid">paid</option>
-          <option value="cancelled">cancelled</option>
-          <option value="expired">expired</option>
-          <option value="refunded">refunded</option>
-        </select>
-
-        <button type="button" (click)="saveStatus()" [disabled]="isSaving()">
-          {{ isSaving() ? 'Saving...' : 'Save status' }}
-        </button>
-      </div>
+      <form [formGroup]="actionForm">
+        <input formControlName="reason" placeholder="Razlog promene (opciono)">
+        <div>
+          <button type="button" class="secondary" (click)="resend()" [disabled]="isSaving()">Pošalji potvrdu ponovo</button>
+          <button type="button" class="secondary" (click)="copyPublicLink()" [disabled]="isSaving()">Kopiraj bezbedan link</button>
+          <button type="button" class="danger" *ngIf="canCancel(item)" (click)="cancel()" [disabled]="isSaving()">Otkaži</button>
+          <button type="button" class="paid" *ngIf="canMarkPaid(item)" (click)="markPaid()" [disabled]="isSaving()">Označi kao plaćeno</button>
+        </div>
+      </form>
     </section>
 
-    <section class="grid">
+    <div class="summary-grid">
       <article>
-        <h3>Event</h3>
-        <p>{{ item.event?.production?.title || '-' }}</p>
-        <span>{{ formatDate(item.event?.startsAt) }}</span>
+        <span>Događaj</span>
+        <strong>{{ item.event.productionTitle || '-' }}</strong>
+        <small>{{ item.event.startsAt | date:'dd.MM.yyyy. HH:mm' }} · {{ item.event.venueName }}</small>
       </article>
-
       <article>
-        <h3>Payment</h3>
-        <p>{{ item.paymentStatus }}</p>
-        <span>{{ item.paymentProvider }}</span>
+        <span>Gost</span>
+        <strong>{{ item.customer.fullName }}</strong>
+        <small>{{ item.customer.email }}<ng-container *ngIf="item.customer.phone"> · {{ item.customer.phone }}</ng-container></small>
       </article>
-    </section>
+      <article>
+        <span>Plaćanje</span>
+        <strong>{{ item.paymentStatusLabel }}</strong>
+        <small *ngIf="item.paidAt">Evidentirano {{ item.paidAt | date:'dd.MM.yyyy. HH:mm' }}</small>
+      </article>
+      <article>
+        <span>Rok</span>
+        <strong>{{ item.expiresAt ? (item.expiresAt | date:'dd.MM.yyyy. HH:mm') : 'Nema roka' }}</strong>
+        <small>Kreirano {{ item.createdAt | date:'dd.MM.yyyy. HH:mm' }}</small>
+      </article>
+      <article>
+        <span>Email potvrda</span>
+        <strong>{{ item.emailDelivery.statusLabel }}</strong>
+        <small>{{ item.emailDelivery.sentAt ? (item.emailDelivery.sentAt | date:'dd.MM.yyyy. HH:mm') : (item.emailDelivery.lastError || 'Još nije poslato') }}</small>
+      </article>
+    </div>
 
     <section class="items">
-      <h3>Tickets</h3>
+      <h2>Sedišta i cene</h2>
+      <div class="item-list">
+        <article *ngFor="let ticket of item.items">
+          <div>
+            <strong>{{ ticket.seatLabel }}</strong>
+            <span>{{ ticket.section || 'Sala' }} · red {{ ticket.row || '-' }} · broj {{ ticket.number || '-' }}</span>
+          </div>
+          <span>{{ ticket.priceCategoryName || ticket.priceCategoryCode || 'Karta' }}</span>
+          <strong>{{ ticket.finalPrice | number:'1.0-2' }} {{ ticket.currency }}</strong>
+        </article>
+      </div>
+    </section>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Seat</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Price</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr *ngFor="let ticket of item.items">
-            <td>{{ ticket.seatLabel }}</td>
-            <td>{{ ticket.priceCategoryName || ticket.priceCategoryCode }}</td>
-            <td>{{ ticket.status }}</td>
-            <td>{{ ticket.finalPrice | number }} {{ ticket.currency }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <section class="history">
+      <h2>Istorija statusa</h2>
+      <div *ngIf="item.statusHistory?.length; else emptyHistory">
+        <article *ngFor="let entry of item.statusHistory">
+          <span>{{ entry.changedAt | date:'dd.MM.yyyy. HH:mm' }}</span>
+          <strong>{{ entry.fromStatus || 'novo' }} → {{ entry.toStatus }}</strong>
+          <p>{{ entry.reason || 'Bez dodatne napomene' }}</p>
+          <small>{{ entry.changedBy?.username || entry.source }}</small>
+        </article>
+      </div>
+      <ng-template #emptyHistory><p>Nema zabeleženih promena statusa.</p></ng-template>
     </section>
   </ng-container>
-</div>
+</section>
