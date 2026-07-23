@@ -281,7 +281,11 @@ export interface PublicSeat {
     currency: string;
     priceCategory?: any;
   } | null;
-  availabilityStatus: 'available' | 'locked' | 'reserved' | 'sold' | 'unavailable' | string;
+  availabilityStatus: 'available' | 'locked' | 'reserved' | 'sold' | 'unavailable' | 'box_office_only' | string;
+  isAccessible?: boolean;
+  isCompanion?: boolean;
+  hasRestrictedView?: boolean;
+  publicMessage?: string;
 }
 
 export interface EventSeatsResponse {

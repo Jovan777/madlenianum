@@ -1,0 +1,110 @@
+<div class="override-page">
+  <a class="back" [routerLink]="['/admin/events', eventId()]">&larr; Detalji termina</a>
+
+  <header class="page-hero" *ngIf="event() as item">
+    <div>
+      <span>Izuzeci sedišta za jedan termin</span>
+      <h1>{{ item.production?.title || 'Termin' }}</h1>
+      <p>{{ formatDate(item.startsAt) }} · {{ item.venue?.name || '-' }} · {{ statusLabel(item) }}</p>
+    </div>
+    <button type="button" (click)="load()">Osveži stanje</button>
+  </header>
+
+  <p class="message error" *ngIf="errorMessage()">
+    {{ errorMessage() }}
+    <button type="button" (click)="load()">Pokušaj ponovo</button>
+  </p>
+  <p class="message" *ngIf="isLoading()">Učitavanje efektivnog stanja sedišta...</p>
+
+  <section class="summary" *ngIf="preview() as data">
+    <article><span>Slobodno online</span><strong>{{ data.summary.effectiveStates.available || 0 }}</strong></article>
+    <article><span>Aktivni izuzeci</span><strong>{{ data.summary.overrides.active }}</strong></article>
+    <article><span>Rezervisano</span><strong>{{ data.summary.effectiveStates.reserved || 0 }}</strong></article>
+    <article><span>Prodato</span><strong>{{ data.summary.effectiveStates.sold || 0 }}</strong></article>
+    <article><span>Zaključano</span><strong>{{ data.summary.effectiveStates.locked || 0 }}</strong></article>
+  </section>
+
+  <nav class="filters" *ngIf="preview() as data">
+    <div>
+      <button type="button" [class.active]="sectionFilter() === 'all'" (click)="sectionFilter.set('all')">Sve sekcije</button>
+      <button type="button" *ngFor="let section of sections()" [class.active]="sectionFilter() === section" (click)="sectionFilter.set(section)">{{ section }}</button>
+    </div>
+    <label>Istakni tip
+      <select [value]="highlightType()" (change)="highlightType.set(selectValue($event))">
+        <option value="">Svi izuzeci</option>
+        <option *ngFor="let option of data.overrideTypes" [value]="option.value">{{ option.label }}</option>
+      </select>
+    </label>
+  </nav>
+
+  <section class="workspace" *ngIf="preview() as data">
+    <app-admin-seat-map-canvas
+      [seats]="data.seats"
+      [canvasWidth]="data.event.seatMap?.canvas?.width || 1400"
+      [canvasHeight]="data.event.seatMap?.canvas?.height || 1000"
+      [selectedIds]="selectedIds()"
+      [visibleSection]="sectionFilter()"
+      [highlightOverrideType]="highlightType()"
+      (selectedIdsChange)="selectedIds.set($event)"
+    />
+
+    <aside class="override-editor">
+      <header>
+        <span>{{ selectedIds().length }} izabrano</span>
+        <h2>Primeni izuzetak</h2>
+        <p>Ovo ne menja fizičku mapu i ne pravi porudžbinu.</p>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="applyOverride()">
+        <label>Tip
+          <select formControlName="type">
+            <option *ngFor="let option of data.overrideTypes" [value]="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+        <label>Interni razlog
+          <textarea rows="4" formControlName="internalReason" placeholder="Vidljivo samo administratorima"></textarea>
+        </label>
+        <label>Javna poruka
+          <input formControlName="publicMessage" placeholder="Opciono, bez interne klasifikacije" />
+        </label>
+        <label class="check"><input type="checkbox" formControlName="replaceExisting" /> Zameni drugi postojeći izuzetak</label>
+        <label class="check warning-check" *ngIf="data.event.saleStatus === 'on_sale'">
+          <input type="checkbox" formControlName="confirmActiveSale" />
+          Potvrđujem promenu dok je termin u aktivnoj prodaji
+        </label>
+        <button class="primary" type="submit" [disabled]="isSaving() || !selectedIds().length">
+          {{ isSaving() ? 'Čuvanje...' : 'Primeni na izabrana sedišta' }}
+        </button>
+        <button type="button" class="danger" [disabled]="isSaving() || !selectedIds().length" (click)="removeSelected()">Ukloni izuzetke sa izabranih</button>
+      </form>
+
+      <section class="selected-details" *ngIf="selectedSeats().length === 1">
+        <h3>{{ selectedSeats()[0].label }}</h3>
+        <ng-container *ngIf="seatOverride(selectedSeats()[0]) as override; else noOverride">
+          <strong>{{ typeLabel(override.type) }}</strong>
+          <p>{{ override.internalReason || 'Bez internog razloga.' }}</p>
+          <small>Ažurirano: {{ formatDate(override.updatedAt) }}</small>
+        </ng-container>
+        <ng-template #noOverride><p>Sedište nema aktivan izuzetak.</p></ng-template>
+      </section>
+    </aside>
+  </section>
+
+  <section class="type-summary" *ngIf="preview() as data">
+    <article *ngFor="let option of data.overrideTypes">
+      <div><strong>{{ option.label }}</strong><span>{{ overrideCount(option.value) }}</span></div>
+      <button type="button" [disabled]="!overrideCount(option.value) || isSaving()" (click)="clearType(option.value)">Ukloni sve ovog tipa</button>
+    </article>
+  </section>
+
+  <section class="audit" *ngIf="overrides().length">
+    <h2>Operativni zapis</h2>
+    <div class="audit-table">
+      <article *ngFor="let item of overrides()">
+        <strong>{{ overrideSeatLabel(item) }} · {{ typeLabel(item.type) }}</strong>
+        <span>{{ item.internalReason || 'Bez razloga' }}</span>
+        <small>{{ item.active ? 'Aktivno' : 'Uklonjeno' }} · {{ formatDate(item.updatedAt) }}</small>
+      </article>
+    </div>
+  </section>
+</div>

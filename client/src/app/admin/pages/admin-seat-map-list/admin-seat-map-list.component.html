@@ -1,0 +1,65 @@
+<div class="map-list-page">
+  <header class="page-hero">
+    <div>
+      <span>{{ total() }} mapa</span>
+      <h1>Mape sedišta</h1>
+      <p>Stalni fizički raspored scena. Izuzeci za jedan termin uređuju se na samom terminu.</p>
+    </div>
+  </header>
+
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label>Pretraga<input [(ngModel)]="q" name="q" placeholder="Naziv mape" /></label>
+    <label>Scena
+      <select [(ngModel)]="venue" name="venue">
+        <option value="">Sve scene</option>
+        <option *ngFor="let item of venues()" [value]="item._id">{{ item.name }}</option>
+      </select>
+    </label>
+    <label>Status
+      <select [(ngModel)]="status" name="status">
+        <option value="">Svi statusi</option>
+        <option value="active">Aktivna</option>
+        <option value="draft">Nacrt</option>
+        <option value="archived">Arhivirana</option>
+      </select>
+    </label>
+    <button type="submit">Primeni</button>
+    <button type="button" class="ghost" (click)="resetFilters()">Poništi</button>
+  </form>
+
+  <p class="state error" *ngIf="errorMessage()">{{ errorMessage() }} <button type="button" (click)="applyFilters()">Pokušaj ponovo</button></p>
+  <p class="state" *ngIf="isLoading()">Učitavanje mapa...</p>
+  <p class="state" *ngIf="!isLoading() && !items().length">Nema mapa za izabrane filtere.</p>
+
+  <section class="map-list" *ngIf="!isLoading() && items().length">
+    <article *ngFor="let item of items()">
+      <div class="map-title">
+        <span>{{ item.venue?.name || 'Bez scene' }}</span>
+        <h2>{{ item.name }}</h2>
+        <p>{{ item.seatCounts?.active || 0 }} aktivnih od {{ item.seatCounts?.total || 0 }} sedišta · {{ item.sectionNames?.length || 0 }} sekcija</p>
+      </div>
+      <div class="usage">
+        <span>{{ item.usage?.events || 0 }} termina</span>
+        <span>{{ item.usage?.orders || 0 }} porudžbina</span>
+        <span>{{ item.usage?.overrides || 0 }} izuzetaka</span>
+        <strong [class.warning]="item.configurationWarnings?.length">{{ item.status }}</strong>
+      </div>
+      <ul class="warnings" *ngIf="item.configurationWarnings?.length">
+        <li *ngFor="let warning of item.configurationWarnings">{{ warning.message }}</li>
+      </ul>
+      <nav class="actions" aria-label="Akcije mape">
+        <a [routerLink]="['/admin/seat-maps', item._id, 'map']">Uredi</a>
+        <a [routerLink]="['/admin/seat-maps', item._id, 'preview']">Pregled</a>
+        <button type="button" (click)="duplicate(item)">Dupliraj</button>
+        <button type="button" (click)="archive(item)" [disabled]="item.status === 'archived'">Arhiviraj</button>
+        <button type="button" class="danger" *ngIf="!item.usage?.hasUsage" (click)="remove(item)">Obriši</button>
+      </nav>
+    </article>
+  </section>
+
+  <nav class="pagination" *ngIf="pages() > 1" aria-label="Stranice">
+    <button type="button" [disabled]="page() === 1" (click)="changePage(page() - 1)">Prethodna</button>
+    <span>{{ page() }} / {{ pages() }}</span>
+    <button type="button" [disabled]="page() === pages()" (click)="changePage(page() + 1)">Sledeća</button>
+  </nav>
+</div>

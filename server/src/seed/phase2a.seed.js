@@ -201,14 +201,23 @@ const getOrCreateSeatMap = async (venue) => {
 const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }) => {
   const seats = [];
 
-  const startX = 210;
-  const startY = 220;
-  const gapX = 34;
+  const startY = 165;
+  const gapX = 38;
   const gapY = 34;
 
   romanRows.forEach((rowLabel, rowIndex) => {
     for (let seatNumber = 1; seatNumber <= 27; seatNumber += 1) {
       const side = seatNumber <= 13 ? "left" : seatNumber === 14 ? "center" : "right";
+      const rowStagger = Math.abs(7.5 - rowIndex) * 3;
+      const aisleOffset = rowIndex >= 8 ? 70 : 0;
+      let x;
+      if (seatNumber <= 13) {
+        x = 118 + rowStagger + (seatNumber - 1) * gapX;
+      } else if (seatNumber === 14) {
+        x = 675;
+      } else {
+        x = 820 - rowStagger + (27 - seatNumber) * gapX;
+      }
 
       seats.push({
         seatMap: seatMap._id,
@@ -219,10 +228,10 @@ const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }
         label: `${rowLabel}-${seatNumber}`,
         seatType: "standard",
         priceCategory: categoryII._id,
-        x: startX + (seatNumber - 1) * gapX,
-        y: startY + rowIndex * gapY,
-        width: 24,
-        height: 24,
+        x,
+        y: startY + rowIndex * gapY + aisleOffset,
+        width: 30,
+        height: 30,
         rotation: 0,
         sortOrder: rowIndex * 100 + seatNumber,
         isActive: true,
@@ -236,22 +245,22 @@ const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }
     {
       boxName: "Loža parter levo",
       count: 4,
-      x: 80,
-      y: 320,
+      x: 90,
+      y: 835,
       category: categoryI._id,
     },
     {
       boxName: "Loža parter desno",
       count: 4,
-      x: 1180,
-      y: 320,
+      x: 1215,
+      y: 835,
       category: categoryI._id,
     },
     {
       boxName: "Pomoćna loža parter",
       count: 2,
-      x: 630,
-      y: 800,
+      x: 650,
+      y: 835,
       category: categoryIII._id,
     },
   ];
@@ -267,10 +276,10 @@ const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }
         label: `${box.boxName} ${i}`,
         seatType: box.category.equals?.(categoryIII._id) ? "auxiliary" : "box",
         priceCategory: box.category,
-        x: box.x + (i - 1) * 30,
-        y: box.y,
-        width: 24,
-        height: 24,
+        x: box.x + ((i - 1) % 2) * 36,
+        y: box.y + (i > 2 ? 34 : 0),
+        width: 30,
+        height: 30,
         rotation: 0,
         sortOrder: 2000 + boxIndex * 100 + i,
         isActive: true,
@@ -285,11 +294,20 @@ const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }
 const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII }) => {
   const seats = [];
 
-  const galleryY = 80;
-
   for (let box = 1; box <= 12; box += 1) {
-    const isLeft = box <= 6;
-    const boxX = isLeft ? 120 + (box - 1) * 70 : 760 + (box - 7) * 70;
+    const isLeft = box <= 4;
+    const isRight = box >= 5 && box <= 8;
+    const bottomIndex = box - 9;
+    const boxX = isLeft
+      ? 80
+      : isRight
+        ? 1240
+        : 285 + bottomIndex * 215;
+    const boxY = isLeft
+      ? 145 + (box - 1) * 145
+      : isRight
+        ? 145 + (box - 5) * 145
+        : 780;
 
     for (let seat = 1; seat <= 4; seat += 1) {
       const isFirstRow = seat <= 2;
@@ -303,10 +321,10 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
         label: `Galerija loža ${box}-${seat}`,
         seatType: "box",
         priceCategory: isFirstRow ? categoryI._id : categoryII._id,
-        x: boxX + (seat - 1) * 16,
-        y: galleryY,
-        width: 22,
-        height: 22,
+        x: boxX + ((seat - 1) % 2) * 38,
+        y: boxY + (seat > 2 ? 38 : 0),
+        width: 32,
+        height: 32,
         rotation: 0,
         sortOrder: 3000 + box * 10 + seat,
         isActive: true,
@@ -316,7 +334,7 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
   }
 
   for (let sideBox = 1; sideBox <= 2; sideBox += 1) {
-    const boxX = sideBox === 1 ? 530 : 700;
+    const boxX = sideBox === 1 ? 1090 : 550;
 
     for (let seat = 1; seat <= 3; seat += 1) {
       seats.push({
@@ -328,10 +346,10 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
         label: `Galerija bočna loža ${sideBox}-${seat}`,
         seatType: "box",
         priceCategory: categoryII._id,
-        x: boxX + (seat - 1) * 20,
-        y: 135,
-        width: 22,
-        height: 22,
+        x: boxX + ((seat - 1) % 2) * 38,
+        y: 780 + (seat > 2 ? 38 : 0),
+        width: 32,
+        height: 32,
         rotation: 0,
         sortOrder: 4000 + sideBox * 10 + seat,
         isActive: true,
@@ -350,10 +368,10 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
       label: `Centralna loža ${seat}`,
       seatType: seat <= 6 ? "central_box" : "auxiliary",
       priceCategory: seat <= 6 ? categoryI._id : categoryIII._id,
-      x: 585 + (seat - 1) * 28,
-      y: 60,
-      width: 22,
-      height: 22,
+      x: 625 + ((seat - 1) % 4) * 38,
+      y: 780 + (seat > 4 ? 38 : 0),
+      width: 32,
+      height: 32,
       rotation: 0,
       sortOrder: 5000 + seat,
       isActive: true,

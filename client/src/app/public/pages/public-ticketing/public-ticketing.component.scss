@@ -155,7 +155,8 @@
 }
 
 .legend-locked i,
-.legend-reserved i {
+.legend-reserved i,
+.legend-box_office_only i {
   background: var(--gold);
 }
 
@@ -204,13 +205,22 @@
   position: absolute;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(16, 17, 18, 0.14);
-  border-radius: 50%;
+  border: 0;
+  border-radius: 4px;
   padding: 0;
   color: transparent;
-  background: #2f7658;
+  background: transparent url("/madlenianum/seat-reserved.png") center / contain no-repeat;
   transform: translate(-50%, -50%);
   box-shadow: 0 3px 10px rgba(20, 17, 15, 0.14);
+}
+
+.seat span {
+  position: absolute;
+  inset: auto 0 -12px;
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 800;
+  text-align: center;
 }
 
 .seat:hover {
@@ -218,21 +228,26 @@
 }
 
 .status-locked,
-.status-reserved {
-  background: var(--gold);
+.status-reserved,
+.status-box_office_only {
+  background: transparent;
 }
 
 .status-sold {
-  background: var(--red);
+  background-image: url("/madlenianum/seat-bought.png");
+}
+
+.status-available {
+  background-image: url("/madlenianum/seat-free.png");
 }
 
 .status-unavailable {
-  background: #8b8580;
+  opacity: 0.62;
 }
 
 .seat.selected,
 .seat.own-lock {
-  background: var(--night);
+  background: transparent;
   outline: 5px solid rgba(231, 196, 109, 0.88);
 }
 

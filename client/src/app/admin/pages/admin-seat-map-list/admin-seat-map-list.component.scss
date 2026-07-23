@@ -1,0 +1,169 @@
+.map-list-page {
+  display: grid;
+  gap: 1rem;
+  color: var(--admin-ink);
+}
+
+.page-hero,
+.filters,
+.map-list article {
+  border: 1px solid rgba(30, 24, 17, 0.12);
+  background: #fff;
+}
+
+.page-hero {
+  padding: 1.5rem;
+}
+
+.page-hero span {
+  color: #8a661f;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.page-hero h1 {
+  margin: 0.25rem 0;
+  font-size: 2rem;
+}
+
+.page-hero p,
+.map-title p {
+  margin: 0;
+  color: #5d554c;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(160px, 0.5fr)) auto auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 1rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  color: #302922;
+  font-weight: 800;
+}
+
+input,
+select,
+button,
+.actions a {
+  min-height: 42px;
+  border: 1px solid #bdb5a9;
+  border-radius: 4px;
+  padding: 0.65rem 0.8rem;
+  color: #171411;
+  background: #fff;
+  font: inherit;
+}
+
+button,
+.actions a {
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:not(.ghost),
+.actions a:first-child {
+  color: #fff;
+  background: #171411;
+}
+
+.map-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.map-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.map-title span {
+  color: #8a661f;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.map-title h2 {
+  margin: 0.2rem 0;
+}
+
+.usage,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.usage span,
+.usage strong {
+  border: 1px solid #d5cec5;
+  padding: 0.35rem 0.55rem;
+  color: #4d443c;
+  background: #f8f5f0;
+  font-size: 0.82rem;
+}
+
+.usage strong.warning {
+  border-color: #9e1b32;
+}
+
+.warnings {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  color: #7b1829;
+  background: #fff0f2;
+}
+
+.actions {
+  grid-column: 1 / -1;
+}
+
+.actions .danger {
+  color: #8b1529;
+  background: #fff;
+}
+
+.state,
+.pagination {
+  margin: 0;
+  padding: 1rem;
+  background: #fff;
+}
+
+.error {
+  color: #8b1529;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .map-list article {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}

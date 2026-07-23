@@ -1,0 +1,53 @@
+<section class="map-shell" [class.readonly]="readOnly">
+  <header class="map-toolbar" aria-label="Alati mape sedišta">
+    <div class="zoom-tools">
+      <button type="button" title="Umanji" aria-label="Umanji mapu" (click)="zoomBy(-0.1)">−</button>
+      <output aria-live="polite">{{ zoomPercent() }}%</output>
+      <button type="button" title="Uvećaj" aria-label="Uvećaj mapu" (click)="zoomBy(0.1)">+</button>
+      <button type="button" (click)="fitToScreen()">Prikaži sve</button>
+      <button type="button" (click)="resetView()">Početni prikaz</button>
+    </div>
+    <div class="selection-tools" *ngIf="!readOnly">
+      <strong>{{ selectionCount() }} izabrano</strong>
+      <button type="button" [disabled]="!selectionCount()" (click)="selectRow()">Ceo red</button>
+      <button type="button" [disabled]="!selectionCount()" (click)="selectSection()">Cela sekcija</button>
+      <button type="button" (click)="selectAllVisible()">Sve vidljivo</button>
+      <button type="button" [disabled]="!selectionCount()" (click)="clearSelection()">Poništi izbor</button>
+    </div>
+    <span class="readonly-label" *ngIf="readOnly">Pregled bez izmena</span>
+  </header>
+
+  <div
+    #viewport
+    class="map-viewport"
+    tabindex="0"
+    (wheel)="onWheel($event)"
+    (pointerdown)="startPan($event)"
+    aria-label="Vizuelna mapa sedišta. Prevucite praznu površinu za pomeranje."
+  >
+    <div
+      class="seat-canvas"
+      [style.width.px]="canvasWidth"
+      [style.height.px]="canvasHeight"
+      [style.transform]="transform()"
+    >
+      <div class="stage" *ngIf="showStage" aria-hidden="true">SCENA</div>
+      <button
+        *ngFor="let seat of visibleSeats()"
+        type="button"
+        class="seat-button"
+        [ngClass]="seatClass(seat)"
+        [ngStyle]="seatStyle(seat)"
+        [attr.aria-pressed]="selectedIds.includes(seat.id)"
+        [attr.aria-label]="seatDescription(seat)"
+        [title]="seatDescription(seat)"
+        [attr.aria-disabled]="readOnly"
+        (click)="selectSeat($event, seat)"
+      >
+        <span>{{ seat.number || '' }}</span>
+        <i *ngIf="seat.isAccessible" aria-hidden="true">A</i>
+        <b *ngIf="seat.hasRestrictedView" aria-hidden="true">!</b>
+      </button>
+    </div>
+  </div>
+</section>

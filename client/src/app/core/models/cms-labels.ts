@@ -62,3 +62,27 @@ export const saleStatusLabel = (value?: string) => labelFor(
 );
 export const ticketingProviderLabel = (value?: string) => labelFor(TICKETING_PROVIDER_OPTIONS, value);
 export const pricePlanStatusLabel = (value?: string) => labelFor(PRICE_PLAN_STATUS_OPTIONS, value);
+
+export const SEAT_OVERRIDE_OPTIONS = [
+  { value: 'blocked', label: 'Blokirano' },
+  { value: 'protocol', label: 'Protokol' },
+  { value: 'vip', label: 'VIP' },
+  { value: 'guest', label: 'Gosti' },
+  { value: 'production_use', label: 'Potrebe produkcije' },
+  { value: 'box_office_only', label: 'Samo blagajna' },
+  { value: 'temporarily_unavailable', label: 'Privremeno nedostupno' },
+] as const;
+
+export const seatOverrideLabel = (value?: string) => labelFor(
+  [...SEAT_OVERRIDE_OPTIONS],
+  value
+);
+
+export const effectiveSeatStateLabel = (value?: string) => labelFor([
+  { value: 'available', label: 'Slobodno' },
+  { value: 'unavailable', label: 'Nedostupno' },
+  { value: 'locked', label: 'Zaključano' },
+  { value: 'reserved', label: 'Rezervisano' },
+  { value: 'sold', label: 'Prodato' },
+  { value: 'box_office_only', label: 'Samo blagajna' },
+], value);

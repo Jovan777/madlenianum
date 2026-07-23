@@ -59,6 +59,7 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
     { status: 'locked', label: 'Zakljucano' },
     { status: 'reserved', label: 'Rezervisano' },
     { status: 'sold', label: 'Prodato' },
+    { status: 'box_office_only', label: 'Samo blagajna' },
     { status: 'unavailable', label: 'Nedostupno' },
   ];
 
@@ -185,6 +186,7 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
       locked: 'Zakljucano',
       reserved: 'Rezervisano',
       sold: 'Prodato',
+      box_office_only: 'Samo blagajna',
       unavailable: 'Nedostupno',
     };
 

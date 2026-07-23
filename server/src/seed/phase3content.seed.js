@@ -24,6 +24,7 @@ const Customer = require("../models/Customer");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
+const EventSeatOverride = require("../models/EventSeatOverride");
 
 const UPLOAD_ROOT = path.join(__dirname, "../../uploads/madlenianum");
 
@@ -860,6 +861,56 @@ const createSeedLock = async ({ event, seatMap, seatLabels, sessionId }) => {
   }
 
   return locks;
+};
+
+const seedEventSeatOverrides = async ({ event, seatMap }) => {
+  const definitions = [
+    { label: "I-8", type: "protocol", internalReason: "[seed:phase4b] Protokol premijere." },
+    { label: "I-9", type: "protocol", internalReason: "[seed:phase4b] Protokol premijere." },
+    { label: "I-10", type: "protocol", internalReason: "[seed:phase4b] Protokol premijere." },
+    { label: "II-10", type: "production_use", internalReason: "[seed:phase4b] Potrebe produkcije." },
+    { label: "II-11", type: "production_use", internalReason: "[seed:phase4b] Potrebe produkcije." },
+    {
+      label: "III-12",
+      type: "box_office_only",
+      internalReason: "[seed:phase4b] Prodaja samo na blagajni.",
+      publicMessage: "Dostupno na blagajni.",
+    },
+    {
+      label: "IV-12",
+      type: "temporarily_unavailable",
+      internalReason: "[seed:phase4b] Privremena tehnička provera.",
+    },
+  ];
+  const seats = await Seat.find({
+    seatMap: seatMap._id,
+    label: { $in: definitions.map((item) => item.label) },
+  }).select("_id label");
+  const seatByLabel = new Map(seats.map((seat) => [seat.label, seat]));
+  const operations = definitions
+    .filter((definition) => seatByLabel.has(definition.label))
+    .map((definition) => ({
+      updateOne: {
+        filter: {
+          event: event._id,
+          seat: seatByLabel.get(definition.label)._id,
+        },
+        update: {
+          $set: {
+            seatMap: seatMap._id,
+            type: definition.type,
+            internalReason: definition.internalReason,
+            publicMessage: definition.publicMessage || "",
+            active: true,
+          },
+        },
+        upsert: true,
+      },
+    }));
+  if (operations.length) {
+    await EventSeatOverride.bulkWrite(operations, { ordered: true });
+  }
+  return operations.length;
 };
 
 const seedPhase3Content = async () => {
@@ -1796,6 +1847,10 @@ const seedPhase3Content = async () => {
       seatLabels: ["IV-10", "IV-11"],
       sessionId: "seed-lock-carmen",
     });
+    const seededOverrides = await seedEventSeatOverrides({
+      event: events.staklena,
+      seatMap,
+    });
 
     console.log("Phase 3 content seed completed.");
     console.log("");
@@ -1860,6 +1915,9 @@ const seedPhase3Content = async () => {
       count: seededLocks.length,
       sessionId: "seed-lock-carmen",
     });
+    console.log("");
+    console.log("Seeded event seat overrides:");
+    console.log({ event: events.staklena._id.toString(), count: seededOverrides });
 
     console.log("");
     console.log("Useful verification endpoints:");

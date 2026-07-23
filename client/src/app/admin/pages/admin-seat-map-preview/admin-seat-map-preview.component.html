@@ -1,0 +1,35 @@
+<div class="preview-page">
+  <a class="back" [routerLink]="['/admin/seat-maps', seatMap()?._id, 'map']">&larr; Editor mape</a>
+  <header class="page-hero" *ngIf="seatMap() as map">
+    <div>
+      <span>Pregled za kupca</span>
+      <h1>{{ map.name }}</h1>
+      <p>{{ event()?.production?.title || 'Osnovna fizička mapa bez termina' }}</p>
+    </div>
+    <label>Efektivno stanje termina
+      <select [(ngModel)]="eventId" (ngModelChange)="load()">
+        <option value="">Samo osnovna mapa</option>
+        <option *ngFor="let item of events()" [value]="item._id">{{ eventLabel(item) }}</option>
+      </select>
+    </label>
+  </header>
+
+  <p class="message error" *ngIf="errorMessage()">{{ errorMessage() }} <button type="button" (click)="load()">Pokušaj ponovo</button></p>
+  <p class="message" *ngIf="isLoading()">Učitavanje pregleda...</p>
+
+  <section class="legend" *ngIf="!isLoading()">
+    <span *ngFor="let item of legend">
+      <img [src]="item.asset" alt="" />
+      <strong>{{ stateLabel(item.state) }}</strong>
+      <small>{{ count(item.state) }}</small>
+    </span>
+  </section>
+
+  <app-admin-seat-map-canvas
+    *ngIf="!isLoading() && seatMap() as map"
+    [seats]="seats()"
+    [canvasWidth]="map.canvas.width"
+    [canvasHeight]="map.canvas.height"
+    [readOnly]="true"
+  />
+</div>

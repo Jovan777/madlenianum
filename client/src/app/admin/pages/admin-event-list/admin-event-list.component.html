@@ -58,6 +58,7 @@
       <div class="actions">
         <a [routerLink]="['/admin/events', item._id]">Otvori</a>
         <a [routerLink]="['/admin/events', item._id, 'edit']">Uredi</a>
+        <a *ngIf="item.seatMap" [routerLink]="['/admin/events', item._id, 'seat-overrides']">Sedišta</a>
         <button type="button" (click)="duplicate(item)">Dupliraj</button>
         <button type="button" (click)="action(item, 'close-sale')" [disabled]="item.saleStatus === 'closed'">Zatvori prodaju</button>
         <button type="button" class="danger" (click)="action(item, 'cancel')" [disabled]="item.status === 'cancelled'">Otkaži</button>

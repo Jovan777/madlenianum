@@ -10,44 +10,11 @@ const {
   getPublicTicketingReadiness,
   validationError,
 } = require("../services/ticketingConfiguration.service");
-
-const getSeatPrice = (seat, pricePlan) => {
-  if (!pricePlan || !Array.isArray(pricePlan.rules)) {
-    return null;
-  }
-
-  if (!seat.priceCategory) {
-    return null;
-  }
-
-  const seatPriceCategoryId = String(seat.priceCategory._id || seat.priceCategory);
-
-  let rule = pricePlan.rules.find((item) => {
-    if (!item.priceCategory) return false;
-
-    const rulePriceCategoryId = String(
-      item.priceCategory._id || item.priceCategory
-    );
-
-    return rulePriceCategoryId === seatPriceCategoryId;
-  });
-
-  if (!rule) {
-    rule = pricePlan.rules.find((item) => {
-      return item.priceCategory && item.priceCategory.code === "ALL";
-    });
-  }
-
-  if (!rule) {
-    return null;
-  }
-
-  return {
-    amount: rule.amount,
-    currency: pricePlan.currency || "RSD",
-    priceCategory: seat.priceCategory,
-  };
-};
+const {
+  calculateEffectiveSeatStates,
+  getSeatPrice,
+  publicSeatDto,
+} = require("../services/effectiveSeatState.service");
 
 const expireOldLocksAndOrders = async () => {
   const now = new Date();
@@ -96,66 +63,6 @@ const expireOldLocksAndOrders = async () => {
       }
     );
   }
-};
-
-const getActiveOrderSeatStatuses = async (eventId) => {
-  const now = new Date();
-
-  const activeOrders = await Order.find({
-    event: eventId,
-    $or: [
-      {
-        status: "paid",
-      },
-      {
-        status: "reserved",
-        $or: [
-          { expiresAt: { $exists: false } },
-          { expiresAt: null },
-          { expiresAt: { $gt: now } },
-        ],
-      },
-    ],
-  }).select("_id status");
-
-  const orderStatusById = new Map();
-
-  activeOrders.forEach((order) => {
-    orderStatusById.set(String(order._id), order.status);
-  });
-
-  const orderIds = activeOrders.map((order) => order._id);
-
-  const soldSeatIds = new Set();
-  const reservedSeatIds = new Set();
-
-  if (orderIds.length === 0) {
-    return {
-      soldSeatIds,
-      reservedSeatIds,
-    };
-  }
-
-  const orderItems = await OrderItem.find({
-    event: eventId,
-    order: { $in: orderIds },
-    status: { $in: ["reserved", "paid"] },
-  }).select("seat order status");
-
-  orderItems.forEach((item) => {
-    const parentOrderStatus = orderStatusById.get(String(item.order));
-
-    if (parentOrderStatus === "paid" || item.status === "paid") {
-      soldSeatIds.add(String(item.seat));
-    } else {
-      reservedSeatIds.add(String(item.seat));
-    }
-  });
-
-  return {
-    soldSeatIds,
-    reservedSeatIds,
-  };
 };
 
 const getEventWithTicketing = async (eventId, { requireOnSale = false } = {}) => {
@@ -246,55 +153,8 @@ const getEventSeats = asyncHandler(async (req, res) => {
     .populate("priceCategory")
     .sort("section sortOrder row number label");
 
-  const activeLocks = await SeatLock.find({
-    event: event._id,
-    status: "active",
-    expiresAt: { $gt: new Date() },
-  }).select("seat sessionId customer expiresAt");
-
-  const lockedSeatIds = new Set(
-    activeLocks.map((lock) => String(lock.seat))
-  );
-
-  const { soldSeatIds, reservedSeatIds } = await getActiveOrderSeatStatuses(
-    event._id
-  );
-
-  const seatItems = seats.map((seat) => {
-    const seatId = String(seat._id);
-    const price = getSeatPrice(seat, event.pricePlan);
-
-    let availabilityStatus = "available";
-
-    if (!seat.isSellable || seat.seatType === "unavailable") {
-      availabilityStatus = "unavailable";
-    } else if (soldSeatIds.has(seatId)) {
-      availabilityStatus = "sold";
-    } else if (reservedSeatIds.has(seatId)) {
-      availabilityStatus = "reserved";
-    } else if (lockedSeatIds.has(seatId)) {
-      availabilityStatus = "locked";
-    }
-
-    return {
-      id: seat._id,
-      section: seat.section,
-      row: seat.row,
-      number: seat.number,
-      label: seat.label,
-      seatType: seat.seatType,
-      visualGroup: seat.visualGroup || "",
-      x: seat.x,
-      y: seat.y,
-      width: seat.width,
-      height: seat.height,
-      rotation: seat.rotation,
-      isSellable: seat.isSellable,
-      priceCategory: seat.priceCategory,
-      price,
-      availabilityStatus,
-    };
-  });
+  const effective = await calculateEffectiveSeatStates(event, { seats });
+  const seatItems = effective.items.map(publicSeatDto);
 
   res.json({
     success: true,
@@ -360,27 +220,13 @@ const lockSeats = asyncHandler(async (req, res) => {
     throw new Error("Some seats do not exist in this event seat map.");
   }
 
-  const invalidSeat = seats.find(
-    (seat) => !seat.isSellable || seat.seatType === "unavailable"
+  const effective = await calculateEffectiveSeatStates(event, { seats });
+  const unavailable = effective.items.find((item) =>
+    ["unavailable", "box_office_only", "sold", "reserved"].includes(item.effectiveState)
   );
-
-  if (invalidSeat) {
-    res.status(400);
-    throw new Error(`Seat ${invalidSeat.label} is not sellable.`);
-  }
-
-  const { soldSeatIds, reservedSeatIds } = await getActiveOrderSeatStatuses(
-    event._id
-  );
-
-  const alreadyTakenSeat = seats.find((seat) => {
-    const seatId = String(seat._id);
-    return soldSeatIds.has(seatId) || reservedSeatIds.has(seatId);
-  });
-
-  if (alreadyTakenSeat) {
+  if (unavailable) {
     res.status(409);
-    throw new Error(`Seat ${alreadyTakenSeat.label} is already reserved or sold.`);
+    throw new Error(`Seat ${unavailable.seat.label} is not available for online sale.`);
   }
 
   const activeLocks = await SeatLock.find({
@@ -579,27 +425,13 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error("Some seats do not exist in this event seat map.");
   }
 
-  const invalidSeat = seats.find(
-    (seat) => !seat.isSellable || seat.seatType === "unavailable"
+  const effective = await calculateEffectiveSeatStates(event, { seats });
+  const unavailable = effective.items.find((item) =>
+    ["unavailable", "box_office_only", "sold", "reserved"].includes(item.effectiveState)
   );
-
-  if (invalidSeat) {
-    res.status(400);
-    throw new Error(`Seat ${invalidSeat.label} is not sellable.`);
-  }
-
-  const { soldSeatIds, reservedSeatIds } = await getActiveOrderSeatStatuses(
-    event._id
-  );
-
-  const alreadyTakenSeat = seats.find((seat) => {
-    const seatId = String(seat._id);
-    return soldSeatIds.has(seatId) || reservedSeatIds.has(seatId);
-  });
-
-  if (alreadyTakenSeat) {
+  if (unavailable) {
     res.status(409);
-    throw new Error(`Seat ${alreadyTakenSeat.label} is already reserved or sold.`);
+    throw new Error(`Seat ${unavailable.seat.label} is not available for online sale.`);
   }
 
   const ownerFilter = getOwnerFilter({ sessionId, customerId });

@@ -3,9 +3,15 @@ import { HttpClient } from '@angular/common/http';
 
 import { environment } from '../../../environments/environment';
 import {
+  AdminEvent,
   AdminEventFormOptions,
+  AdminEventSeatPreview,
   AdminEventSummary,
   AdminPricePlanFormOptions,
+  AdminSeat,
+  AdminSeatMapPreview,
+  AdminSeatOverride,
+  AdminSeatOverrideType,
   AdminSystemStatusResponse,
   AdminValidationIssue,
   ApiItemResponse,
@@ -112,6 +118,82 @@ export class AdminApiService {
     return this.http.post<ApiItemResponse<T>>(
       `${this.apiUrl}/admin/${resource}/${id}/actions/${action}`,
       {}
+    );
+  }
+
+  getSeatMapPreview(id: string, eventId = '') {
+    const query = eventId ? `?event=${encodeURIComponent(eventId)}` : '';
+    return this.http.get<ApiItemResponse<AdminSeatMapPreview>>(
+      `${this.apiUrl}/admin/seat-maps/${id}/preview${query}`
+    );
+  }
+
+  bulkUpdateSeatMapSeats(
+    id: string,
+    payload: {
+      seatIds: string[];
+      changes?: Record<string, unknown>;
+      updates?: Array<{ seatId: string; changes: Partial<AdminSeat> }>;
+    }
+  ) {
+    return this.http.patch<{ success: boolean; count: number; items: AdminSeat[] }>(
+      `${this.apiUrl}/admin/seat-maps/${id}/seats/bulk`,
+      payload
+    );
+  }
+
+  getEventSeatPreview(eventId: string) {
+    return this.http.get<ApiItemResponse<AdminEventSeatPreview>>(
+      `${this.apiUrl}/admin/events/${eventId}/seat-map-preview`
+    );
+  }
+
+  getEventSeatOverrides(eventId: string) {
+    return this.http.get<ApiItemResponse<{
+      event: AdminEvent;
+      overrides: AdminSeatOverride[];
+      summary: AdminEventSeatPreview['summary']['overrides'];
+      overrideTypes: Array<{ value: AdminSeatOverrideType; label: string }>;
+    }>>(`${this.apiUrl}/admin/events/${eventId}/seat-overrides`);
+  }
+
+  bulkUpsertEventSeatOverrides(
+    eventId: string,
+    payload: {
+      seatIds: string[];
+      type: AdminSeatOverrideType;
+      internalReason?: string;
+      publicMessage?: string;
+      replaceExisting?: boolean;
+      confirmActiveSale?: boolean;
+    }
+  ) {
+    return this.http.post<{ success: boolean; count: number; items: AdminSeatOverride[] }>(
+      `${this.apiUrl}/admin/events/${eventId}/seat-overrides/bulk`,
+      payload
+    );
+  }
+
+  bulkRemoveEventSeatOverrides(
+    eventId: string,
+    payload: { seatIds: string[]; confirmActiveSale?: boolean }
+  ) {
+    return this.http.request<{ success: boolean; removedCount: number }>(
+      'DELETE',
+      `${this.apiUrl}/admin/events/${eventId}/seat-overrides/bulk`,
+      { body: payload }
+    );
+  }
+
+  clearEventSeatOverrideType(
+    eventId: string,
+    type: AdminSeatOverrideType,
+    confirmActiveSale = false
+  ) {
+    return this.http.request<{ success: boolean; removedCount: number }>(
+      'DELETE',
+      `${this.apiUrl}/admin/events/${eventId}/seat-overrides/type/${type}`,
+      { body: { confirmActiveSale } }
     );
   }
 }

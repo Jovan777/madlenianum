@@ -168,6 +168,33 @@ cd C:\Zepter\Madlenianum\server
 npm run test:phase4a
 ```
 
+## Seat maps and Event seat overrides
+
+`SeatMap` and `Seat` represent the permanent physical layout of a venue. Seat identity is stable: layout updates change the existing Seat documents instead of deleting and recreating them. Event-only restrictions such as protocol, VIP, guest, production use, box-office-only, blocked, and temporarily unavailable seats are stored in `EventSeatOverride`.
+
+Authenticated admin routes include:
+
+- `/api/admin/seat-maps/:id/preview`
+- `/api/admin/seat-maps/:id/seats/bulk`
+- `/api/admin/seat-maps/:id/duplicate`
+- `/api/admin/events/:id/seat-overrides`
+- `/api/admin/events/:id/seat-map-preview`
+- `/api/admin/events/:id/seat-overrides/bulk`
+
+The Angular administration routes are `/admin/seat-maps`, `/admin/seat-maps/:id/edit`, `/admin/seat-maps/:id/preview`, and `/admin/events/:id/seat-overrides`.
+
+Effective Event seat availability is calculated centrally. Permanent physical unavailability wins first, sold and reserved OrderItems remain authoritative, Event overrides are then applied, active locks follow, and all remaining active seats are available. Expired locks and cancelled Orders do not block seats. Public APIs expose only safe effective states and never return internal override reasons or administrator audit fields.
+
+The base seed preserves existing Seat IDs while updating the demo Parter and Galerija coordinates. The content seed idempotently adds a small set of realistic Event overrides. No Phase 4B migration is required because the audited data model did not contain legacy Event-specific state on Seat documents.
+
+Phase 4B smoke checks cover stable Seat IDs, layout validation, protected structural changes, map duplication, bulk overrides, public-state privacy, Order/lock precedence, and existing Event configuration:
+
+```powershell
+cd C:\Zepter\Madlenianum\server
+npm run test:phase4a
+npm run test:phase4b
+```
+
 ## Build and verification
 
 ```powershell

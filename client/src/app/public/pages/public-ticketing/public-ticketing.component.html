@@ -56,7 +56,7 @@
           [title]="seatTitle(seat)"
           (click)="toggleSeat(seat)"
         >
-          {{ seat.number || '' }}
+          <span>{{ seat.number || '' }}</span>
         </button>
       </div>
     </section>

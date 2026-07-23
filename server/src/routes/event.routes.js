@@ -13,6 +13,14 @@ const {
   cancelEvent,
   archiveEvent,
 } = require("../controllers/event.controller");
+const {
+  bulkRemoveOverrides,
+  bulkUpsertOverrides,
+  clearOverrideType,
+  getEventSeatPreview,
+  listEventSeatOverrides,
+  removeOverride,
+} = require("../controllers/eventSeatOverride.controller");
 
 const router = express.Router();
 
@@ -22,6 +30,12 @@ router.post("/validate", validateEvent);
 
 router.get("/:id", getEventById);
 router.get("/:id/ticketing-summary", getEventTicketingSummary);
+router.get("/:id/seat-overrides", listEventSeatOverrides);
+router.get("/:id/seat-map-preview", getEventSeatPreview);
+router.post("/:id/seat-overrides/bulk", bulkUpsertOverrides);
+router.delete("/:id/seat-overrides/bulk", bulkRemoveOverrides);
+router.delete("/:id/seat-overrides/type/:type", clearOverrideType);
+router.delete("/:id/seat-overrides/:overrideId", removeOverride);
 router.post("/:id/validate", validateEvent);
 router.post("/:id/duplicate", duplicateEvent);
 router.post("/:id/actions/close-sale", closeEventSale);

@@ -14,6 +14,9 @@ const {
   validationError,
 } = require("../services/ticketingConfiguration.service");
 const { normalizeEventStatus, normalizeSaleStatus } = require("../constants/ticketing.constants");
+const {
+  calculateEffectiveSeatStates,
+} = require("../services/effectiveSeatState.service");
 
 const populateEvent = [
   { path: "production", populate: [{ path: "poster" }] },
@@ -268,7 +271,7 @@ const getEventTicketingSummary = asyncHandler(async (req, res) => {
 
   const now = new Date();
   const [seats, orders, orderItems, activeLocks, validation] = await Promise.all([
-    event.seatMap ? Seat.find({ seatMap: event.seatMap._id, isActive: true }).select("_id isSellable seatType") : [],
+    event.seatMap ? Seat.find({ seatMap: event.seatMap._id, isActive: true }).populate("priceCategory") : [],
     Order.find({ event: event._id }).select("_id status paymentStatus totalAmount expiresAt"),
     OrderItem.find({ event: event._id }).select("seat order status finalPrice"),
     SeatLock.find({ event: event._id, status: "active", expiresAt: { $gt: now } }).select("seat"),
@@ -292,18 +295,20 @@ const getEventTicketingSummary = asyncHandler(async (req, res) => {
     }
   });
 
-  const activeLockSeatIds = new Set(activeLocks.map((lock) => String(lock.seat)));
-  const occupied = new Set([...reservedSeatIds, ...paidSeatIds, ...activeLockSeatIds]);
   const sellableSeatIds = new Set(seats
     .filter((seat) => seat.isSellable && seat.seatType !== "unavailable")
     .map((seat) => String(seat._id)));
-  const unavailableSeats = seats.length - sellableSeatIds.size;
-  const availableSeats = [...sellableSeatIds].filter((id) => !occupied.has(id)).length;
   const paidOrders = orders.filter((order) => order.status === "paid" || order.paymentStatus === "paid");
   const revenue = paidOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
   const occupancy = sellableSeatIds.size
     ? Math.round(((reservedSeatIds.size + paidSeatIds.size) / sellableSeatIds.size) * 1000) / 10
     : 0;
+  const effective = event.seatMap
+    ? await calculateEffectiveSeatStates(event, { seats })
+    : { counts: {} };
+  const effectiveAvailable = Number(effective.counts.available || 0);
+  const effectiveUnavailable = Number(effective.counts.unavailable || 0)
+    + Number(effective.counts.box_office_only || 0);
 
   res.json({
     success: true,
@@ -313,8 +318,8 @@ const getEventTicketingSummary = asyncHandler(async (req, res) => {
       stats: {
         totalConfiguredSeats: seats.length,
         sellableSeats: sellableSeatIds.size,
-        unavailableSeats,
-        availableSeats,
+        unavailableSeats: effectiveUnavailable,
+        availableSeats: effectiveAvailable,
         activeLocksCount: activeLocks.length,
         reservedSeatsCount: reservedSeatIds.size,
         paidSeatsCount: paidSeatIds.size,

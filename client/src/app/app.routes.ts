@@ -8,7 +8,6 @@ import { AdminDashboardComponent } from './admin/pages/admin-dashboard/admin-das
 import { AdminResourceListComponent } from './admin/pages/admin-resource-list/admin-resource-list.component';
 import { AdminResourceFormComponent } from './admin/pages/admin-resource-form/admin-resource-form.component';
 import { AdminOrderDetailComponent } from './admin/pages/admin-order-detail/admin-order-detail.component';
-import { AdminSeatMapDesignerComponent } from './admin/pages/admin-seat-map-designer/admin-seat-map-designer.component';
 import { AdminProductionFormComponent } from './admin/pages/admin-production-form/admin-production-form.component';
 import { AdminArtistFormComponent } from './admin/pages/admin-artist-form/admin-artist-form.component';
 import { AdminMediaLibraryComponent } from './admin/pages/admin-media-library/admin-media-library.component';
@@ -68,6 +67,10 @@ export const routes: Routes = [
         path: 'events/:id/edit',
         loadComponent: () => import('./admin/pages/admin-event-form/admin-event-form.component').then((item) => item.AdminEventFormComponent),
         canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'events/:id/seat-overrides',
+        loadComponent: () => import('./admin/pages/admin-event-seat-overrides/admin-event-seat-overrides.component').then((item) => item.AdminEventSeatOverridesComponent),
       },
       {
         path: 'events/:id',
@@ -137,7 +140,16 @@ export const routes: Routes = [
       },
       {
         path: 'seat-maps/:id/map',
-        component: AdminSeatMapDesignerComponent,
+        loadComponent: () => import('./admin/pages/admin-seat-map-designer/admin-seat-map-designer.component').then((item) => item.AdminSeatMapDesignerComponent),
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'seat-maps/:id/preview',
+        loadComponent: () => import('./admin/pages/admin-seat-map-preview/admin-seat-map-preview.component').then((item) => item.AdminSeatMapPreviewComponent),
+      },
+      {
+        path: 'seat-maps',
+        loadComponent: () => import('./admin/pages/admin-seat-map-list/admin-seat-map-list.component').then((item) => item.AdminSeatMapListComponent),
       },
       {
         path: 'media',

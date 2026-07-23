@@ -12,10 +12,17 @@ const Customer = require("../models/Customer");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
+const EventSeatOverride = require("../models/EventSeatOverride");
 const {
   validateEventConfiguration,
   validatePricePlanPayload,
 } = require("../services/ticketingConfiguration.service");
+const {
+  calculateEffectiveSeatStates,
+} = require("../services/effectiveSeatState.service");
+const {
+  getSeatMapWarnings,
+} = require("../services/seatMapAdministration.service");
 
 const getAdminSystemStatus = asyncHandler(async (req, res) => {
   const now = new Date();
@@ -24,7 +31,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     artistsCount,
     events,
     venuesCount,
-    seatMapsCount,
+    seatMaps,
     seatsCount,
     priceCategoriesCount,
     pricePlans,
@@ -32,6 +39,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     ordersCount,
     orderItemsCount,
     activeLocksCount,
+    overrides,
   ] = await Promise.all([
     Production.countDocuments(),
     Artist.countDocuments(),
@@ -40,7 +48,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       populate: "rules.priceCategory",
     }),
     Venue.countDocuments(),
-    SeatMap.countDocuments(),
+    SeatMap.find().populate("venue"),
     Seat.countDocuments(),
     PriceCategory.countDocuments(),
     PricePlan.find().populate("venue").populate("rules.priceCategory"),
@@ -48,6 +56,9 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     Order.countDocuments(),
     OrderItem.countDocuments(),
     SeatLock.countDocuments({ status: "active", expiresAt: { $gt: now } }),
+    EventSeatOverride.find()
+      .populate("event", "seatMap venue startsAt status saleStatus")
+      .populate("seat", "seatMap label"),
   ]);
 
   const warningItems = [];
@@ -65,7 +76,9 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
         : target.name,
       link: targetType === "event"
         ? `/admin/events/${target._id}`
-        : `/admin/price-plans/${target._id}/edit`,
+        : targetType === "seatMap"
+          ? `/admin/seat-maps/${target._id}/map`
+          : `/admin/price-plans/${target._id}/edit`,
     });
   };
 
@@ -76,6 +89,50 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
   for (const pricePlan of pricePlans) {
     const result = await validatePricePlanPayload({}, { existingPlan: pricePlan });
     result.warnings.forEach((problem) => addWarning(problem, "pricePlan", pricePlan));
+  }
+  for (const seatMap of seatMaps) {
+    const mapWarnings = await getSeatMapWarnings(seatMap);
+    mapWarnings.forEach((problem) => addWarning(problem, "seatMap", seatMap));
+  }
+  for (const override of overrides) {
+    if (!override.event || !override.seat) {
+      const target = seatMaps.find((map) => String(map._id) === String(override.seatMap));
+      if (target) {
+        addWarning({
+          code: "invalid_override_reference",
+          field: "eventSeatOverride",
+          message: "Izuzetak sedišta referencira obrisan termin ili sedište.",
+        }, "seatMap", target);
+      }
+      continue;
+    }
+    if (String(override.event.seatMap) !== String(override.seatMap)
+        || String(override.seat.seatMap) !== String(override.seatMap)) {
+      const target = seatMaps.find((map) => String(map._id) === String(override.seatMap));
+      if (target) {
+        addWarning({
+          code: "override_seat_map_mismatch",
+          field: "eventSeatOverride",
+          message: "Izuzetak referencira sedište van mape termina.",
+        }, "seatMap", target);
+      }
+    }
+  }
+  for (const event of events.filter((item) =>
+    item.status === "scheduled"
+    && item.saleStatus === "on_sale"
+    && item.ticketing?.enabled
+    && item.ticketing?.provider === "internal"
+    && item.seatMap
+  )) {
+    const effective = await calculateEffectiveSeatStates(event);
+    if (!effective.counts.available) {
+      addWarning({
+        code: "no_publicly_available_seats",
+        field: "seatMap",
+        message: "Online termin nema nijedno javno dostupno sedište.",
+      }, "event", event);
+    }
   }
 
   const eventsOnSale = events.filter((event) => event.saleStatus === "on_sale").length;
@@ -90,7 +147,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       artists: artistsCount,
       events: events.length,
       venues: venuesCount,
-      seatMaps: seatMapsCount,
+      seatMaps: seatMaps.length,
       seats: seatsCount,
       priceCategories: priceCategoriesCount,
       pricePlans: pricePlans.length,
@@ -98,6 +155,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       orders: ordersCount,
       orderItems: orderItemsCount,
       activeLocks: activeLocksCount,
+      eventSeatOverrides: overrides.length,
     },
     warnings: {
       eventsOnSale,

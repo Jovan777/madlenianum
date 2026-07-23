@@ -48,6 +48,132 @@ export interface AdminReference {
   title?: string;
   type?: string;
   status?: string;
+  canvas?: { width?: number; height?: number };
+  sections?: unknown[];
+  venue?: AdminReference | string;
+}
+
+export type AdminEffectiveSeatState =
+  | 'available'
+  | 'unavailable'
+  | 'locked'
+  | 'reserved'
+  | 'sold'
+  | 'box_office_only';
+
+export type AdminSeatOverrideType =
+  | 'blocked'
+  | 'protocol'
+  | 'vip'
+  | 'guest'
+  | 'production_use'
+  | 'box_office_only'
+  | 'temporarily_unavailable';
+
+export interface AdminSeatMapUsage extends AdminUsage {
+  overrides?: number;
+  eventIds?: string[];
+}
+
+export interface AdminSeatMap {
+  _id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  venue: AdminReference;
+  canvas: { width: number; height: number };
+  sections: Array<{
+    key: string;
+    name: string;
+    capacity: number;
+    description?: string;
+    order?: number;
+  }>;
+  status: 'draft' | 'active' | 'archived';
+  seatCounts?: { total: number; active: number };
+  sectionNames?: string[];
+  usage?: AdminSeatMapUsage;
+  configurationWarnings?: AdminValidationIssue[];
+}
+
+export interface AdminSeatOverride {
+  _id: string;
+  seat?: {
+    _id: string;
+    label: string;
+    section: string;
+    row: string;
+    number?: number;
+  } | string;
+  type: AdminSeatOverrideType;
+  internalReason: string;
+  publicMessage: string;
+  active: boolean;
+  createdBy?: AdminReference | null;
+  updatedBy?: AdminReference | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminSeat {
+  _id?: string;
+  id: string;
+  seatMap?: AdminReference | string;
+  venue?: AdminReference | string;
+  section: string;
+  row: string;
+  number?: number | null;
+  label: string;
+  seatType: string;
+  priceCategory?: AdminPriceCategory | null;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  sortOrder?: number;
+  visualGroup?: string;
+  isActive?: boolean;
+  isSellable: boolean;
+  baseIsSellable?: boolean;
+  isAccessible?: boolean;
+  isCompanion?: boolean;
+  hasRestrictedView?: boolean;
+  physicalNote?: string;
+  availabilityStatus: AdminEffectiveSeatState;
+  price?: {
+    amount: number;
+    currency: string;
+    priceCategory?: AdminPriceCategory;
+  } | null;
+  override?: AdminSeatOverride | null;
+  publicMessage?: string;
+  lock?: { expiresAt: string } | null;
+}
+
+export interface AdminSeatMapPreview {
+  seatMap: AdminSeatMap;
+  event?: AdminEvent | null;
+  seats: AdminSeat[];
+  compatibleEvents?: AdminEvent[];
+  usage?: AdminSeatMapUsage;
+  warnings?: AdminValidationIssue[];
+}
+
+export interface AdminSeatOverrideSummary {
+  total: number;
+  active: number;
+  byType: Record<AdminSeatOverrideType, number>;
+}
+
+export interface AdminEventSeatPreview {
+  event: AdminEvent;
+  seats: AdminSeat[];
+  summary: {
+    effectiveStates: Partial<Record<AdminEffectiveSeatState, number>>;
+    overrides: AdminSeatOverrideSummary;
+  };
+  overrideTypes: AdminOption<AdminSeatOverrideType>[];
 }
 
 export interface AdminTicketingConfig {
@@ -189,7 +315,7 @@ export interface AdminSystemStatusResponse {
   counts: Record<string, number>;
   warnings: Record<string, number>;
   warningItems?: Array<AdminValidationIssue & {
-    targetType: 'event' | 'pricePlan';
+    targetType: 'event' | 'pricePlan' | 'seatMap';
     targetId: string;
     targetLabel: string;
     link: string;

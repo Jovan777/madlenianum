@@ -68,6 +68,28 @@ const seatSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        isAccessible: {
+            type: Boolean,
+            default: false,
+        },
+        isCompanion: {
+            type: Boolean,
+            default: false,
+        },
+        companionSeat: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Seat",
+        },
+        hasRestrictedView: {
+            type: Boolean,
+            default: false,
+        },
+        physicalNote: {
+            type: String,
+            default: "",
+            trim: true,
+            maxlength: 500,
+        },
         sortOrder: {
             type: Number,
             default: 0,
@@ -92,6 +114,15 @@ const seatSchema = new mongoose.Schema(
 );
 
 seatSchema.index({ seatMap: 1, label: 1 }, { unique: true });
+seatSchema.index(
+    { seatMap: 1, section: 1, row: 1, number: 1 },
+    {
+        unique: true,
+        partialFilterExpression: {
+            number: { $type: "number" },
+        },
+    }
+);
 seatSchema.index({ seatMap: 1, section: 1 });
 seatSchema.index({ venue: 1 });
 

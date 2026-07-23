@@ -1,177 +1,138 @@
 <div class="seat-map-page">
-  <a class="back" routerLink="/admin/seat-maps">← Seat Maps</a>
+  <a class="back" routerLink="/admin/seat-maps">&larr; Mape sedišta</a>
 
-  <header class="page-hero">
+  <header class="page-hero" *ngIf="seatMap() as map">
     <div>
-      <p>Visual seat manager</p>
-      <h1>{{ seatMap()?.name || 'Seat map' }}</h1>
-      <span>{{ seats().length }} seats · {{ seatMap()?.venue?.name || 'Venue' }}</span>
+      <p>Stalni fizički raspored</p>
+      <h1>{{ map.name }}</h1>
+      <span>{{ map.venue?.name || 'Bez scene' }} · {{ seats().length }} sedišta · ID sedišta ostaje stabilan</span>
     </div>
-
-    <button type="button" (click)="reloadCurrent()" [disabled]="!seatMap()">
-      Refresh
-    </button>
+    <div class="hero-actions">
+      <a [routerLink]="['/admin/seat-maps', map._id, 'preview']">Javni pregled</a>
+      <button type="button" (click)="load()">Osveži</button>
+    </div>
   </header>
 
-  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Loading seat map...</p>
+  <p class="message error" *ngIf="errorMessage()">
+    {{ errorMessage() }}
+    <button type="button" (click)="load()">Pokušaj ponovo</button>
+  </p>
+  <p class="message" *ngIf="isLoading()">Učitavanje mape...</p>
 
-  <section class="toolbar">
-    <button type="button" [class.active]="sectionFilter() === 'all'" (click)="selectSection('all')">
-      All
-    </button>
-    <button
-      type="button"
-      *ngFor="let section of sections()"
-      [class.active]="sectionFilter() === section"
-      (click)="selectSection(section)"
-    >
-      {{ section }}
-    </button>
+  <section class="warnings" *ngIf="seatMap()?.configurationWarnings?.length">
+    <strong>Provera rasporeda</strong>
+    <ul><li *ngFor="let warning of seatMap()?.configurationWarnings">{{ warning.message }}</li></ul>
   </section>
 
-  <section class="workspace">
-    <div class="map-card">
-      <div class="stage-label">STAGE</div>
+  <nav class="section-filter" *ngIf="!isLoading()">
+    <button type="button" [class.active]="sectionFilter() === 'all'" (click)="sectionFilter.set('all')">Sve sekcije</button>
+    <button
+      type="button"
+      *ngFor="let section of sectionNames()"
+      [class.active]="sectionFilter() === section"
+      (click)="sectionFilter.set(section)"
+    >{{ section }}</button>
+  </nav>
 
-      <div class="canvas-wrap">
-        <div class="seat-canvas" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()">
-          <button
-            type="button"
-            class="seat-dot"
-            *ngFor="let seat of filteredSeats()"
-            [ngClass]="seatClass(seat)"
-            [ngStyle]="seatStyle(seat)"
-            [title]="seat.label + ' · ' + seat.section"
-            (click)="selectSeat(seat)"
-          >
-            {{ seat.number || '' }}
+  <section class="workspace" *ngIf="!isLoading() && seatMap() as map">
+    <app-admin-seat-map-canvas
+      [seats]="seats()"
+      [canvasWidth]="map.canvas.width"
+      [canvasHeight]="map.canvas.height"
+      [selectedIds]="selectedIds()"
+      [visibleSection]="sectionFilter()"
+      (selectedIdsChange)="onSelectionChange($event)"
+    />
+
+    <aside class="inspector">
+      <ng-container *ngIf="selectedSeats().length; else emptyInspector">
+        <header>
+          <span>{{ selectedSeats().length }} izabrano</span>
+          <h2>{{ selectedSeats().length === 1 ? selectedSeats()[0].label : 'Grupna izmena' }}</h2>
+          <p *ngIf="selectedSeats().length > 1">Označite samo polja koja želite da primenite na sva izabrana sedišta.</p>
+        </header>
+
+        <form [formGroup]="inspectorForm" (ngSubmit)="saveSelection()">
+          <div class="single-only" *ngIf="selectedSeats().length === 1">
+            <label>Oznaka<input formControlName="label" /></label>
+            <label>Broj<input type="number" min="1" formControlName="number" /></label>
+          </div>
+
+          <label class="bulk-field">
+            <input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('section', checkboxValue($event))" />
+            <span>Sekcija <small *ngIf="mixed('section')">mešovito</small></span>
+            <input formControlName="section" />
+          </label>
+          <label class="bulk-field">
+            <input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('row', checkboxValue($event))" />
+            <span>Red <small *ngIf="mixed('row')">mešovito</small></span>
+            <input formControlName="row" />
+          </label>
+          <label class="bulk-field">
+            <input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('seatType', checkboxValue($event))" />
+            <span>Fizički tip</span>
+            <select formControlName="seatType">
+              <option value="standard">Standardno</option>
+              <option value="box">Loža</option>
+              <option value="central_box">Centralna loža</option>
+              <option value="auxiliary">Pomoćno</option>
+              <option value="wheelchair">Pristupačno</option>
+              <option value="unavailable">Trajno nedostupno</option>
+              <option value="other">Drugo</option>
+            </select>
+          </label>
+          <label class="bulk-field">
+            <input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('priceCategory', checkboxValue($event))" />
+            <span>Osnovna cenovna kategorija</span>
+            <select formControlName="priceCategory">
+              <option value="">Bez kategorije</option>
+              <option *ngFor="let item of priceCategories()" [value]="item._id">{{ item.code }} · {{ item.name }}</option>
+            </select>
+          </label>
+
+          <div class="checks">
+            <label><input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('isActive', checkboxValue($event))" /><input type="checkbox" formControlName="isActive" /> Fizički aktivno</label>
+            <label><input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('isSellable', checkboxValue($event))" /><input type="checkbox" formControlName="isSellable" /> Osnovno prodajno</label>
+            <label><input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('isAccessible', checkboxValue($event))" /><input type="checkbox" formControlName="isAccessible" /> Pristupačno</label>
+            <label><input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('hasRestrictedView', checkboxValue($event))" /><input type="checkbox" formControlName="hasRestrictedView" /> Ograničen pogled</label>
+          </div>
+
+          <label class="bulk-field">
+            <input *ngIf="selectedSeats().length > 1" type="checkbox" (change)="toggleBulkField('physicalNote', checkboxValue($event))" />
+            <span>Fizička napomena</span>
+            <textarea rows="3" formControlName="physicalNote"></textarea>
+          </label>
+
+          <section class="coordinates">
+            <strong>Koordinate</strong>
+            <p *ngIf="selectedSeats().length > 1">Pomeranje čuva relativni raspored svih izabranih sedišta.</p>
+            <div class="coordinate-grid" *ngIf="selectedSeats().length === 1">
+              <label>X<input type="number" formControlName="x" /></label>
+              <label>Y<input type="number" formControlName="y" /></label>
+              <label>Širina<input type="number" formControlName="width" /></label>
+              <label>Visina<input type="number" formControlName="height" /></label>
+              <label>Rotacija<input type="number" formControlName="rotation" /></label>
+            </div>
+            <div class="nudge">
+              <button type="button" title="Gore" (click)="nudge(0, -5)">↑</button>
+              <button type="button" title="Levo" (click)="nudge(-5, 0)">←</button>
+              <button type="button" title="Desno" (click)="nudge(5, 0)">→</button>
+              <button type="button" title="Dole" (click)="nudge(0, 5)">↓</button>
+            </div>
+          </section>
+
+          <button class="primary" type="submit" [disabled]="isSaving()">
+            {{ isSaving() ? 'Čuvanje...' : 'Sačuvaj izabrana sedišta' }}
           </button>
+        </form>
+      </ng-container>
+      <ng-template #emptyInspector>
+        <div class="empty-inspector">
+          <h2>Izaberite sedište</h2>
+          <p>Klik bira jedno, Ctrl/Cmd dodaje u izbor, a Shift bira raspon u istom redu.</p>
+          <p>VIP, protokol i druge potrebe jednog termina ne uređuju se ovde.</p>
         </div>
-      </div>
-
-      <div class="legend">
-        <span><i class="category1"></i>I</span>
-        <span><i class="category2"></i>II</span>
-        <span><i class="category3"></i>III</span>
-        <span><i class="auxiliary"></i>Auxiliary</span>
-        <span><i class="unsellable"></i>Not sellable</span>
-      </div>
-    </div>
-
-    <aside class="editor-card" *ngIf="selectedSeat() as seat; else emptyEditor">
-      <h2>{{ seat.label }}</h2>
-      <p>{{ seat.section }} · {{ seat.priceCategory?.name || 'No category' }}</p>
-
-      <form [formGroup]="editForm" (ngSubmit)="saveSeat()">
-        <label>
-          Label
-          <input type="text" formControlName="label" />
-        </label>
-
-        <label>
-          Section
-          <input type="text" formControlName="section" />
-        </label>
-
-        <div class="two">
-          <label>
-            Row
-            <input type="text" formControlName="row" />
-          </label>
-
-          <label>
-            Number
-            <input type="number" formControlName="number" />
-          </label>
-        </div>
-
-        <label>
-          Seat type
-          <select formControlName="seatType">
-            <option value="standard">Standard</option>
-            <option value="box">Box</option>
-            <option value="central_box">Central box</option>
-            <option value="auxiliary">Auxiliary</option>
-            <option value="wheelchair">Wheelchair</option>
-            <option value="unavailable">Unavailable</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-
-        <label>
-          Price category
-          <select formControlName="priceCategory">
-            <option value="">No category</option>
-            <option *ngFor="let item of priceCategories()" [value]="item._id">
-              {{ item.code }} · {{ item.name }}
-            </option>
-          </select>
-        </label>
-
-        <div class="two">
-          <label>
-            X
-            <input type="number" formControlName="x" />
-          </label>
-
-          <label>
-            Y
-            <input type="number" formControlName="y" />
-          </label>
-        </div>
-
-        <div class="move-grid">
-          <button type="button" (click)="moveSelected(0, -5)">↑</button>
-          <button type="button" (click)="moveSelected(-5, 0)">←</button>
-          <button type="button" (click)="moveSelected(5, 0)">→</button>
-          <button type="button" (click)="moveSelected(0, 5)">↓</button>
-        </div>
-
-        <div class="two">
-          <label>
-            Width
-            <input type="number" formControlName="width" />
-          </label>
-
-          <label>
-            Height
-            <input type="number" formControlName="height" />
-          </label>
-        </div>
-
-        <label>
-          Rotation
-          <input type="number" formControlName="rotation" />
-        </label>
-
-        <label>
-          Visual group
-          <input type="text" formControlName="visualGroup" />
-        </label>
-
-        <label class="check">
-          <input type="checkbox" formControlName="isSellable" />
-          <span>Sellable</span>
-        </label>
-
-        <label class="check">
-          <input type="checkbox" formControlName="isActive" />
-          <span>Active</span>
-        </label>
-
-        <button class="primary" type="submit" [disabled]="isSaving()">
-          {{ isSaving() ? 'Saving...' : 'Save seat' }}
-        </button>
-      </form>
+      </ng-template>
     </aside>
-
-    <ng-template #emptyEditor>
-      <aside class="editor-card empty">
-        <h2>Select a seat</h2>
-        <p>Click any seat on the map to edit its label, category, sellable state and coordinates.</p>
-      </aside>
-    </ng-template>
   </section>
 </div>
