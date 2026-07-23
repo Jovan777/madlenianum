@@ -767,17 +767,16 @@ const createSeedOrder = async ({
       : undefined;
 
   let subtotalAmount = 0;
+  const [firstName = "", ...lastNameParts] = String(customer.fullName || "").trim().split(/\s+/);
 
   const order = await Order.create({
     orderCode,
     customer: customer._id,
     customerSnapshot: {
+      firstName,
+      lastName: lastNameParts.join(" "),
       fullName: customer.fullName,
       email: customer.email,
-      address: customer.address,
-      postalCode: customer.postalCode,
-      city: customer.city,
-      country: customer.country,
       phone: customer.phone,
     },
     sessionId: "",

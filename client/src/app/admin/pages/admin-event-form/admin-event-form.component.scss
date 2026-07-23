@@ -126,6 +126,94 @@ label.wide {
   background: #f7f0e5;
 }
 
+.price-plan-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.selector-note {
+  color: #5f5548;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.price-plan-summary {
+  gap: 0.8rem;
+}
+
+.plan-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.plan-heading > div,
+.plan-details {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.compatibility-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.compatibility-list > div {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 0.65rem;
+}
+
+.compatibility-list > div > span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 900;
+}
+
+.compatibility-list p {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+}
+
+.compatibility-list p strong {
+  color: var(--admin-ink);
+}
+
+.compatibility-list p small {
+  color: #4f463f;
+  font-weight: 600;
+}
+
+.compatibility-list .compatible {
+  border-color: rgba(47, 118, 88, 0.3);
+  background: #eef8f2;
+}
+
+.compatibility-list .compatible > span {
+  background: #2f7658;
+}
+
+.compatibility-list .incompatible {
+  border-color: rgba(157, 49, 37, 0.32);
+  background: #fff0ed;
+}
+
+.compatibility-list .incompatible > span {
+  background: #9d3125;
+}
+
 input,
 select,
 textarea {
@@ -220,7 +308,8 @@ textarea:focus {
 
 @media (max-width: 900px) {
   .form-grid,
-  .nested {
+  .nested,
+  .price-plan-layout {
     grid-template-columns: 1fr;
   }
 }

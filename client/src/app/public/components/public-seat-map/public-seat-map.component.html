@@ -1,0 +1,57 @@
+<div class="map-toolbar">
+  <div class="section-tabs" aria-label="Nivoi sale">
+    <button
+      *ngFor="let group of mapGroups()"
+      type="button"
+      [class.active]="activeSection() === group.key"
+      (click)="setSection(group.key)"
+    >
+      {{ group.label }}
+    </button>
+  </div>
+
+</div>
+
+<div class="legend" aria-label="Legenda sedišta">
+  <span *ngFor="let item of legend" [class]="'legend-' + item.status">
+    <i aria-hidden="true"></i>{{ item.label }}
+  </span>
+</div>
+
+<div class="map-viewport" #viewport>
+  <div class="empty-map" *ngIf="visibleSeats().length === 0">Za ovaj deo sale nema sedišta.</div>
+
+  <div
+    class="scaled-canvas"
+    *ngIf="visibleSeats().length > 0"
+    [style.width.px]="scaledWidth()"
+    [style.height.px]="scaledHeight()"
+  >
+    <div
+      class="seat-canvas"
+      [style.width.px]="mapWidth()"
+      [style.height.px]="mapHeight()"
+      [style.transform]="'scale(' + scale() + ')'"
+    >
+      <div class="stage">Scena</div>
+      <button
+        *ngFor="let seat of visibleSeats()"
+        type="button"
+        class="seat"
+        [ngClass]="seatClass(seat)"
+        [style.left.px]="seatLeft(seat)"
+        [style.top.px]="seatTop(seat)"
+        [style.width.px]="seatWidth(seat)"
+        [style.height.px]="seatHeight(seat)"
+        [style.rotate]="(seat.rotation || 0) + 'deg'"
+        [disabled]="disabled || !canSelect(seat)"
+        [attr.aria-pressed]="selectedSeatIds.includes(seat.id)"
+        [attr.aria-label]="seatTitle(seat)"
+        [title]="seatTitle(seat)"
+        (click)="toggleSeat(seat)"
+      >
+        <span>{{ seat.number || '' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

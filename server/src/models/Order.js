@@ -2,6 +2,16 @@ const mongoose = require("mongoose");
 
 const customerSnapshotSchema = new mongoose.Schema(
   {
+    firstName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     fullName: {
       type: String,
       default: "",
@@ -13,28 +23,6 @@ const customerSnapshotSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-    // izbaciti
-    address: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-    postalCode: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-    city: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-    country: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-    // do ovde izbaciti
     phone: {
       type: String,
       default: "",

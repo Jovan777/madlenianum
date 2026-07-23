@@ -5,13 +5,18 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { MediaUrlService } from './media-url.service';
 import {
+  CreateGuestOrderPayload,
+  CreateGuestOrderResponse,
   EventSeatsResponse,
   PublicHomeResponse,
   PublicEvent,
   PublicListResponse,
+  PublicOrder,
   PublicProduction,
   PublicRepertoireResponse,
   PublicSiteSettings,
+  SeatLockResponse,
+  SeatReleaseResponse,
 } from '../models/public.models';
 
 const PUBLIC_SESSION_KEY = 'madlenianum_public_session_id';
@@ -70,33 +75,21 @@ export class PublicApiService {
   }
 
   lockSeats(eventId: string, seatIds: string[]) {
-    return this.http.post<any>(`${this.apiUrl}/public/events/${eventId}/seats/lock`, {
+    return this.http.post<SeatLockResponse>(`${this.apiUrl}/public/events/${eventId}/seats/lock`, {
       sessionId: this.getSessionId(),
       seatIds,
     });
   }
 
   releaseSeats(eventId: string, seatIds: string[]) {
-    return this.http.post<any>(`${this.apiUrl}/public/events/${eventId}/seats/release`, {
+    return this.http.post<SeatReleaseResponse>(`${this.apiUrl}/public/events/${eventId}/seats/release`, {
       sessionId: this.getSessionId(),
       seatIds,
     });
   }
 
-  createGuestOrder(payload: {
-    eventId: string;
-    seatIds: string[];
-    customerSnapshot: {
-      fullName: string;
-      email: string;
-      phone: string;
-      address: string;
-      postalCode: string;
-      city: string;
-      country: string;
-    };
-  }) {
-    return this.http.post<any>(`${this.apiUrl}/public/orders`, {
+  createGuestOrder(payload: CreateGuestOrderPayload) {
+    return this.http.post<CreateGuestOrderResponse>(`${this.apiUrl}/public/orders`, {
       ...payload,
       sessionId: this.getSessionId(),
     });
@@ -104,7 +97,9 @@ export class PublicApiService {
 
   getPublicOrder(identifier: string) {
     const sessionId = encodeURIComponent(this.getSessionId());
-    return this.http.get<any>(`${this.apiUrl}/public/orders/${identifier}?sessionId=${sessionId}`);
+    return this.http.get<{ success: boolean; order?: PublicOrder; item?: PublicOrder }>(
+      `${this.apiUrl}/public/orders/${identifier}?sessionId=${sessionId}`
+    );
   }
 
   subscribeNewsletter(email: string) {

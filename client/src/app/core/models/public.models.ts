@@ -139,6 +139,13 @@ export interface PublicEvent {
   saleAvailability?: PublicSaleAvailability;
 }
 
+export interface PublicPriceCategory {
+  _id?: string;
+  id?: string;
+  code?: string;
+  name?: string;
+}
+
 export interface PublicRepertoireMonth {
   year: number;
   month: number;
@@ -275,11 +282,11 @@ export interface PublicSeat {
   height?: number;
   rotation?: number;
   isSellable?: boolean;
-  priceCategory?: any;
+  priceCategory?: PublicPriceCategory | null;
   price?: {
     amount: number;
     currency: string;
-    priceCategory?: any;
+    priceCategory?: PublicPriceCategory | null;
   } | null;
   availabilityStatus: 'available' | 'locked' | 'reserved' | 'sold' | 'unavailable' | 'box_office_only' | string;
   isAccessible?: boolean;
@@ -292,6 +299,77 @@ export interface EventSeatsResponse {
   success: boolean;
   event: PublicEvent;
   seats: PublicSeat[];
+}
+
+export interface PublicGuestSnapshot {
+  firstName: string;
+  lastName: string;
+  fullName?: string;
+  email: string;
+  phone: string;
+}
+
+export interface PublicOrderItem {
+  _id?: string;
+  id?: string;
+  seat?: PublicSeat | string | null;
+  seatLabel: string;
+  section?: string;
+  row?: string;
+  number?: number;
+  priceCategory?: PublicPriceCategory | string | null;
+  priceCategoryCode?: string;
+  priceCategoryName?: string;
+  finalPrice: number;
+  currency: string;
+  status: string;
+}
+
+export interface PublicOrder {
+  _id: string;
+  orderCode?: string;
+  customerSnapshot?: PublicGuestSnapshot;
+  event?: PublicEvent | string | null;
+  items?: PublicOrderItem[];
+  totalAmount: number;
+  currency: string;
+  status: string;
+  paymentStatus?: string;
+  createdAt?: string;
+}
+
+export interface SeatLockResponse {
+  success: boolean;
+  expiresAt: string;
+  lockDurationMinutes: number;
+  seats: Array<{
+    seatId: string;
+    label: string;
+    section?: string;
+    row?: string;
+    number?: number;
+    price?: PublicSeat['price'];
+    lockId: string;
+    availabilityStatus: 'locked';
+  }>;
+}
+
+export interface SeatReleaseResponse {
+  success: boolean;
+  releasedCount: number;
+}
+
+export interface CreateGuestOrderPayload {
+  eventId: string;
+  seatIds: string[];
+  action: 'reserve' | 'purchase';
+  customerSnapshot: PublicGuestSnapshot;
+}
+
+export interface CreateGuestOrderResponse {
+  success: boolean;
+  action: 'reserve' | 'purchase';
+  order: PublicOrder;
 }
 
 export interface PublicListResponse<T> {

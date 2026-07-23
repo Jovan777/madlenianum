@@ -20,6 +20,13 @@ interface SeatMapOption extends AdminReference {
   sections?: unknown[];
 }
 
+interface PricePlanCompatibilityCheck {
+  key: 'venue' | 'productionType' | 'premiere' | 'date' | 'status';
+  label: string;
+  valid: boolean;
+  detail: string;
+}
+
 @Component({
   selector: 'app-admin-event-form',
   standalone: true,
@@ -74,9 +81,7 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
     this.loadOptions();
     if (id) this.loadEvent(id);
 
-    this.form.controls.venue.valueChanges.subscribe(() => this.clearIncompatibleSelections());
-    this.form.controls.production.valueChanges.subscribe(() => this.clearIncompatiblePricePlan());
-    this.form.controls.isPremiere.valueChanges.subscribe(() => this.clearIncompatiblePricePlan());
+    this.form.controls.venue.valueChanges.subscribe(() => this.clearIncompatibleSeatMap());
     this.form.controls.saleStatus.valueChanges.subscribe(() => this.applyConditionalValidators());
     this.form.controls.ticketing.controls.provider.valueChanges.subscribe(() => this.applyProviderMode(true));
     this.form.controls.ticketing.controls.enabled.valueChanges.subscribe(() => this.applyConditionalValidators());
@@ -104,14 +109,23 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
   }
 
   get pricePlans(): AdminPricePlan[] {
-    const venueId = this.form.controls.venue.value;
-    const productionType = this.productions.find((item) => item._id === this.form.controls.production.value)?.type;
-    const isPremiere = this.form.controls.isPremiere.value;
     const selectedId = this.form.controls.pricePlan.value;
-    return (this.options()?.pricePlans || []).filter((plan) => {
-      if (plan._id === selectedId) return true;
-      return this.isPricePlanCompatible(plan, venueId, productionType, isPremiere);
-    });
+    return (this.options()?.pricePlans || [])
+      .filter((plan) => plan.status !== 'archived' || plan._id === selectedId)
+      .sort((left, right) => {
+        const compatibilityDifference =
+          Number(this.isPricePlanCompatible(right)) - Number(this.isPricePlanCompatible(left));
+        return compatibilityDifference || left.name.localeCompare(right.name, 'sr');
+      });
+  }
+
+  get recommendedPricePlans(): AdminPricePlan[] {
+    return this.pricePlans.filter((plan) => this.isPricePlanCompatible(plan));
+  }
+
+  get otherPricePlans(): AdminPricePlan[] {
+    const recommendedIds = new Set(this.recommendedPricePlans.map((plan) => plan._id));
+    return this.pricePlans.filter((plan) => !recommendedIds.has(plan._id));
   }
 
   selectedSeatMap(): SeatMapOption | null {
@@ -119,12 +133,100 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
   }
 
   selectedPricePlan(): AdminPricePlan | null {
-    return this.pricePlans.find((item) => item._id === this.form.controls.pricePlan.value) || null;
+    return (this.options()?.pricePlans || [])
+      .find((item) => item._id === this.form.controls.pricePlan.value) || null;
   }
 
   formatRule(rule: AdminPricePlan['rules'][number]): string {
     const category = typeof rule.priceCategory === 'string' ? null : rule.priceCategory;
     return `${category ? `${category.code} / ${category.name}` : 'Kategorija'}: ${Number(rule.amount).toLocaleString('sr-RS')} ${this.selectedPricePlan()?.currency || 'RSD'}`;
+  }
+
+  pricePlanCompatibility(plan = this.selectedPricePlan()): PricePlanCompatibilityCheck[] {
+    if (!plan) return [];
+
+    const venueId = this.form.controls.venue.value;
+    const production = this.productions.find(
+      (item) => item._id === this.form.controls.production.value
+    );
+    const startsAt = this.form.controls.startsAt.value
+      ? new Date(this.form.controls.startsAt.value)
+      : null;
+    const validDate = startsAt && !Number.isNaN(startsAt.getTime())
+      ? (!plan.validFrom || startsAt >= new Date(plan.validFrom))
+        && (!plan.validTo || startsAt <= new Date(plan.validTo))
+      : false;
+
+    return [
+      {
+        key: 'venue',
+        label: 'Scena',
+        valid: Boolean(venueId) && this.getId(plan.venue) === venueId,
+        detail: !venueId
+          ? 'Prvo izaberite scenu.'
+          : this.getId(plan.venue) === venueId
+            ? 'Cenovnik pripada izabranoj sceni.'
+            : `Cenovnik pripada sceni „${plan.venue?.name || 'druga scena'}“.`,
+      },
+      {
+        key: 'productionType',
+        label: 'Tip predstave',
+        valid: Boolean(production?.type) && plan.productionTypes.includes(String(production?.type)),
+        detail: !production?.type
+          ? 'Prvo izaberite predstavu.'
+          : plan.productionTypes.includes(String(production.type))
+            ? `Podržan tip: ${this.productionTypeLabel(String(production.type))}.`
+            : `Podržano: ${this.planProductionTypes(plan)}.`,
+      },
+      {
+        key: 'premiere',
+        label: 'Premijera',
+        valid: plan.isPremiere === this.form.controls.isPremiere.value,
+        detail: plan.isPremiere === this.form.controls.isPremiere.value
+          ? (plan.isPremiere ? 'Premijerni cenovnik odgovara terminu.' : 'Regularni cenovnik odgovara terminu.')
+          : (plan.isPremiere ? 'Cenovnik je namenjen premijeri.' : 'Cenovnik je namenjen regularnom terminu.'),
+      },
+      {
+        key: 'date',
+        label: 'Važenje',
+        valid: Boolean(validDate),
+        detail: !startsAt
+          ? 'Prvo unesite datum termina.'
+          : validDate
+            ? `Važi na datum termina (${this.planValidityLabel(plan)}).`
+            : `Termin nije u periodu važenja (${this.planValidityLabel(plan)}).`,
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        valid: plan.status === 'active',
+        detail: plan.status === 'active'
+          ? 'Cenovnik je aktivan.'
+          : `Cenovnik ima status „${this.pricePlanStatusLabel(plan.status)}“.`,
+      },
+    ];
+  }
+
+  pricePlanStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      draft: 'Nacrt',
+      active: 'Aktivan',
+      inactive: 'Neaktivan',
+      archived: 'Arhiviran',
+    };
+    return labels[status] || status;
+  }
+
+  planValidityLabel(plan: AdminPricePlan): string {
+    const from = plan.validFrom ? this.formatDate(plan.validFrom) : 'bez početka';
+    const to = plan.validTo ? this.formatDate(plan.validTo) : 'bez kraja';
+    return `${from} – ${to}`;
+  }
+
+  planProductionTypes(plan: AdminPricePlan): string {
+    return plan.productionTypes
+      .map((type) => this.productionTypeLabel(type))
+      .join(', ') || 'nije definisano';
   }
 
   loadOptions(): void {
@@ -261,32 +363,23 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
     [legacy, external, seatMap, pricePlan].forEach((control) => control.updateValueAndValidity({ emitEvent: false }));
   }
 
-  private clearIncompatibleSelections(): void { this.clearIncompatibleSeatMap(); this.clearIncompatiblePricePlan(); }
   private clearIncompatibleSeatMap(): void {
     const selected = this.form.controls.seatMap.value;
     if (selected && this.options() && !this.seatMaps.some((item) => item._id === selected)) this.form.controls.seatMap.setValue('');
   }
-  private clearIncompatiblePricePlan(): void {
-    const selected = this.form.controls.pricePlan.value;
-    if (!selected || !this.options()) return;
-    const plan = this.options()!.pricePlans.find((item) => item._id === selected);
-    const venueId = this.form.controls.venue.value;
-    const productionType = this.productions.find((item) => item._id === this.form.controls.production.value)?.type;
-    if (!plan || !this.isPricePlanCompatible(plan, venueId, productionType, this.form.controls.isPremiere.value)) {
-      this.form.controls.pricePlan.setValue('');
-    }
+  private isPricePlanCompatible(plan: AdminPricePlan): boolean {
+    return this.pricePlanCompatibility(plan).every((check) => check.valid);
   }
 
-  private isPricePlanCompatible(
-    plan: AdminPricePlan,
-    venueId: string,
-    productionType: string | undefined,
-    isPremiere: boolean,
-  ): boolean {
-    return (!venueId || this.getId(plan.venue) === venueId)
-      && (!productionType || plan.productionTypes.includes(productionType))
-      && plan.isPremiere === isPremiere
-      && plan.status === 'active';
+  private productionTypeLabel(type: string): string {
+    return this.options()?.productionTypes.find((item) => item.value === type)?.label || type;
+  }
+
+  private formatDate(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? 'nepoznat datum'
+      : date.toLocaleDateString('sr-RS');
   }
 
   private clearMessages(): void { this.errorMessage.set(''); this.fieldErrors.set({}); this.warnings.set([]); }

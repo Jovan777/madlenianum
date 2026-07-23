@@ -15,7 +15,8 @@
     "migrate:phase4a-ticketing": "node src/migration/migratePhase4aTicketing.js",
     "test:cms": "node src/tests/cms.smoke.js",
     "test:phase4a": "node src/tests/phase4a-ticketing.smoke.js",
-    "test:phase4b": "node src/tests/phase4b-seat-map.smoke.js"
+    "test:phase4b": "node src/tests/phase4b-seat-map.smoke.js",
+    "test:ticketing-flow": "node src/tests/ticketing-guest-flow.smoke.js"
   },
   "keywords": [],
   "author": "",

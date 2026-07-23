@@ -1,0 +1,19 @@
+<article class="event-card">
+  <div class="poster">
+    <img [src]="imageUrl()" [alt]="productionTitle()" />
+  </div>
+
+  <div class="event-copy">
+    <div class="meta-line">
+      <span>{{ productionType() }}</span>
+      <span *ngIf="event.isPremiere || event.badge" class="premiere">{{ event.badge || 'Premijera' }}</span>
+    </div>
+    <h1>{{ productionTitle() }}</h1>
+    <p>{{ eventDate() }} <i aria-hidden="true"></i> {{ venueName() }}</p>
+  </div>
+
+  <div class="event-actions">
+    <span class="status" *ngIf="statusLabel()">{{ statusLabel() }}</span>
+    <a routerLink="/repertoar">Nazad na program</a>
+  </div>
+</article>

@@ -1,127 +1,220 @@
-<div class="loading-state" *ngIf="isLoading()">Ucitavanje sale...</div>
-<div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
-<div class="success-state" *ngIf="successMessage()">{{ successMessage() }}</div>
+<div class="loading-state" *ngIf="isLoading()">Učitavanje sale...</div>
 
-<section class="ticket-page" *ngIf="!isLoading()">
-  <header class="ticket-head">
-    <a routerLink="/repertoar">Nazad na program</a>
-    <p class="eyebrow">{{ productionType() }}</p>
-    <h1>{{ productionTitle() }}</h1>
-    <span>{{ eventDate() }} / {{ venueName() }}</span>
-  </header>
+<section class="ticket-page" *ngIf="!isLoading() && event() as currentEvent">
+  <app-public-ticket-event-card [event]="currentEvent" />
 
-  <div class="ticket-grid">
+  <nav class="stepper" aria-label="Koraci kupovine">
+    <span [class.active]="step() === 1" [class.done]="step() > 1"><b>1</b> Sedišta</span>
+    <span [class.active]="step() === 2" [class.done]="step() > 2"><b>2</b> Podaci</span>
+    <span [class.active]="step() === 3" [class.done]="step() > 3"><b>3</b> Potvrda</span>
+    <span [class.active]="step() === 4"><b>4</b> Završeno</span>
+  </nav>
+
+  <p class="alert error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  <p class="alert success" *ngIf="successMessage()">{{ successMessage() }}</p>
+
+  <div class="ticket-grid" *ngIf="step() === 1">
     <section class="map-panel">
-      <div class="map-top">
+      <header class="map-heading">
         <div>
-          <strong>Izaberite sedista</strong>
-          <span>{{ availabilityCount('available') }} dostupno</span>
+          <p class="eyebrow">Plan sale</p>
+          <h2>Izaberite sedišta</h2>
+          <span>{{ availabilityCount() }} dostupno</span>
         </div>
-        <button type="button" (click)="refresh()">Osvezi</button>
+        <button type="button" class="refresh" (click)="loadSeats()" [disabled]="isWorking()">Osveži</button>
+      </header>
+
+      <app-public-seat-map
+        [seats]="seats()"
+        [selectedSeatIds]="selectedSeatIds()"
+        [lockedSeatIds]="lockedSeatIds()"
+        [canvasWidth]="canvasWidth()"
+        [canvasHeight]="canvasHeight()"
+        [maxSelection]="currentEvent.maxTicketsPerOrder || 4"
+        [disabled]="isWorking()"
+        (selectionChange)="onSelectionChange($event)"
+        (selectionError)="errorMessage.set($event)"
+      />
+    </section>
+
+    <aside class="checkout-card">
+      <p class="eyebrow">Vaš izbor</p>
+      <div class="selection-count">
+        <strong>{{ selectedSeats().length }}</strong>
+        <span>izabrane karte</span>
       </div>
 
-      <div class="section-tabs">
-        <button type="button" [class.active]="mapSection() === 'all'" (click)="setSection('all')">Cela sala</button>
+      <div class="empty-selection" *ngIf="selectedSeats().length === 0">
+        Kliknite slobodna sedišta na planu sale.
+      </div>
+
+      <div class="seat-list" *ngIf="selectedSeats().length > 0">
+        <article *ngFor="let seat of selectedSeats()">
+          <div>
+            <strong>{{ seat.label }}</strong>
+            <span>{{ seat.priceCategory?.name || seat.priceCategory?.code || 'Karta' }}</span>
+          </div>
+          <small>{{ seat.price?.amount || 0 | number }} {{ seat.price?.currency || 'RSD' }}</small>
+        </article>
+      </div>
+
+      <div class="total">
+        <span>Ukupno</span>
+        <strong>{{ selectedTotal() | number }} {{ selectedCurrency() }}</strong>
+      </div>
+
+      <div class="checkout-actions">
         <button
-          *ngFor="let section of sections()"
+          class="btn btn-ghost"
           type="button"
-          [class.active]="mapSection() === section"
-          (click)="setSection(section)"
+          [disabled]="isWorking() || selectedSeatIds().length === 0"
+          (click)="beginCheckout('reserve')"
         >
-          {{ section }}
+          Rezerviši
+        </button>
+        <button
+          class="btn btn-gold"
+          type="button"
+          [disabled]="isWorking() || selectedSeatIds().length === 0"
+          (click)="beginCheckout('purchase')"
+        >
+          Kupi
+        </button>
+        <button
+          class="clear-selection"
+          type="button"
+          [disabled]="isWorking() || selectedSeatIds().length === 0"
+          (click)="resetSelection()"
+        >
+          Poništi izbor
         </button>
       </div>
+    </aside>
+  </div>
 
-      <div class="legend">
-        <span *ngFor="let item of statusLegend" [class]="'legend-' + item.status">
-          <i></i>{{ item.label }}
-        </span>
+  <div class="details-step" *ngIf="step() === 2">
+    <form class="customer-card" [formGroup]="customerForm" (ngSubmit)="continueToReview()">
+      <p class="eyebrow">Podaci gosta</p>
+      <h2>Kontakt podaci</h2>
+      <p class="form-intro">Nalog nije potreban. Ovi podaci se vezuju samo za rezervaciju ili kupovinu.</p>
+
+      <div class="form-grid">
+        <label>
+          Ime
+          <input type="text" formControlName="firstName" autocomplete="given-name" />
+          <small *ngIf="fieldError('firstName')">{{ fieldError('firstName') }}</small>
+        </label>
+        <label>
+          Prezime
+          <input type="text" formControlName="lastName" autocomplete="family-name" />
+          <small *ngIf="fieldError('lastName')">{{ fieldError('lastName') }}</small>
+        </label>
+        <label>
+          Email
+          <input type="email" formControlName="email" autocomplete="email" />
+          <small *ngIf="fieldError('email')">{{ fieldError('email') }}</small>
+        </label>
+        <label>
+          Telefon
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+          <small *ngIf="fieldError('phone')">{{ fieldError('phone') }}</small>
+        </label>
       </div>
 
-      <div class="empty-map" *ngIf="visibleSeats().length === 0">
-        Za ovaj deo sale nema sedista.
+      <div class="form-actions">
+        <button class="btn btn-ghost" type="button" (click)="backToSeats()" [disabled]="isWorking()">Nazad</button>
+        <button class="btn btn-primary" type="submit" [disabled]="isWorking()">Nastavi</button>
+      </div>
+    </form>
+
+    <aside class="step-summary">
+      <strong>Sedišta su sačuvana još {{ holdExpiresLabel() }}</strong>
+      <span>{{ selectedSeats().length }} karte · {{ selectedTotal() | number }} {{ selectedCurrency() }}</span>
+      <small>Po isteku vremena sedišta se automatski oslobađaju.</small>
+    </aside>
+  </div>
+
+  <div class="details-step" *ngIf="step() === 3">
+    <section class="review-card">
+      <p class="eyebrow">Potvrda</p>
+      <h2>Proverite podatke i izaberite akciju</h2>
+
+      <div class="review-contact">
+        <strong>{{ customerForm.controls.firstName.value }} {{ customerForm.controls.lastName.value }}</strong>
+        <span>{{ customerForm.controls.email.value }} · {{ customerForm.controls.phone.value }}</span>
       </div>
 
-      <div class="seat-canvas" *ngIf="visibleSeats().length > 0" [style.width.px]="canvasWidth()" [style.height.px]="canvasHeight()">
-        <div class="stage">Scena</div>
+      <div class="review-seats">
+        <article *ngFor="let seat of selectedSeats()">
+          <span>{{ seat.section || 'Sala' }} · red {{ seat.row || '-' }} · sedište {{ seat.number || '-' }}</span>
+          <strong>{{ seat.price?.amount || 0 | number }} {{ seat.price?.currency || 'RSD' }}</strong>
+        </article>
+      </div>
+
+      <div class="total review-total">
+        <span>Ukupno</span>
+        <strong>{{ selectedTotal() | number }} {{ selectedCurrency() }}</strong>
+      </div>
+
+      <p class="hold-line">Sedišta su sačuvana još {{ holdExpiresLabel() }}</p>
+
+      <div class="review-actions">
+        <button class="btn btn-ghost" type="button" (click)="backToCustomer()" [disabled]="isWorking()">Izmeni podatke</button>
         <button
-          *ngFor="let seat of visibleSeats()"
+          class="btn btn-light-action"
           type="button"
-          class="seat"
-          [ngClass]="seatClass(seat)"
-          [style.left.%]="seatLeft(seat)"
-          [style.top.%]="seatTop(seat)"
-          [style.width.px]="seatWidth(seat)"
-          [style.height.px]="seatHeight(seat)"
-          [title]="seatTitle(seat)"
-          (click)="toggleSeat(seat)"
+          [class.recommended]="desiredAction() === 'reserve'"
+          (click)="submitOrder('reserve')"
+          [disabled]="isWorking()"
         >
-          <span>{{ seat.number || '' }}</span>
+          {{ isWorking() && desiredAction() === 'reserve' ? 'Potvrđivanje...' : 'Rezerviši' }}
+        </button>
+        <button
+          class="btn btn-gold"
+          type="button"
+          [class.recommended]="desiredAction() === 'purchase'"
+          (click)="submitOrder('purchase')"
+          [disabled]="isWorking()"
+        >
+          {{ isWorking() && desiredAction() === 'purchase' ? 'Potvrđivanje...' : 'Kupi' }}
         </button>
       </div>
     </section>
-
-    <aside class="checkout">
-      <section class="selection">
-        <p class="eyebrow">Korpa</p>
-        <h2>{{ selectedSeats().length }}</h2>
-        <span>izabrane karte</span>
-
-        <div class="hold-info" *ngIf="lockedSeatIds().length">
-          <strong>Rezervacija traje {{ holdExpiresLabel() }}</strong>
-          <small>Sedišta su zaključana za ovu sesiju. Dugme Kupi potvrđuje rezervaciju bez plaćanja.</small>
-        </div>
-
-        <div class="seat-line" *ngFor="let seat of selectedSeats()">
-          <strong>{{ seat.label }}</strong>
-          <span>{{ seat.priceCategory?.name || seat.priceCategory?.code || 'Karta' }}</span>
-          <small>
-            Red {{ seat.row || '-' }} / broj {{ seat.number || '-' }} /
-            {{ seat.price?.amount || 0 | number }} {{ seat.price?.currency || 'RSD' }}
-          </small>
-        </div>
-
-        <div class="empty-selection" *ngIf="selectedSeats().length === 0">
-          Kliknite slobodna sedista na planu sale.
-        </div>
-
-        <div class="total">
-          <span>Ukupno</span>
-          <strong>{{ selectedTotal() | number }} {{ selectedCurrency() }}</strong>
-        </div>
-
-        <div class="selection-actions">
-          <button class="btn btn-primary" type="button" [disabled]="isWorking() || selectedSeatIds().length === 0 || lockedSeatIds().length > 0" (click)="lockSelectedSeats()">
-            Zadrzi sedista
-          </button>
-          <button class="btn btn-ghost" type="button" [disabled]="isWorking() || (selectedSeatIds().length === 0 && lockedSeatIds().length === 0)" (click)="releaseHeldSeats()">
-            Ponisti izbor
-          </button>
-        </div>
-      </section>
-
-      <form class="guest" (ngSubmit)="createOrder()">
-        <h3>Podaci za porudzbinu</h3>
-        <input placeholder="Ime i prezime" [ngModel]="guestForm().fullName" name="fullName" (ngModelChange)="updateGuestField('fullName', $event)">
-        <input placeholder="Email" [ngModel]="guestForm().email" name="email" type="email" (ngModelChange)="updateGuestField('email', $event)">
-        <input placeholder="Telefon" [ngModel]="guestForm().phone" name="phone" (ngModelChange)="updateGuestField('phone', $event)">
-        <input placeholder="Adresa" [ngModel]="guestForm().address" name="address" (ngModelChange)="updateGuestField('address', $event)">
-        <div>
-          <input placeholder="Grad" [ngModel]="guestForm().city" name="city" (ngModelChange)="updateGuestField('city', $event)">
-          <input placeholder="Postanski broj" [ngModel]="guestForm().postalCode" name="postalCode" (ngModelChange)="updateGuestField('postalCode', $event)">
-        </div>
-        <input placeholder="Drzava" [ngModel]="guestForm().country" name="country" (ngModelChange)="updateGuestField('country', $event)">
-
-        <button class="btn btn-gold" type="submit" [disabled]="isWorking() || lockedSeatIds().length === 0">
-          Kupi
-        </button>
-      </form>
-
-      <article class="created" *ngIf="order() as created">
-        <span>Porudzbina</span>
-        <strong>{{ created.orderCode || created._id }}</strong>
-        <a [routerLink]="['/porudzbina', created.orderCode || created._id]">Otvori detalje</a>
-      </article>
-    </aside>
   </div>
+
+  <section class="confirmation" *ngIf="step() === 4 && order() as completedOrder">
+    <span class="confirmation-mark" aria-hidden="true">✓</span>
+    <p class="eyebrow">{{ completedStatusLabel() }}</p>
+    <h2>Hvala, potvrda je uspešno kreirana.</h2>
+    <p class="reference-label">Broj potvrde</p>
+    <strong class="reference">{{ orderReference() }}</strong>
+
+    <div class="confirmation-grid">
+      <div>
+        <span>Događaj</span>
+        <strong>{{ publicApi.productionFromEvent(currentEvent)?.title || 'Događaj' }}</strong>
+      </div>
+      <div>
+        <span>Status</span>
+        <strong>{{ completedStatusLabel() }}</strong>
+      </div>
+      <div>
+        <span>Sedišta</span>
+        <strong>{{ confirmedSeats().length }}</strong>
+      </div>
+      <div>
+        <span>Ukupno</span>
+        <strong>{{ selectedTotal(confirmedSeats()) | number }} {{ selectedCurrency(confirmedSeats()) }}</strong>
+      </div>
+    </div>
+
+    <div class="confirmed-seats">
+      <span *ngFor="let seat of confirmedSeats()">{{ seat.label }}</span>
+    </div>
+
+    <div class="confirmation-actions">
+      <a class="btn btn-primary" [routerLink]="['/porudzbina', orderReference()]">Detalji potvrde</a>
+      <a class="btn btn-ghost" routerLink="/repertoar">Nazad na program</a>
+    </div>
+  </section>
 </section>

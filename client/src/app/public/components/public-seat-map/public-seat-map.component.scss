@@ -1,0 +1,234 @@
+:host {
+  display: grid;
+  min-width: 0;
+}
+
+.map-toolbar {
+  display: block;
+  align-items: start;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 14px 16px 10px;
+}
+
+.section-tabs,
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.section-tabs {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.section-tabs button {
+  min-height: 40px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 14px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.88);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.section-tabs button.active {
+  color: var(--paper);
+  background: var(--night);
+}
+
+.legend {
+  flex-wrap: wrap;
+  padding: 2px 16px 14px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.legend i {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: center / contain no-repeat url("/madlenianum/seat-free.png");
+}
+
+.legend-selected i {
+  outline: 3px solid #d2a620;
+  outline-offset: 1px;
+}
+
+.legend-locked i,
+.legend-reserved i,
+.legend-box_office_only i {
+  background-image: url("/madlenianum/seat-reserved.png");
+}
+
+.legend-sold i {
+  background-image: url("/madlenianum/seat-bought.png");
+}
+
+.legend-unavailable i {
+  filter: grayscale(1);
+  opacity: 0.62;
+}
+
+.map-viewport {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 980px;
+  height: clamp(980px, 108vh, 1160px);
+  overflow: hidden;
+  padding: 12px;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--line);
+  background: #e8ded2;
+}
+
+.scaled-canvas {
+  position: relative;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.seat-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: left top;
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(20, 17, 15, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 17, 15, 0.045) 1px, transparent 1px),
+    #ebe2d7;
+  background-size: 44px 44px;
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  width: min(420px, 54%);
+  transform: translateX(-50%);
+  border-radius: 0 0 70px 70px;
+  padding: 15px;
+  color: var(--paper);
+  background: var(--night);
+  text-align: center;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.seat {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  color: var(--ink);
+  background: center / contain no-repeat url("/madlenianum/seat-free.png");
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+}
+
+.seat span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -25%);
+  color: #171311;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.seat:not(:disabled):hover {
+  outline: 3px solid rgba(159, 51, 40, 0.55);
+  outline-offset: 2px;
+}
+
+.seat:focus-visible {
+  z-index: 2;
+  outline: 4px solid #14110f;
+  outline-offset: 2px;
+}
+
+.status-locked,
+.status-reserved,
+.status-box_office_only {
+  background-image: url("/madlenianum/seat-reserved.png");
+}
+
+.status-sold {
+  background-image: url("/madlenianum/seat-bought.png");
+}
+
+.status-unavailable {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.seat.selected,
+.seat.own-lock {
+  z-index: 1;
+  background-image: url("/madlenianum/seat-free.png");
+  outline: 4px solid #d2a620;
+  outline-offset: 1px;
+}
+
+.seat.own-lock {
+  background-image: url("/madlenianum/seat-reserved.png");
+}
+
+.seat.accessible::after {
+  content: "A";
+  position: absolute;
+  right: -4px;
+  top: -5px;
+  display: grid;
+  width: 11px;
+  height: 11px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--blue);
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.empty-map {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 28px;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--gold-text);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .map-viewport {
+    min-height: 460px;
+    height: 72vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-viewport {
+    scroll-behavior: auto;
+  }
+}

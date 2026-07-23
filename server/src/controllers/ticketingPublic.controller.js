@@ -106,6 +106,28 @@ const normalizeSeatIds = (seatIds) => {
   return [...new Set(seatIds.map((id) => String(id)))];
 };
 
+const normalizeCustomerSnapshot = (snapshot = {}) => {
+  const suppliedFullName = String(snapshot.fullName || "").trim();
+  const nameParts = suppliedFullName.split(/\s+/).filter(Boolean);
+  const firstName = String(snapshot.firstName || nameParts[0] || "").trim();
+  const lastName = String(
+    snapshot.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(" ") : "")
+  ).trim();
+
+  return {
+    firstName,
+    lastName,
+    fullName: [firstName, lastName].filter(Boolean).join(" "),
+    email: String(snapshot.email || "").trim().toLowerCase(),
+    phone: String(snapshot.phone || "").trim(),
+  };
+};
+
+const normalizeOrderAction = (value) => {
+  const action = String(value || "reserve").trim().toLowerCase();
+  return ["reserve", "purchase"].includes(action) ? action : "";
+};
+
 const isSameLockOwner = (lock, { sessionId, customerId }) => {
   const lockSessionId = lock.sessionId || "";
   const lockCustomerId = lock.customer ? String(lock.customer) : "";
@@ -359,6 +381,7 @@ const createOrder = asyncHandler(async (req, res) => {
   await expireOldLocksAndOrders();
 
   const { eventId, customerSnapshot, notes } = req.body;
+  const action = normalizeOrderAction(req.body.action);
   const seatIds = normalizeSeatIds(req.body.seatIds);
   const sessionId = req.body.sessionId ? String(req.body.sessionId).trim() : "";
   const customerId = req.customer?._id || null;
@@ -366,6 +389,11 @@ const createOrder = asyncHandler(async (req, res) => {
   if (!eventId) {
     res.status(400);
     throw new Error("eventId is required.");
+  }
+
+  if (!action) {
+    res.status(400);
+    throw new Error("action must be reserve or purchase.");
   }
 
   if (seatIds.length === 0) {
@@ -395,23 +423,26 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error(`Maximum ${event.maxTicketsPerOrder} tickets per order.`);
   }
 
-  let finalCustomerSnapshot = customerSnapshot || {};
+  let finalCustomerSnapshot = normalizeCustomerSnapshot(customerSnapshot);
 
   if (req.customer) {
-    finalCustomerSnapshot = {
+    finalCustomerSnapshot = normalizeCustomerSnapshot({
+      firstName: req.customer.firstName,
+      lastName: req.customer.lastName,
       fullName: req.customer.fullName,
       email: req.customer.email,
-      address: req.customer.address,
-      postalCode: req.customer.postalCode,
-      city: req.customer.city,
-      country: req.customer.country,
       phone: req.customer.phone,
-    };
+    });
   }
 
-  if (!finalCustomerSnapshot.fullName || !finalCustomerSnapshot.email) {
+  if (
+    !finalCustomerSnapshot.firstName
+    || !finalCustomerSnapshot.lastName
+    || !finalCustomerSnapshot.email
+    || !finalCustomerSnapshot.phone
+  ) {
     res.status(400);
-    throw new Error("Customer fullName and email are required.");
+    throw new Error("Customer firstName, lastName, email and phone are required.");
   }
 
   const seats = await Seat.find({
@@ -455,23 +486,7 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 
   let subtotalAmount = 0;
-
-  const order = await Order.create({
-    customer: customerId || undefined,
-    customerSnapshot: finalCustomerSnapshot,
-    sessionId,
-    event: event._id,
-    subtotalAmount: 0,
-    discountAmount: 0,
-    totalAmount: 0,
-    currency: event.pricePlan?.currency || "RSD",
-    status: "reserved",
-    paymentStatus: "unpaid",
-    paymentProvider: "none",
-    expiresAt: undefined,
-    notes: notes || "",
-  });
-
+  const finalItemStatus = action === "purchase" ? "paid" : "reserved";
   const orderItemsPayload = seats.map((seat) => {
     const price = getSeatPrice(seat, event.pricePlan);
 
@@ -482,7 +497,6 @@ const createOrder = asyncHandler(async (req, res) => {
     subtotalAmount += price.amount;
 
     return {
-      order: order._id,
       event: event._id,
       seat: seat._id,
       seatLabel: seat.label,
@@ -496,16 +510,32 @@ const createOrder = asyncHandler(async (req, res) => {
       discountAmount: 0,
       finalPrice: price.amount,
       currency: price.currency,
-      status: "reserved",
+      status: finalItemStatus,
     };
   });
 
-  const orderItems = await OrderItem.insertMany(orderItemsPayload);
+  const order = await Order.create({
+    customer: customerId || undefined,
+    customerSnapshot: finalCustomerSnapshot,
+    sessionId,
+    event: event._id,
+    subtotalAmount,
+    discountAmount: 0,
+    totalAmount: subtotalAmount,
+    currency: event.pricePlan?.currency || "RSD",
+    status: action === "purchase" ? "paid" : "reserved",
+    paymentStatus: action === "purchase" ? "paid" : "unpaid",
+    paymentProvider: action === "purchase" ? "manual" : "none",
+    paidAt: action === "purchase" ? new Date() : undefined,
+    expiresAt: undefined,
+    notes: notes || "",
+  });
+
+  const orderItems = await OrderItem.insertMany(
+    orderItemsPayload.map((item) => ({ ...item, order: order._id }))
+  );
 
   order.items = orderItems.map((item) => item._id);
-  order.subtotalAmount = subtotalAmount;
-  order.totalAmount = subtotalAmount;
-  order.currency = event.pricePlan?.currency || "RSD";
   await order.save();
 
   await SeatLock.updateMany(
@@ -535,6 +565,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
+    action,
     order: populatedOrder,
   });
 });

@@ -1,32 +1,33 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { PublicEvent, PublicSeat } from '../../../core/models/public.models';
+import { PublicEvent, PublicOrder, PublicSeat } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicSeatMapComponent } from '../../components/public-seat-map/public-seat-map.component';
+import { PublicTicketEventCardComponent } from '../../components/public-ticket-event-card/public-ticket-event-card.component';
 
-interface GuestForm {
-  fullName: string;
-  email: string;
-  phone: string;
-  address: string;
-  postalCode: string;
-  city: string;
-  country: string;
-}
+type TicketStep = 1 | 2 | 3 | 4;
+type OrderAction = 'reserve' | 'purchase';
 
 @Component({
   selector: 'app-public-ticketing',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    PublicSeatMapComponent,
+    PublicTicketEventCardComponent,
+  ],
   templateUrl: './public-ticketing.component.html',
   styleUrl: './public-ticketing.component.scss',
 })
 export class PublicTicketingComponent implements OnInit, OnDestroy {
   readonly publicApi = inject(PublicApiService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
   private timerId: number | null = null;
 
   readonly eventId = signal('');
@@ -34,49 +35,40 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
   readonly seats = signal<PublicSeat[]>([]);
   readonly selectedSeatIds = signal<string[]>([]);
   readonly lockedSeatIds = signal<string[]>([]);
+  readonly confirmedSeats = signal<PublicSeat[]>([]);
+  readonly step = signal<TicketStep>(1);
+  readonly desiredAction = signal<OrderAction>('reserve');
+  readonly completedAction = signal<OrderAction | null>(null);
   readonly isLoading = signal(true);
   readonly isWorking = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
-  readonly order = signal<any | null>(null);
-  readonly mapSection = signal('all');
+  readonly order = signal<PublicOrder | null>(null);
   readonly holdExpiresAt = signal('');
   readonly nowTick = signal(Date.now());
 
-  readonly guestForm = signal<GuestForm>({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    postalCode: '',
-    city: 'Beograd',
-    country: 'Srbija',
+  readonly customerForm = this.fb.nonNullable.group({
+    firstName: ['', [Validators.required, Validators.maxLength(80)]],
+    lastName: ['', [Validators.required, Validators.maxLength(80)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
+    phone: ['', [Validators.required, Validators.maxLength(40)]],
   });
 
-  readonly statusLegend = [
-    { status: 'available', label: 'Slobodno' },
-    { status: 'selected', label: 'Izabrano' },
-    { status: 'locked', label: 'Zakljucano' },
-    { status: 'reserved', label: 'Rezervisano' },
-    { status: 'sold', label: 'Prodato' },
-    { status: 'box_office_only', label: 'Samo blagajna' },
-    { status: 'unavailable', label: 'Nedostupno' },
-  ];
-
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('eventId') || '';
-    this.eventId.set(id);
-    this.loadSeats();
+    this.eventId.set(this.route.snapshot.paramMap.get('eventId') || '');
+    this.loadSeats(true);
   }
 
   ngOnDestroy(): void {
-    if (this.timerId !== null) {
-      window.clearInterval(this.timerId);
+    this.stopHoldTimer();
+    const seatIds = this.lockedSeatIds();
+    if (seatIds.length > 0) {
+      this.publicApi.releaseSeats(this.eventId(), seatIds).subscribe();
     }
   }
 
-  loadSeats(): void {
-    this.isLoading.set(true);
+  loadSeats(showLoading = false): void {
+    if (showLoading) this.isLoading.set(true);
     this.errorMessage.set('');
 
     this.publicApi.getEventSeats(this.eventId()).subscribe({
@@ -85,173 +77,184 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
         this.seats.set(response.seats || []);
       },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Sedista trenutno nisu dostupna.');
+        this.errorMessage.set(error?.error?.message || 'Sedišta trenutno nisu dostupna.');
       },
       complete: () => {
-        this.isLoading.set(false);
+        if (showLoading) this.isLoading.set(false);
       },
     });
-  }
-
-  productionTitle(): string {
-    const production = this.publicApi.productionFromEvent(this.event());
-    return production?.title || 'Dogadjaj';
-  }
-
-  productionSlug(): string {
-    return this.publicApi.productionFromEvent(this.event())?.slug || '';
-  }
-
-  productionType(): string {
-    return this.publicApi.typeLabel(this.publicApi.productionFromEvent(this.event())?.type);
-  }
-
-  eventDate(): string {
-    const startsAt = this.event()?.startsAt;
-    if (!startsAt) return 'Termin ce biti objavljen';
-
-    return new Date(startsAt).toLocaleString('sr-RS', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  venueName(): string {
-    const event = this.event();
-    return event?.venue?.name || event?.venue?.title || 'Madlenianum';
-  }
-
-  sections(): string[] {
-    return [...new Set(this.seats().map((seat) => seat.section || 'Ostalo'))];
-  }
-
-  setSection(section: string): void {
-    this.mapSection.set(section);
-  }
-
-  visibleSeats(): PublicSeat[] {
-    const section = this.mapSection();
-    if (section === 'all') return this.seats();
-    return this.seats().filter((seat) => (seat.section || 'Ostalo') === section);
   }
 
   canvasWidth(): number {
     const configured = Number(this.event()?.seatMap?.canvas?.width || 0);
-    const values = this.seats().map((seat) => seat.x || 0);
-    return Math.max(configured, 980, ...values) + 90;
+    const furthestSeat = Math.max(0, ...this.seats().map((seat) => Number(seat.x || 0)));
+    return Math.max(configured, furthestSeat + 70, 900);
   }
 
   canvasHeight(): number {
     const configured = Number(this.event()?.seatMap?.canvas?.height || 0);
-    const values = this.seats().map((seat) => seat.y || 0);
-    return Math.max(configured, 640, ...values) + 90;
+    const furthestSeat = Math.max(0, ...this.seats().map((seat) => Number(seat.y || 0)));
+    return Math.max(configured, furthestSeat + 70, 620);
   }
 
-  seatLeft(seat: PublicSeat): number {
-    return ((seat.x || 0) / this.canvasWidth()) * 100;
+  availabilityCount(): number {
+    return this.seats().filter(
+      (seat) => seat.availabilityStatus === 'available' && seat.isSellable !== false
+    ).length;
   }
 
-  seatTop(seat: PublicSeat): number {
-    return ((seat.y || 0) / this.canvasHeight()) * 100;
-  }
-
-  seatWidth(seat: PublicSeat): number {
-    return Math.max(18, Math.min(34, Number(seat.width || 24)));
-  }
-
-  seatHeight(seat: PublicSeat): number {
-    return Math.max(18, Math.min(34, Number(seat.height || 24)));
-  }
-
-  seatClass(seat: PublicSeat): string {
-    const classes = [`status-${seat.availabilityStatus}`];
-    if (this.isSelected(seat.id)) classes.push('selected');
-    if (this.lockedSeatIds().includes(String(seat.id))) classes.push('own-lock');
-    return classes.join(' ');
-  }
-
-  seatTitle(seat: PublicSeat): string {
-    const price = seat.price ? `${seat.price.amount.toLocaleString('sr-RS')} ${seat.price.currency}` : 'Bez cene';
-    return `${seat.label} / ${this.statusLabel(seat.availabilityStatus)} / ${price}`;
-  }
-
-  statusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      available: 'Slobodno',
-      selected: 'Izabrano',
-      locked: 'Zakljucano',
-      reserved: 'Rezervisano',
-      sold: 'Prodato',
-      box_office_only: 'Samo blagajna',
-      unavailable: 'Nedostupno',
-    };
-
-    return labels[status] || status;
-  }
-
-  isSelected(seatId: string): boolean {
-    return this.selectedSeatIds().includes(String(seatId));
-  }
-
-  canSelect(seat: PublicSeat): boolean {
-    return seat.availabilityStatus === 'available' && seat.isSellable !== false;
-  }
-
-  toggleSeat(seat: PublicSeat): void {
-    if (!this.canSelect(seat)) return;
-
-    const id = String(seat.id);
-    const selected = this.selectedSeatIds();
-
-    if (selected.includes(id)) {
-      this.selectedSeatIds.set(selected.filter((item) => item !== id));
-      return;
-    }
-
-    const max = this.event()?.maxTicketsPerOrder || 4;
-    if (selected.length >= max) {
-      this.errorMessage.set(`Maksimalan broj ulaznica je ${max}.`);
-      return;
-    }
-
+  onSelectionChange(seatIds: string[]): void {
     this.errorMessage.set('');
-    this.selectedSeatIds.set([...selected, id]);
+    this.selectedSeatIds.set(seatIds);
   }
 
   selectedSeats(): PublicSeat[] {
-    const ids = new Set(this.selectedSeatIds());
-    return this.seats().filter((seat) => ids.has(String(seat.id)));
+    const selectedIds = new Set(this.selectedSeatIds());
+    return this.seats().filter((seat) => selectedIds.has(String(seat.id)));
   }
 
-  selectedTotal(): number {
-    return this.selectedSeats().reduce((sum, seat) => sum + (seat.price?.amount || 0), 0);
+  selectedTotal(seats = this.selectedSeats()): number {
+    return seats.reduce((sum, seat) => sum + Number(seat.price?.amount || 0), 0);
   }
 
-  selectedCurrency(): string {
-    return this.selectedSeats()[0]?.price?.currency || 'RSD';
+  selectedCurrency(seats = this.selectedSeats()): string {
+    return seats[0]?.price?.currency || this.order()?.currency || 'RSD';
   }
 
-  availabilityCount(status: string): number {
-    return this.seats().filter((seat) => seat.availabilityStatus === status).length;
+  beginCheckout(action: OrderAction): void {
+    if (this.selectedSeatIds().length === 0) {
+      this.errorMessage.set('Izaberite bar jedno sedište.');
+      return;
+    }
+
+    this.desiredAction.set(action);
+    this.lockSelectedSeats();
+  }
+
+  lockSelectedSeats(): void {
+    const seatIds = this.selectedSeatIds();
+    if (seatIds.length === 0 || this.isWorking()) return;
+
+    this.isWorking.set(true);
+    this.clearMessages();
+
+    this.publicApi.lockSeats(this.eventId(), seatIds).subscribe({
+      next: (response) => {
+        const locked = response.seats.map((seat) => String(seat.seatId));
+        this.lockedSeatIds.set(locked.length > 0 ? locked : seatIds);
+        this.startHoldTimer(response.expiresAt);
+        this.step.set(2);
+        this.successMessage.set('Sedišta su privremeno sačuvana dok unosite podatke.');
+        this.loadSeats();
+      },
+      error: (error) => {
+        this.errorMessage.set(error?.error?.message || 'Čuvanje sedišta nije uspelo.');
+      },
+      complete: () => this.isWorking.set(false),
+    });
+  }
+
+  continueToReview(): void {
+    this.clearMessages();
+    if (this.customerForm.invalid) {
+      this.customerForm.markAllAsTouched();
+      this.errorMessage.set('Popunite ime, prezime, email i telefon.');
+      return;
+    }
+    if (this.lockedSeatIds().length === 0) {
+      this.errorMessage.set('Rezervacija sedišta je istekla. Izaberite sedišta ponovo.');
+      this.step.set(1);
+      return;
+    }
+    this.step.set(3);
+  }
+
+  submitOrder(action: OrderAction): void {
+    if (this.customerForm.invalid || this.lockedSeatIds().length === 0 || this.isWorking()) {
+      this.customerForm.markAllAsTouched();
+      return;
+    }
+
+    const selectedSeats = this.selectedSeats();
+    this.desiredAction.set(action);
+    this.isWorking.set(true);
+    this.clearMessages();
+
+    this.publicApi.createGuestOrder({
+      eventId: this.eventId(),
+      seatIds: this.lockedSeatIds(),
+      action,
+      customerSnapshot: this.customerForm.getRawValue(),
+    }).subscribe({
+      next: (response) => {
+        this.confirmedSeats.set(selectedSeats);
+        this.order.set(response.order);
+        this.completedAction.set(response.action);
+        this.selectedSeatIds.set([]);
+        this.lockedSeatIds.set([]);
+        this.holdExpiresAt.set('');
+        this.stopHoldTimer();
+        this.step.set(4);
+        this.successMessage.set(
+          response.action === 'purchase'
+            ? 'Kupovina je uspešno potvrđena.'
+            : 'Rezervacija je uspešno potvrđena.'
+        );
+        this.loadSeats();
+      },
+      error: (error) => {
+        this.errorMessage.set(error?.error?.message || 'Potvrda nije uspela.');
+      },
+      complete: () => this.isWorking.set(false),
+    });
+  }
+
+  backToCustomer(): void {
+    this.clearMessages();
+    this.step.set(2);
+  }
+
+  backToSeats(): void {
+    this.releaseHeldSeats(true);
+  }
+
+  resetSelection(): void {
+    this.releaseHeldSeats(false);
+  }
+
+  releaseHeldSeats(goToFirstStep: boolean): void {
+    const seatIds = this.lockedSeatIds();
+
+    if (seatIds.length === 0) {
+      this.selectedSeatIds.set([]);
+      if (goToFirstStep) this.step.set(1);
+      return;
+    }
+
+    this.isWorking.set(true);
+    this.clearMessages();
+    this.publicApi.releaseSeats(this.eventId(), seatIds).subscribe({
+      next: () => {
+        this.selectedSeatIds.set([]);
+        this.lockedSeatIds.set([]);
+        this.holdExpiresAt.set('');
+        this.stopHoldTimer();
+        if (goToFirstStep) this.step.set(1);
+        this.successMessage.set('Sedišta su oslobođena.');
+        this.loadSeats();
+      },
+      error: (error) => {
+        this.errorMessage.set(error?.error?.message || 'Oslobađanje sedišta nije uspelo.');
+      },
+      complete: () => this.isWorking.set(false),
+    });
   }
 
   holdExpiresLabel(): string {
-    const expiresAt = this.holdExpiresAt();
+    if (!this.holdExpiresAt()) return `${this.event()?.lockDurationMinutes || 15} min`;
 
-    if (!expiresAt) {
-      const minutes = this.event()?.lockDurationMinutes || 15;
-      return `${minutes} min`;
-    }
-
-    const remainingMs = new Date(expiresAt).getTime() - this.nowTick();
-
-    if (remainingMs <= 0) {
-      return 'isteklo';
-    }
+    const remainingMs = new Date(this.holdExpiresAt()).getTime() - this.nowTick();
+    if (remainingMs <= 0) return 'isteklo';
 
     const totalSeconds = Math.ceil(remainingMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -259,133 +262,38 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 
-  startHoldTimer(expiresAt: string): void {
-    this.holdExpiresAt.set(expiresAt);
+  orderReference(): string {
+    const order = this.order();
+    return order?.orderCode || order?._id || '';
+  }
 
+  completedStatusLabel(): string {
+    return this.completedAction() === 'purchase' ? 'Kupljeno' : 'Rezervisano';
+  }
+
+  fieldError(field: keyof typeof this.customerForm.controls): string {
+    const control = this.customerForm.controls[field];
+    if (!control.touched || !control.errors) return '';
+    if (control.errors['required']) return 'Polje je obavezno.';
+    if (control.errors['email']) return 'Unesite ispravnu email adresu.';
+    return 'Vrednost nije ispravna.';
+  }
+
+  private startHoldTimer(expiresAt: string): void {
+    this.holdExpiresAt.set(expiresAt);
+    this.stopHoldTimer();
+    this.timerId = window.setInterval(() => this.nowTick.set(Date.now()), 1000);
+  }
+
+  private stopHoldTimer(): void {
     if (this.timerId !== null) {
       window.clearInterval(this.timerId);
+      this.timerId = null;
     }
-
-    this.timerId = window.setInterval(() => {
-      this.nowTick.set(Date.now());
-    }, 1000);
   }
 
-  lockSelectedSeats(): void {
-    const seatIds = this.selectedSeatIds();
-    if (seatIds.length === 0) {
-      this.errorMessage.set('Izaberite bar jedno sediste.');
-      return;
-    }
-
-    this.isWorking.set(true);
+  private clearMessages(): void {
     this.errorMessage.set('');
     this.successMessage.set('');
-
-    this.publicApi.lockSeats(this.eventId(), seatIds).subscribe({
-      next: (response) => {
-        const locked = (response.seats || []).map((seat: any) => String(seat.seatId));
-        this.lockedSeatIds.set(locked.length ? locked : seatIds);
-        if (response.expiresAt) {
-          this.startHoldTimer(response.expiresAt);
-        }
-        this.successMessage.set('Sedista su privremeno zadrzana. Unesite podatke i potvrdite kupovinu.');
-        this.loadSeats();
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Zakljucavanje sedista nije uspelo.');
-      },
-      complete: () => {
-        this.isWorking.set(false);
-      },
-    });
-  }
-
-  releaseHeldSeats(): void {
-    const seatIds = this.lockedSeatIds();
-
-    if (!seatIds.length) {
-      this.selectedSeatIds.set([]);
-      return;
-    }
-
-    this.isWorking.set(true);
-    this.publicApi.releaseSeats(this.eventId(), seatIds).subscribe({
-      next: () => {
-        this.selectedSeatIds.set([]);
-        this.lockedSeatIds.set([]);
-        this.holdExpiresAt.set('');
-        this.successMessage.set('Izbor je oslobodjen.');
-        this.loadSeats();
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Oslobadjanje sedista nije uspelo.');
-      },
-      complete: () => {
-        this.isWorking.set(false);
-      },
-    });
-  }
-
-  updateGuestField(field: keyof GuestForm, value: string): void {
-    this.guestForm.update((form) => ({ ...form, [field]: value }));
-  }
-
-  createOrder(): void {
-    const seatIds = this.lockedSeatIds();
-    if (seatIds.length === 0) {
-      this.errorMessage.set('Prvo zadrzite izabrana sedista.');
-      return;
-    }
-
-    const form = this.guestForm();
-    if (!form.fullName.trim() || !form.email.trim()) {
-      this.errorMessage.set('Ime i email su obavezni.');
-      return;
-    }
-
-    this.isWorking.set(true);
-    this.errorMessage.set('');
-    this.successMessage.set('');
-
-    this.publicApi
-      .createGuestOrder({
-        eventId: this.eventId(),
-        seatIds,
-        customerSnapshot: {
-          fullName: form.fullName,
-          email: form.email,
-          phone: form.phone,
-          address: form.address,
-          postalCode: form.postalCode,
-          city: form.city,
-          country: form.country,
-        },
-      })
-      .subscribe({
-        next: (response) => {
-          this.order.set(response.order);
-          this.selectedSeatIds.set([]);
-          this.lockedSeatIds.set([]);
-          this.holdExpiresAt.set('');
-          this.successMessage.set('Porudzbina je potvrdjena.');
-          const code = response.order?.orderCode || response.order?._id;
-          if (code) {
-            this.router.navigate(['/porudzbina', code]);
-          } else {
-            this.loadSeats();
-          }
-        },
-        error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Kreiranje porudzbine nije uspelo.');
-        },
-        complete: () => {
-          this.isWorking.set(false);
-        },
-      });
-  }
-
-  refresh(): void {
-    this.loadSeats();
   }
 }

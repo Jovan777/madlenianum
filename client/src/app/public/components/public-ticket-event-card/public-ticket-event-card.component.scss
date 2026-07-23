@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.event-card {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr) 260px;
+  align-items: stretch;
+  min-height: 188px;
+  overflow: hidden;
+  border: 1px solid rgba(246, 240, 232, 0.14);
+  border-radius: 8px;
+  color: var(--text-on-dark);
+  background:
+    linear-gradient(105deg, #101112 0%, #101112 64%, #18191a 100%);
+}
+
+.poster {
+  min-height: 188px;
+  background: #24201e;
+}
+
+.poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-copy {
+  display: grid;
+  align-content: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 28px 38px;
+}
+
+.meta-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.premiere {
+  padding: 3px 7px;
+  color: #fff;
+  background: var(--red);
+}
+
+h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3rem, 4.4vw, 5.2rem);
+  font-weight: 400;
+  line-height: 0.95;
+}
+
+p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted-on-dark);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+p i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.event-actions {
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  gap: 15px;
+  min-width: 240px;
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.event-actions a {
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-invert);
+  border-radius: 999px;
+  padding: 11px 20px;
+  color: var(--text-on-dark);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.status {
+  color: var(--gold);
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.event-actions a:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .event-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+    min-height: 116px;
+  }
+
+  .poster {
+    min-height: 116px;
+  }
+
+  .event-copy {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: clamp(1.7rem, 8vw, 2.5rem);
+  }
+
+  .event-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+  }
+}

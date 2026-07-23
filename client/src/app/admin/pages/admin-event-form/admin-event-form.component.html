@@ -18,7 +18,53 @@
 
     <section class="card" *ngIf="provider === 'internal'"><h2>5. Mapa sedišta</h2><p class="hint">Mapa definiše stalni fizički raspored sedišta za izabranu scenu.</p><div class="form-grid"><label>Mapa sedišta<select formControlName="seatMap"><option value="">Bez mape</option><option *ngFor="let item of seatMaps" [value]="item._id">{{item.name}}</option></select><small class="field-error" *ngIf="fieldError('seatMap')">{{fieldError('seatMap')}}</small></label><div class="setup-summary" *ngIf="selectedSeatMap() as map"><strong>{{map.name}}</strong><small>{{map.sections?.length||0}} sekcija · {{map.canvas?.width||'-'}} × {{map.canvas?.height||'-'}}</small></div></div></section>
 
-    <section class="card" *ngIf="provider === 'internal' && form.controls.saleStatus.value !== 'free'"><h2>6. Cenovnik</h2><p class="hint">Cenovnik definiše cene kategorija i mora odgovarati sceni, tipu predstave, datumu i premijernom statusu.</p><div class="form-grid"><label>Cenovnik<select formControlName="pricePlan"><option value="">Bez cenovnika</option><option *ngFor="let item of pricePlans" [value]="item._id">{{item.name}} · v{{item.revision||1}} · {{item.status}}</option></select><small class="field-error" *ngIf="fieldError('pricePlan')">{{fieldError('pricePlan')}}</small></label><div class="setup-summary" *ngIf="selectedPricePlan() as plan"><strong>{{plan.name}} · {{plan.currency}}</strong><small>{{plan.rules.length}} cena po kategorijama</small><ul><li *ngFor="let rule of plan.rules">{{formatRule(rule)}}</li></ul><a [routerLink]="['/admin/price-plans',plan._id,'edit']">Otvori cenovnik</a></div></div></section>
+    <section class="card" *ngIf="provider === 'internal' && form.controls.saleStatus.value !== 'free'">
+      <h2>6. Cenovnik</h2>
+      <p class="hint">Svi raspoloživi cenovnici ostaju dostupni. Preporučeni izbori odgovaraju sceni, tipu predstave, datumu, statusu i premijernoj oznaci.</p>
+      <div class="price-plan-layout">
+        <label>
+          Cenovnik
+          <select formControlName="pricePlan">
+            <option value="">Bez cenovnika</option>
+            <optgroup label="Preporučeni cenovnici" *ngIf="recommendedPricePlans.length">
+              <option *ngFor="let item of recommendedPricePlans" [value]="item._id">
+                {{item.name}} · v{{item.revision || 1}} · {{pricePlanStatusLabel(item.status)}}
+              </option>
+            </optgroup>
+            <optgroup label="Ostali raspoloživi cenovnici" *ngIf="otherPricePlans.length">
+              <option *ngFor="let item of otherPricePlans" [value]="item._id">
+                {{item.name}} · {{item.venue?.name || 'Bez scene'}} · v{{item.revision || 1}} · {{pricePlanStatusLabel(item.status)}}
+              </option>
+            </optgroup>
+          </select>
+          <small class="selector-note">{{ pricePlans.length }} cenovnika je dostupno za izbor. Backend proverava konačnu kompatibilnost pri čuvanju.</small>
+          <small class="field-error" *ngIf="fieldError('pricePlan')">{{fieldError('pricePlan')}}</small>
+        </label>
+
+        <div class="setup-summary price-plan-summary" *ngIf="selectedPricePlan() as plan">
+          <div class="plan-heading">
+            <div>
+              <strong>{{plan.name}} · v{{plan.revision || 1}}</strong>
+              <small>{{pricePlanStatusLabel(plan.status)}} · {{plan.currency}} · {{plan.isPremiere ? 'Premijera' : 'Regularno'}}</small>
+            </div>
+            <a [routerLink]="['/admin/price-plans',plan._id,'edit']">Otvori cenovnik</a>
+          </div>
+
+          <div class="compatibility-list" aria-label="Provera kompatibilnosti cenovnika">
+            <div *ngFor="let check of pricePlanCompatibility(plan)" [class.compatible]="check.valid" [class.incompatible]="!check.valid">
+              <span aria-hidden="true">{{ check.valid ? '✓' : '!' }}</span>
+              <p><strong>{{check.label}}</strong><small>{{check.detail}}</small></p>
+            </div>
+          </div>
+
+          <div class="plan-details">
+            <small>Tipovi: {{planProductionTypes(plan)}}</small>
+            <small>Važenje: {{planValidityLabel(plan)}}</small>
+          </div>
+          <ul><li *ngFor="let rule of plan.rules">{{formatRule(rule)}}</li></ul>
+        </div>
+      </div>
+    </section>
 
     <section class="card"><h2>7. Način prodaje</h2><p class="hint">Interni provider koristi mapu i cenovnik. PHP provider koristi legacy ID. Spoljni provider koristi bezbedan HTTP/HTTPS URL.</p><div class="nested" formGroupName="ticketing"><label>Provider<select formControlName="provider"><option *ngFor="let item of ticketingProviders" [value]="item.value">{{item.label}}</option></select></label><label class="check-row" *ngIf="provider !== 'manual'"><input type="checkbox" formControlName="enabled"/><span>Online ticketing je omogućen</span></label><label *ngIf="provider === 'legacy_php'">ID događaja u starom sistemu<input type="text" formControlName="legacyEventId"/><small class="field-error" *ngIf="fieldError('ticketing.legacyEventId')">{{fieldError('ticketing.legacyEventId')}}</small></label><label *ngIf="provider === 'external'">Spoljni URL za kupovinu<input type="url" formControlName="externalCheckoutUrl" placeholder="https://..."/><small class="field-error" *ngIf="fieldError('ticketing.externalCheckoutUrl')">{{fieldError('ticketing.externalCheckoutUrl')}}</small></label><label class="wide">Napomena za prodaju<textarea rows="3" formControlName="note"></textarea></label></div></section>
 

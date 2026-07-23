@@ -297,12 +297,17 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
   for (let box = 1; box <= 12; box += 1) {
     const isLeft = box <= 4;
     const isRight = box >= 5 && box <= 8;
-    const bottomIndex = box - 9;
+    const bottomBoxX = {
+      9: 240,
+      10: 390,
+      11: 860,
+      12: 1010,
+    };
     const boxX = isLeft
       ? 80
       : isRight
         ? 1240
-        : 285 + bottomIndex * 215;
+        : bottomBoxX[box];
     const boxY = isLeft
       ? 145 + (box - 1) * 145
       : isRight
@@ -334,7 +339,7 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
   }
 
   for (let sideBox = 1; sideBox <= 2; sideBox += 1) {
-    const boxX = sideBox === 1 ? 1090 : 550;
+    const boxX = sideBox === 1 ? 1160 : 540;
 
     for (let seat = 1; seat <= 3; seat += 1) {
       seats.push({
@@ -368,7 +373,7 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
       label: `Centralna loža ${seat}`,
       seatType: seat <= 6 ? "central_box" : "auxiliary",
       priceCategory: seat <= 6 ? categoryI._id : categoryIII._id,
-      x: 625 + ((seat - 1) % 4) * 38,
+      x: 670 + ((seat - 1) % 4) * 38,
       y: 780 + (seat > 4 ? 38 : 0),
       width: 32,
       height: 32,
