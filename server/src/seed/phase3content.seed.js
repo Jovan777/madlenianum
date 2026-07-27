@@ -25,6 +25,7 @@ const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
 const EventSeatOverride = require("../models/EventSeatOverride");
+const { runPhase6ASeed } = require("./phase6a.seed");
 
 const UPLOAD_ROOT = path.join(__dirname, "../../uploads/madlenianum");
 
@@ -1817,6 +1818,7 @@ const seedPhase3Content = async () => {
     });
 
     const siteSettings = await upsertSiteSettings({ socialImage: media.main.carmen });
+    const phase6aSeed = await runPhase6ASeed();
 
     const customers = {
       milica: await upsertCustomer({
@@ -1943,6 +1945,15 @@ const seedPhase3Content = async () => {
     console.log("");
     console.log("Seeded event seat overrides:");
     console.log({ event: events.staklena._id.toString(), count: seededOverrides });
+    console.log("");
+    console.log("Phase 6A seed data:");
+    console.log({
+      costumes: phase6aSeed.costumes.length,
+      propScenographyItems: phase6aSeed.propItems.length,
+      rentalSpaces: phase6aSeed.rentalSpaces.length,
+      rentalInquiry: phase6aSeed.rentalInquiry.referenceNumber,
+      eventPlanningInquiry: phase6aSeed.eventPlanningInquiry.referenceNumber,
+    });
 
     console.log("");
     console.log("Useful verification endpoints:");

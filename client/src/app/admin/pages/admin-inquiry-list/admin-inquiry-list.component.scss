@@ -1,0 +1,375 @@
+:host {
+  display: block;
+  color: #171512;
+}
+
+.inbox {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.inbox-hero {
+  padding: 28px 34px 30px;
+  border: 1px solid #2c2925;
+  background: #171512;
+  color: #fff;
+}
+
+.result-count,
+.inbox-intro {
+  margin: 0;
+  color: #f3eee5;
+}
+
+.result-count {
+  font-weight: 750;
+}
+
+.inbox h1 {
+  margin: 10px 0 8px;
+  color: #fff;
+  font: 400 clamp(2.7rem, 5vw, 4.6rem) Georgia, serif;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.inbox-intro {
+  max-width: 760px;
+  font-size: 1.03rem;
+  line-height: 1.5;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.tabs button {
+  min-height: 48px;
+  border: 1px solid #bdb6aa;
+  padding: 11px 20px;
+  background: #fff;
+  color: #171512;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  border-color: #a92f29;
+  background: #a92f29;
+  color: #fff;
+}
+
+.tabs button:focus-visible,
+.filters input:focus-visible,
+.filters select:focus-visible,
+.filters button:focus-visible,
+.cards > a:focus-visible,
+.pagination button:focus-visible {
+  outline: 3px solid #e5c86b;
+  outline-offset: 2px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.6fr) repeat(3, minmax(170px, 1fr));
+  gap: 16px;
+  align-items: end;
+  padding: 22px;
+  border: 1px solid #d4cec1;
+  background: #f8f5ee;
+}
+
+.filters label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #2d281f;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.filters input,
+.filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid #aaa397;
+  border-radius: 0;
+  padding: 10px 12px;
+  background: #fff;
+  color: #171512;
+  font: inherit;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.filter-actions button {
+  min-height: 46px;
+  border: 1px solid #171512;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.button-primary {
+  background: #171512;
+  color: #fff;
+}
+
+.button-secondary {
+  background: #fff;
+  color: #171512;
+}
+
+.state {
+  margin: 18px 0 0;
+  padding: 22px;
+  border: 1px solid #d4cec1;
+  background: #f8f5ee;
+  color: #2d281f;
+  text-align: center;
+}
+
+.state.error,
+.error {
+  color: #7a1713;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.cards > a {
+  display: block;
+  min-width: 0;
+  padding: 22px 24px;
+  border: 1px solid #d4cec1;
+  background: #fff;
+  color: #171512;
+  text-decoration: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.cards > a:hover {
+  border-color: #8e877b;
+  box-shadow: 0 7px 18px rgb(23 21 18 / 10%);
+}
+
+.card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badges span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  color: #332f29;
+  background: #ece8df;
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.status.new {
+  background: #f4d98b;
+  color: #4b3500;
+}
+
+.status.in_review {
+  background: #dce8f1;
+  color: #244860;
+}
+
+.status.contacted,
+.status.qualified {
+  background: #cce3cf;
+  color: #214d29;
+}
+
+.status.closed {
+  background: #dedede;
+  color: #3d3d3d;
+}
+
+.status.rejected {
+  background: #f2c8c8;
+  color: #681f1f;
+}
+
+.email.sent {
+  background: #dfeadf;
+  color: #1e5229;
+}
+
+.email.failed,
+.email.not_configured {
+  background: #ffe0dd;
+  color: #8d1f19;
+}
+
+.email.pending {
+  background: #eee7d8;
+  color: #554621;
+}
+
+.open-label {
+  flex: 0 0 auto;
+  color: #7a2924;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.cards h2 {
+  margin: 18px 0 7px;
+  color: #171512;
+  font-size: 1.24rem;
+  line-height: 1.25;
+}
+
+.cards strong {
+  display: block;
+  color: #342f28;
+  font-size: 0.98rem;
+}
+
+.space-name {
+  margin: 18px 0 0;
+  color: #514b42;
+  font-size: 1rem;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0 0;
+  padding-top: 15px;
+  border-top: 1px solid #d4cec1;
+}
+
+dt {
+  color: #625b51;
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+dd {
+  margin: 5px 0 0;
+  color: #171512;
+  font-weight: 650;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin: 26px 0 4px;
+  color: #f3eee5;
+}
+
+.pagination button {
+  min-height: 42px;
+  border: 1px solid #d4cec1;
+  padding: 8px 14px;
+  background: #fff;
+  color: #171512;
+  font: inherit;
+  font-weight: 700;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 1100px) {
+  .filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filter-search {
+    grid-column: span 2;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .inbox {
+    padding: 12px;
+  }
+
+  .inbox-hero {
+    padding: 24px 20px;
+  }
+
+  .tabs {
+    flex-direction: column;
+  }
+
+  .tabs button {
+    width: 100%;
+  }
+
+  .filters,
+  .filter-search {
+    grid-template-columns: 1fr;
+    grid-column: auto;
+  }
+
+  .filter-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cards > a {
+    padding: 19px 18px;
+  }
+
+  .card-topline {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .open-label {
+    align-self: flex-start;
+  }
+
+  dl {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cards > a {
+    transition: none;
+  }
+}

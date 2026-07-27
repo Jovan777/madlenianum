@@ -1,0 +1,148 @@
+<main class="detail">
+  <a class="back-link" routerLink="/admin/inquiries">← Nazad na upite</a>
+
+  <p class="state" *ngIf="loading()">Učitavanje upita...</p>
+  <p class="state state--error" *ngIf="error()">{{ error() }}</p>
+
+  <ng-container *ngIf="item() as entry">
+    <header class="detail-hero">
+      <div class="hero-copy">
+        <p class="inquiry-kind">{{ kind() === 'rental' ? 'Upit za konkretan prostor' : 'Opšti upit za događaj' }}</p>
+        <h1>{{ entry.referenceNumber }}</h1>
+        <p class="customer-line">
+          {{ entry.firstName }} {{ entry.lastName }}
+          <ng-container *ngIf="entry.companyName"> · {{ entry.companyName }}</ng-container>
+          <ng-container *ngIf="!entry.companyName"> · Fizičko lice</ng-container>
+        </p>
+      </div>
+      <div class="hero-badges" aria-label="Status upita i email isporuke">
+        <span [class]="'status status--' + entry.status">{{ status(entry.status) }}</span>
+        <span [class]="'email email--' + (entry.emailDelivery?.status || 'pending')">
+          {{ email(entry.emailDelivery?.status) }}
+        </span>
+      </div>
+    </header>
+
+    <div class="primary-grid">
+      <section class="panel request-panel" aria-labelledby="request-data-title">
+        <div class="section-heading">
+          <p>Primljeni podaci</p>
+          <h2 id="request-data-title">Podaci iz upita</h2>
+        </div>
+
+        <dl class="request-data">
+          <div class="data-block data-block--contact">
+            <dt>Kontakt</dt>
+            <dd>
+              <strong>{{ entry.firstName }} {{ entry.lastName }}</strong>
+              <a [href]="'mailto:' + entry.email">{{ entry.email }}</a>
+              <a [href]="'tel:' + entry.phone">{{ entry.phone }}</a>
+            </dd>
+          </div>
+          <div class="data-block" *ngIf="entry.companyName">
+            <dt>Kompanija</dt>
+            <dd>{{ entry.companyName }}</dd>
+          </div>
+          <div class="data-block">
+            <dt>{{ kind() === 'rental' ? 'Prostor' : 'Željeni prostor' }}</dt>
+            <dd>{{ space(entry) }}</dd>
+          </div>
+          <div class="data-block">
+            <dt>Željeni datum</dt>
+            <dd>{{ entry.desiredDate ? (entry.desiredDate | date: 'dd.MM.yyyy.') : 'Nije naveden' }}</dd>
+          </div>
+          <div class="data-block">
+            <dt>Broj gostiju</dt>
+            <dd>{{ entry.approximateGuestCount || 'Nije naveden' }}</dd>
+          </div>
+          <div class="data-block" *ngIf="eventType(entry)">
+            <dt>Tip događaja</dt>
+            <dd>{{ eventType(entry) }}</dd>
+          </div>
+          <div class="data-block data-block--wide">
+            <dt>Napomena</dt>
+            <dd class="note-value">{{ entry.note || 'Nema napomene' }}</dd>
+          </div>
+          <div class="data-block">
+            <dt>Upit primljen</dt>
+            <dd>{{ entry.createdAt | date: 'dd.MM.yyyy. HH:mm' }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel processing-panel" [formGroup]="form" aria-labelledby="processing-title">
+        <div class="section-heading">
+          <p>Interna obrada</p>
+          <h2 id="processing-title">Obrada upita</h2>
+        </div>
+
+        <div class="form-section">
+          <label>
+            Status
+            <select formControlName="status">
+              <option *ngFor="let option of statuses" [value]="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+          <label>
+            Razlog promene statusa
+            <textarea rows="3" formControlName="reason" placeholder="Kratka napomena uz promenu statusa"></textarea>
+          </label>
+          <button class="button-primary" type="button" (click)="saveStatus()" [disabled]="saving()">
+            {{ saving() ? 'Čuvanje...' : 'Sačuvaj status' }}
+          </button>
+        </div>
+
+        <div class="form-section form-section--notes">
+          <label>
+            Interne beleške
+            <textarea rows="6" formControlName="internalNotes" placeholder="Vidljivo samo administratorima"></textarea>
+          </label>
+          <button class="button-secondary" type="button" (click)="saveNotes()" [disabled]="saving()">
+            {{ saving() ? 'Čuvanje...' : 'Sačuvaj beleške' }}
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div class="secondary-grid">
+      <section class="panel email-panel" aria-labelledby="email-title">
+        <div class="section-heading section-heading--compact">
+          <p>Obaveštenje</p>
+          <h2 id="email-title">Email isporuka</h2>
+        </div>
+        <div class="email-summary">
+          <div>
+            <span>Trenutni status</span>
+            <strong>{{ email(entry.emailDelivery?.status) }}</strong>
+          </div>
+          <div *ngIf="entry.emailDelivery?.sentAt">
+            <span>Poslato</span>
+            <strong>{{ entry.emailDelivery?.sentAt | date: 'dd.MM.yyyy. HH:mm' }}</strong>
+          </div>
+        </div>
+        <p class="delivery-error" *ngIf="entry.emailDelivery?.lastError">{{ entry.emailDelivery?.lastError }}</p>
+        <button class="button-secondary" type="button" (click)="resend()" [disabled]="saving()">Pošalji ponovo</button>
+      </section>
+
+      <section class="panel history-panel" aria-labelledby="history-title">
+        <div class="section-heading section-heading--compact">
+          <p>Tok obrade</p>
+          <h2 id="history-title">Istorija statusa</h2>
+        </div>
+        <ol *ngIf="entry.statusHistory?.length; else emptyHistory">
+          <li *ngFor="let history of entry.statusHistory">
+            <span class="history-marker" aria-hidden="true"></span>
+            <div>
+              <strong>{{ status(history.toStatus) }}</strong>
+              <span>{{ history.changedAt | date: 'dd.MM.yyyy. HH:mm' }} · {{ history.source }}</span>
+              <p *ngIf="history.reason">{{ history.reason }}</p>
+            </div>
+          </li>
+        </ol>
+        <ng-template #emptyHistory>
+          <p class="empty-history">Nema zabeleženih promena statusa.</p>
+        </ng-template>
+      </section>
+    </div>
+  </ng-container>
+</main>

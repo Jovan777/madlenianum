@@ -54,6 +54,24 @@ const partnerSchema = new mongoose.Schema(
   { _id: true }
 );
 
+const inquiryRecipientsSchema = new mongoose.Schema(
+  {
+    rentalEmails: [{ type: String, lowercase: true, trim: true }],
+    eventPlanningEmails: [{ type: String, lowercase: true, trim: true }],
+  },
+  { _id: false }
+);
+
+const publicDepartmentContactSchema = new mongoose.Schema(
+  {
+    contactName: { type: String, trim: true, default: "" },
+    email: { type: String, lowercase: true, trim: true, default: "" },
+    phone: { type: String, trim: true, default: "" },
+    responseTimeText: { type: String, trim: true, default: "" },
+  },
+  { _id: false }
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, enum: ["default"], unique: true, default: "default", immutable: true },
@@ -66,6 +84,9 @@ const siteSettingsSchema = new mongoose.Schema(
     legalLinks: [navLinkSchema],
     footerNavigation: [footerGroupSchema],
     partnerLogos: [partnerSchema],
+    inquiryRecipients: { type: inquiryRecipientsSchema, default: () => ({}) },
+    fundusContact: { type: publicDepartmentContactSchema, default: () => ({}) },
+    commercialContact: { type: publicDepartmentContactSchema, default: () => ({}) },
     defaultSeo: { type: seoSchema, default: () => ({}) },
     socialImage: { type: mongoose.Schema.Types.ObjectId, ref: "Media" },
     languages: [{ type: String, enum: ["sr", "en"] }],

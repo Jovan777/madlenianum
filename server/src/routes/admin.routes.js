@@ -23,6 +23,11 @@ const adminOrderRoutes = require("./adminOrder.routes");
 const adminFormOptionsRoutes = require("./adminFormOptions.routes");
 const homepageConfigRoutes = require("./homepageConfig.routes");
 const siteSettingsRoutes = require("./siteSettings.routes");
+const costumeRoutes = require("./costume.routes");
+const propScenographyRoutes = require("./propScenography.routes");
+const rentalSpaceRoutes = require("./rentalSpace.routes");
+const rentalInquiryRoutes = require("./rentalInquiry.routes");
+const eventPlanningInquiryRoutes = require("./eventPlanningInquiry.routes");
 const { protectAdmin } = require("../middleware/auth.middleware");
 
 const router = express.Router();
@@ -52,5 +57,10 @@ router.use("/seats", seatRoutes);
 router.use("/form-options", adminFormOptionsRoutes);
 router.use("/homepage-config", homepageConfigRoutes);
 router.use("/site-settings", siteSettingsRoutes);
+router.use("/fundus/costumes", costumeRoutes);
+router.use("/fundus/props-scenography", propScenographyRoutes);
+router.use("/rental-spaces", rentalSpaceRoutes);
+router.use("/rental-inquiries", rentalInquiryRoutes);
+router.use("/event-planning-inquiries", eventPlanningInquiryRoutes);
 
 module.exports = router;

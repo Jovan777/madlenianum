@@ -176,5 +176,7 @@ const sendOrderConfirmation = async (order, accessToken, { isResend = false } = 
 
 module.exports = {
   buildOrderEmail,
+  createTransport,
+  escapeHtml,
   sendOrderConfirmation,
 };

@@ -6,6 +6,9 @@ const StaticPage = require("../models/StaticPage");
 const Venue = require("../models/Venue");
 const HomepageConfig = require("../models/HomepageConfig");
 const SiteSettings = require("../models/SiteSettings");
+const CostumeItem = require("../models/CostumeItem");
+const PropScenographyItem = require("../models/PropScenographyItem");
+const RentalSpace = require("../models/RentalSpace");
 
 const usageChecks = [
   { resourceType: "Production", Model: Production, titleField: "title", field: "poster" },
@@ -37,6 +40,16 @@ const usageChecks = [
   { resourceType: "SiteSettings", Model: SiteSettings, titleField: "siteName", field: "footerLogo" },
   { resourceType: "SiteSettings", Model: SiteSettings, titleField: "siteName", field: "socialImage" },
   { resourceType: "SiteSettings", Model: SiteSettings, titleField: "siteName", field: "partnerLogos.media" },
+  { resourceType: "CostumeItem", Model: CostumeItem, titleField: "title", field: "mainImage" },
+  { resourceType: "CostumeItem", Model: CostumeItem, titleField: "title", field: "gallery" },
+  { resourceType: "CostumeItem", Model: CostumeItem, titleField: "title", field: "galleryItems.media" },
+  { resourceType: "PropScenographyItem", Model: PropScenographyItem, titleField: "title", field: "mainImage" },
+  { resourceType: "PropScenographyItem", Model: PropScenographyItem, titleField: "title", field: "gallery" },
+  { resourceType: "PropScenographyItem", Model: PropScenographyItem, titleField: "title", field: "galleryItems.media" },
+  { resourceType: "RentalSpace", Model: RentalSpace, titleField: "title", field: "heroImage" },
+  { resourceType: "RentalSpace", Model: RentalSpace, titleField: "title", field: "gallery" },
+  { resourceType: "RentalSpace", Model: RentalSpace, titleField: "title", field: "galleryItems.media" },
+  { resourceType: "RentalSpace", Model: RentalSpace, titleField: "title", field: "floorPlanPdf" },
 ];
 
 const findMediaUsage = async (mediaId) => {

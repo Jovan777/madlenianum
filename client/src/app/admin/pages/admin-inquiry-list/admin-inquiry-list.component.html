@@ -1,0 +1,112 @@
+<section class="inbox">
+  <header class="inbox-hero">
+    <p class="result-count">{{ total() }} {{ total() === 1 ? 'rezultat' : 'rezultata' }}</p>
+    <h1>Zakup i upiti</h1>
+    <p class="inbox-intro">Operativni inbox za prostore i planiranje događaja. Status upita nije rezervacija.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Vrsta upita">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'rental'"
+      [class.active]="tab() === 'rental'"
+      (click)="setTab('rental')"
+    >
+      Upiti za konkretan prostor
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'planning'"
+      [class.active]="tab() === 'planning'"
+      (click)="setTab('planning')"
+    >
+      Opšti upiti za događaje
+    </button>
+  </div>
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="apply()">
+    <label class="filter-search">
+      Pretraga
+      <input formControlName="q" placeholder="Referenca, ime, firma ili email" />
+    </label>
+    <label>
+      Status
+      <select formControlName="status">
+        <option *ngFor="let option of statuses" [value]="option.value">{{ option.label }}</option>
+      </select>
+    </label>
+    <label>
+      Email
+      <select formControlName="emailStatus">
+        <option *ngFor="let option of emailStatuses" [value]="option.value">{{ option.label }}</option>
+      </select>
+    </label>
+    <label>
+      {{ tab() === 'rental' ? 'Prostor' : 'Željeni prostor' }}
+      <select formControlName="space">
+        <option value="">Svi prostori</option>
+        <option *ngFor="let space of spaces()" [value]="space.id">{{ space.title }}</option>
+      </select>
+    </label>
+    <label>
+      Željeni datum od
+      <input type="date" formControlName="desiredFrom" />
+    </label>
+    <label>
+      Željeni datum do
+      <input type="date" formControlName="desiredTo" />
+    </label>
+    <div class="filter-actions">
+      <button class="button-primary" type="submit">Primeni filtere</button>
+      <button class="button-secondary" type="button" (click)="clearFilters()">Poništi</button>
+    </div>
+  </form>
+
+  <p class="state" *ngIf="loading()">Učitavanje upita...</p>
+  <p class="state error" *ngIf="error()">{{ error() }}</p>
+  <p class="state" *ngIf="!loading() && !items().length">Nema upita za izabrane filtere.</p>
+
+  <div class="cards">
+    <a *ngFor="let item of items()" [routerLink]="['/admin/inquiries', kind(), item.id]">
+      <div class="card-topline">
+        <div class="badges">
+          <span [class]="'status ' + item.status">{{ status(item.status) }}</span>
+          <span [class]="'email ' + (item.emailDelivery?.status || '')">
+            {{ emailStatus(item.emailDelivery?.status) }}
+          </span>
+        </div>
+        <span class="open-label">Otvori upit</span>
+      </div>
+
+      <h2>{{ item.referenceNumber }}</h2>
+      <strong>
+        {{ item.firstName }} {{ item.lastName }}
+        <ng-container *ngIf="item.companyName"> · {{ item.companyName }}</ng-container>
+      </strong>
+      <p class="space-name">{{ spaceLabel(item) }}</p>
+
+      <dl>
+        <div>
+          <dt>Željeni datum</dt>
+          <dd>{{ item.desiredDate ? (item.desiredDate | date: 'dd.MM.yyyy.') : 'Nije naveden' }}</dd>
+        </div>
+        <div>
+          <dt>Broj gostiju</dt>
+          <dd>{{ item.approximateGuestCount || 'Nije naveden' }}</dd>
+        </div>
+        <div>
+          <dt>Kreirano</dt>
+          <dd>{{ item.createdAt | date: 'dd.MM.yyyy. HH:mm' }}</dd>
+        </div>
+      </dl>
+    </a>
+  </div>
+
+  <nav class="pagination" *ngIf="pages() > 1" aria-label="Stranice rezultata">
+    <button type="button" (click)="pageBy(-1)" [disabled]="page() === 1">Prethodna</button>
+    <span>Strana {{ page() }} od {{ pages() }}</span>
+    <button type="button" (click)="pageBy(1)" [disabled]="page() === pages()">Sledeća</button>
+  </nav>
+</section>

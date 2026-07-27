@@ -1,0 +1,64 @@
+@use '../admin-production-list/admin-production-list.component.scss';
+
+.content-list article {
+  min-height: 132px;
+}
+
+.badge--published {
+  background: #dfeadf;
+  color: #1e5229;
+}
+
+.badge--draft {
+  background: #eee7d8;
+  color: #554621;
+}
+
+.badge--archived {
+  background: #e4e4e4;
+  color: #454545;
+}
+
+.actions {
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.actions a,
+.actions button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 13px;
+  border-radius: 3px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.actions .action--primary {
+  border-color: var(--admin-ink);
+  background: var(--admin-ink);
+  color: #fff;
+}
+
+.actions .danger {
+  border-color: #a6403b;
+  background: #fff;
+  color: #8d1f19;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 24px;
+}
+
+@media (max-width: 760px) {
+  .actions {
+    justify-content: flex-start;
+  }
+}

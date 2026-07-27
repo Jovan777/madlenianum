@@ -14,6 +14,8 @@ export const PUBLIC_NAVIGATION: PublicNavigationItem[] = [
   { label: 'Repertoar', path: '/repertoar' },
   { label: 'Predstave', path: '/predstave' },
   { label: 'Umetnici', path: '/umetnici' },
+  { label: 'Fundusi', path: '/fundusi' },
+  { label: 'Zakup prostora', path: '/zakup-prostora' },
   { label: 'O Madlenianumu', path: '/strana/o-nama' },
   { label: 'Kontakt', path: '/strana/kontakt' },
 ];
@@ -49,6 +51,8 @@ const PUBLIC_EXACT_ROUTES = new Set([
   '/repertoar',
   '/predstave',
   '/umetnici',
+  '/fundusi',
+  '/zakup-prostora',
   '/strana/o-nama',
   '/strana/kontakt',
   '/porudzbina',
@@ -67,6 +71,8 @@ export function isAvailablePublicDestination(value: string): boolean {
   return PUBLIC_EXACT_ROUTES.has(url)
     || /^\/predstave\/[^/]+$/.test(url)
     || /^\/umetnici\/[^/]+$/.test(url)
+    || /^\/fundusi\/(kostimi|rekviziti-scenografija)\/[^/]+$/.test(url)
+    || /^\/zakup-prostora\/[^/]+$/.test(url)
     || /^\/kupovina\/[^/]+$/.test(url)
     || /^\/porudzbina\/[^/]+$/.test(url);
 }

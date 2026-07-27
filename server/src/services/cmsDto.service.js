@@ -496,6 +496,18 @@ const siteSettingsDto = (value) => {
       phone: item.contact?.phones?.[0] || "",
       ticketOfficePhone: item.contact?.ticketOfficePhones?.[0] || "",
     },
+    fundusContact: {
+      contactName: item.fundusContact?.contactName || "",
+      email: item.fundusContact?.email || item.contact?.generalEmail || "",
+      phone: item.fundusContact?.phone || item.contact?.phones?.[0] || "",
+      responseTimeText: item.fundusContact?.responseTimeText || "",
+    },
+    commercialContact: {
+      contactName: item.commercialContact?.contactName || "",
+      email: item.commercialContact?.email || item.contact?.generalEmail || "",
+      phone: item.commercialContact?.phone || item.contact?.phones?.[0] || "",
+      responseTimeText: item.commercialContact?.responseTimeText || "",
+    },
     socialLinks: (item.socialLinks || [])
       .filter((entry) => entry.enabled !== false)
       .map((entry, index) => ({

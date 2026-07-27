@@ -1,0 +1,111 @@
+<section class="cms-list-page">
+  <header class="list-hero">
+    <div>
+      <span>{{ total() }} predmeta</span>
+      <h1>Fundus</h1>
+      <p>Odvojeno upravljanje kostimima i rekvizitima/scenografijom.</p>
+    </div>
+    <a [routerLink]="['/admin/fundus', tab() === 'costumes' ? 'costumes' : 'props', 'new']">
+      Novi predmet
+    </a>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Vrsta fundusa">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'costumes'"
+      [class.active]="tab() === 'costumes'"
+      (click)="setTab('costumes')"
+    >
+      Kostimi
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === 'props'"
+      [class.active]="tab() === 'props'"
+      (click)="setTab('props')"
+    >
+      Rekviziti i scenografija
+    </button>
+  </div>
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="apply()">
+    <label>
+      Pretraga
+      <input formControlName="q" />
+    </label>
+    <label>
+      Status
+      <select formControlName="status">
+        <option value="">Svi</option>
+        <option value="draft">Nacrt</option>
+        <option value="published">Objavljeno</option>
+        <option value="archived">Arhivirano</option>
+      </select>
+    </label>
+    <label *ngIf="tab() === 'costumes'">
+      Pol
+      <select formControlName="gender">
+        <option value="">Svi</option>
+        <option value="female">Ženski</option>
+        <option value="male">Muški</option>
+        <option value="unisex">Uniseks</option>
+        <option value="children">Dečji</option>
+      </select>
+    </label>
+    <label *ngIf="tab() === 'props'">
+      Vrsta
+      <select formControlName="itemType">
+        <option value="">Sve</option>
+        <option value="prop">Rekvizit</option>
+        <option value="scenography">Scenografija</option>
+      </select>
+    </label>
+    <label>
+      Stanje
+      <select formControlName="condition">
+        <option value="">Sva</option>
+        <option value="excellent">Odlično</option>
+        <option value="good">Dobro</option>
+        <option value="fair">Zadovoljavajuće</option>
+        <option value="needs_repair">Potrebna popravka</option>
+      </select>
+    </label>
+    <button type="submit">Primeni</button>
+  </form>
+
+  <p class="state" *ngIf="loading()">Učitavanje...</p>
+  <p class="state error" *ngIf="error()">{{ error() }}</p>
+  <p class="state" *ngIf="!loading() && !items().length">Nema predmeta.</p>
+
+  <div class="content-list">
+    <article *ngFor="let item of items()">
+      <img *ngIf="image(item)" [src]="image(item)" [alt]="item.title" />
+      <div class="content-main">
+        <span [class]="'badge badge--' + item.status">{{ status(item.status) }}</span>
+        <h2>{{ item.title }}</h2>
+        <p>{{ subtitle(item) }} · {{ condition(item.condition) }}</p>
+        <small>{{ item.inventoryNumber }}</small>
+      </div>
+      <div class="actions" aria-label="Akcije za predmet">
+        <a class="action action--primary" [routerLink]="['/admin/fundus', tab() === 'costumes' ? 'costumes' : 'props', item.id, 'edit']">
+          Uredi
+        </a>
+        <a class="action" [routerLink]="['/admin/fundus', tab() === 'costumes' ? 'costumes' : 'props', item.id, 'preview']" target="_blank">
+          Pregled
+        </a>
+        <button *ngIf="item.status !== 'published'" type="button" (click)="publish(item)">Objavi</button>
+        <button type="button" (click)="archive(item)">Arhiviraj</button>
+        <button class="danger" type="button" (click)="remove(item)">Obriši</button>
+      </div>
+    </article>
+  </div>
+
+  <nav class="pagination" *ngIf="pages() > 1" aria-label="Stranice rezultata">
+    <button type="button" (click)="changePage(page() - 1)" [disabled]="page() === 1">Prethodna</button>
+    <span>{{ page() }} / {{ pages() }}</span>
+    <button type="button" (click)="changePage(page() + 1)" [disabled]="page() === pages()">Sledeća</button>
+  </nav>
+</section>

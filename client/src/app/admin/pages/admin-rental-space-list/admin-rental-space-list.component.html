@@ -1,0 +1,67 @@
+<section class="cms-list-page">
+  <header class="list-hero">
+    <div>
+      <span>{{ total() }} prostora</span>
+      <h1>Zakup prostora</h1>
+      <p>Sale i komercijalni prostori dostupni na javnom sajtu.</p>
+    </div>
+    <a routerLink="/admin/rental-spaces/new">Novi prostor</a>
+  </header>
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="load(true)">
+    <label>
+      Pretraga
+      <input formControlName="q" />
+    </label>
+    <label>
+      Status
+      <select formControlName="status">
+        <option value="">Svi</option>
+        <option value="draft">Nacrt</option>
+        <option value="published">Objavljeno</option>
+        <option value="archived">Arhivirano</option>
+      </select>
+    </label>
+    <label>
+      Izdvojeno
+      <select formControlName="isFeatured">
+        <option value="">Sve</option>
+        <option value="true">Da</option>
+        <option value="false">Ne</option>
+      </select>
+    </label>
+    <button type="submit">Primeni</button>
+  </form>
+
+  <p class="state" *ngIf="loading()">Učitavanje...</p>
+  <p class="state error" *ngIf="error()">{{ error() }}</p>
+  <p class="state" *ngIf="!loading() && !items().length">Nema prostora za izabrane filtere.</p>
+
+  <div class="content-list">
+    <article *ngFor="let item of items()">
+      <img *ngIf="image(item)" [src]="image(item)" [alt]="item.title" />
+      <div class="content-main">
+        <span [class]="'badge badge--' + item.status">{{ status(item.status) }}</span>
+        <h2>{{ item.title }}</h2>
+        <p>
+          <span *ngIf="item.seatedCapacity">{{ item.seatedCapacity }} sedećih</span>
+          <span *ngIf="item.standingCapacity"> · {{ item.standingCapacity }} stojećih</span>
+          <span *ngIf="item.areaSqm"> · {{ item.areaSqm }} m²</span>
+        </p>
+      </div>
+      <div class="actions" aria-label="Akcije za prostor">
+        <a class="action action--primary" [routerLink]="['/admin/rental-spaces', item.id, 'edit']">Uredi</a>
+        <a class="action" [routerLink]="['/admin/rental-spaces', item.id, 'preview']" target="_blank">Pregled</a>
+        <button *ngIf="item.status !== 'published'" type="button" (click)="publish(item)">Objavi</button>
+        <button type="button" (click)="archive(item)">Arhiviraj</button>
+        <button class="danger" type="button" (click)="remove(item)">Obriši</button>
+      </div>
+    </article>
+  </div>
+
+  <nav class="pagination" *ngIf="pages() > 1" aria-label="Stranice rezultata">
+    <button type="button" (click)="pageBy(-1)" [disabled]="page() === 1">Prethodna</button>
+    <span>{{ page() }} / {{ pages() }}</span>
+    <button type="button" (click)="pageBy(1)" [disabled]="page() === pages()">Sledeća</button>
+  </nav>
+</section>

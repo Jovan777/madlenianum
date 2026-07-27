@@ -13,6 +13,11 @@ const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
 const EventSeatOverride = require("../models/EventSeatOverride");
+const CostumeItem = require("../models/CostumeItem");
+const PropScenographyItem = require("../models/PropScenographyItem");
+const RentalSpace = require("../models/RentalSpace");
+const RentalInquiry = require("../models/RentalInquiry");
+const EventPlanningInquiry = require("../models/EventPlanningInquiry");
 const {
   validateEventConfiguration,
   validatePricePlanPayload,
@@ -40,6 +45,11 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     orderItemsCount,
     activeLocksCount,
     overrides,
+    costumeItemsCount,
+    propScenographyItemsCount,
+    rentalSpacesCount,
+    rentalInquiries,
+    eventPlanningInquiries,
   ] = await Promise.all([
     Production.countDocuments(),
     Artist.countDocuments(),
@@ -61,6 +71,11 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     EventSeatOverride.find()
       .populate("event", "seatMap venue startsAt status saleStatus")
       .populate("seat", "seatMap label"),
+    CostumeItem.countDocuments(),
+    PropScenographyItem.countDocuments(),
+    RentalSpace.countDocuments(),
+    RentalInquiry.find().select("referenceNumber status emailDelivery desiredDate createdAt"),
+    EventPlanningInquiry.find().select("referenceNumber status emailDelivery desiredDate createdAt"),
   ]);
 
   const warningItems = [];
@@ -75,11 +90,17 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       targetId: String(target._id),
       targetLabel: targetType === "order"
         ? target.orderCode
+        : targetType === "rentalInquiry" || targetType === "eventPlanningInquiry"
+        ? target.referenceNumber
         : targetType === "event"
         ? `${target.production?.title || "Termin"} - ${new Date(target.startsAt).toLocaleString("sr-RS")}`
         : target.name,
       link: targetType === "order"
         ? `/admin/orders/${target._id}`
+        : targetType === "rentalInquiry"
+        ? `/admin/rental-inquiries/${target._id}`
+        : targetType === "eventPlanningInquiry"
+        ? `/admin/event-planning-inquiries/${target._id}`
         : targetType === "event"
         ? `/admin/events/${target._id}`
         : targetType === "seatMap"
@@ -168,6 +189,25 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     }
   }
 
+  for (const inquiry of rentalInquiries) {
+    if (inquiry.emailDelivery?.status === "failed" || inquiry.emailDelivery?.status === "not_configured") {
+      addWarning({
+        code: "rental_inquiry_email_failed",
+        field: "emailDelivery",
+        message: "Obavestenje za upit o zakupu prostora nije poslato.",
+      }, "rentalInquiry", inquiry);
+    }
+  }
+  for (const inquiry of eventPlanningInquiries) {
+    if (inquiry.emailDelivery?.status === "failed" || inquiry.emailDelivery?.status === "not_configured") {
+      addWarning({
+        code: "event_planning_inquiry_email_failed",
+        field: "emailDelivery",
+        message: "Obavestenje za event planning upit nije poslato.",
+      }, "eventPlanningInquiry", inquiry);
+    }
+  }
+
   const activeOrderIds = orders
     .filter((order) => ["reserved", "pending_payment", "paid"].includes(order.status))
     .map((order) => order._id);
@@ -208,7 +248,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    status: warningItems.some((item) => item.targetType === "event") ? "warning" : "ok",
+    status: warningItems.length ? "warning" : "ok",
     counts: {
       productions: productionsCount,
       artists: artistsCount,
@@ -223,6 +263,11 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       orderItems: orderItemsCount,
       activeLocks: activeLocksCount,
       eventSeatOverrides: overrides.length,
+      costumeItems: costumeItemsCount,
+      propScenographyItems: propScenographyItemsCount,
+      rentalSpaces: rentalSpacesCount,
+      rentalInquiries: rentalInquiries.length,
+      eventPlanningInquiries: eventPlanningInquiries.length,
     },
     warnings: {
       eventsOnSale,

@@ -19,6 +19,17 @@ import {
   SeatLockResponse,
   SeatReleaseResponse,
 } from '../models/public.models';
+import {
+  CostumeItem,
+  EventPlanningInquiry,
+  EventPlanningInquiryPayload,
+  Phase6AItemResponse,
+  Phase6AListResponse,
+  PropScenographyItem,
+  RentalInquiry,
+  RentalInquiryPayload,
+  RentalSpace,
+} from '../models/phase6a.models';
 
 const PUBLIC_SESSION_KEY = 'madlenianum_public_session_id';
 
@@ -69,6 +80,54 @@ export class PublicApiService {
 
   getPage(slug: string) {
     return this.http.get<any>(`${this.apiUrl}/public/pages/${slug}`);
+  }
+
+  getCostumes(filters: Record<string, string | number | undefined> = {}) {
+    return this.http.get<Phase6AListResponse<CostumeItem>>(`${this.apiUrl}/public/fundus/costumes`, {
+      params: this.params(filters),
+    });
+  }
+
+  getCostume(slug: string) {
+    return this.http.get<Phase6AItemResponse<CostumeItem>>(`${this.apiUrl}/public/fundus/costumes/${encodeURIComponent(slug)}`);
+  }
+
+  getPropsScenography(filters: Record<string, string | number | undefined> = {}) {
+    return this.http.get<Phase6AListResponse<PropScenographyItem>>(`${this.apiUrl}/public/fundus/props-scenography`, {
+      params: this.params(filters),
+    });
+  }
+
+  getPropScenography(slug: string) {
+    return this.http.get<Phase6AItemResponse<PropScenographyItem>>(
+      `${this.apiUrl}/public/fundus/props-scenography/${encodeURIComponent(slug)}`
+    );
+  }
+
+  getRentalSpaces(filters: Record<string, string | number | undefined> = {}) {
+    return this.http.get<Phase6AListResponse<RentalSpace>>(`${this.apiUrl}/public/rental-spaces`, {
+      params: this.params(filters),
+    });
+  }
+
+  getRentalSpace(slug: string) {
+    return this.http.get<Phase6AItemResponse<RentalSpace>>(`${this.apiUrl}/public/rental-spaces/${encodeURIComponent(slug)}`);
+  }
+
+  createRentalInquiry(payload: RentalInquiryPayload) {
+    return this.http.post<Phase6AItemResponse<RentalInquiry> & { emailStatus?: string; idempotent?: boolean }>(
+      `${this.apiUrl}/public/rental-inquiries`,
+      payload,
+      { headers: { 'Idempotency-Key': payload.idempotencyKey } }
+    );
+  }
+
+  createEventPlanningInquiry(payload: EventPlanningInquiryPayload) {
+    return this.http.post<Phase6AItemResponse<EventPlanningInquiry> & { emailStatus?: string; idempotent?: boolean }>(
+      `${this.apiUrl}/public/event-planning-inquiries`,
+      payload,
+      { headers: { 'Idempotency-Key': payload.idempotencyKey } }
+    );
   }
 
   getEventSeats(eventId: string) {
@@ -256,5 +315,13 @@ export class PublicApiService {
     }
 
     return roots;
+  }
+
+  private params(values: Record<string, string | number | undefined>): HttpParams {
+    let params = new HttpParams();
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') params = params.set(key, String(value));
+    });
+    return params;
   }
 }

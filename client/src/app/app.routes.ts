@@ -160,6 +160,52 @@ export const routes: Routes = [
         component: AdminMediaLibraryComponent,
       },
       {
+        path: 'fundus/:kind/new',
+        loadComponent: () => import('./admin/pages/admin-fundus-form/admin-fundus-form.component').then((item) => item.AdminFundusFormComponent),
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'fundus/:kind/:id/edit',
+        loadComponent: () => import('./admin/pages/admin-fundus-form/admin-fundus-form.component').then((item) => item.AdminFundusFormComponent),
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'fundus/:kind/:id/preview',
+        loadComponent: () => import('./admin/pages/admin-phase6a-preview/admin-phase6a-preview.component').then((item) => item.AdminPhase6APreviewComponent),
+        data: { previewType: 'fundus' },
+      },
+      {
+        path: 'fundus',
+        loadComponent: () => import('./admin/pages/admin-fundus-list/admin-fundus-list.component').then((item) => item.AdminFundusListComponent),
+      },
+      {
+        path: 'rental-spaces/new',
+        loadComponent: () => import('./admin/pages/admin-rental-space-form/admin-rental-space-form.component').then((item) => item.AdminRentalSpaceFormComponent),
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'rental-spaces/:id/edit',
+        loadComponent: () => import('./admin/pages/admin-rental-space-form/admin-rental-space-form.component').then((item) => item.AdminRentalSpaceFormComponent),
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'rental-spaces/:id/preview',
+        loadComponent: () => import('./admin/pages/admin-phase6a-preview/admin-phase6a-preview.component').then((item) => item.AdminPhase6APreviewComponent),
+        data: { previewType: 'rental-space' },
+      },
+      {
+        path: 'rental-spaces',
+        loadComponent: () => import('./admin/pages/admin-rental-space-list/admin-rental-space-list.component').then((item) => item.AdminRentalSpaceListComponent),
+      },
+      {
+        path: 'inquiries/:kind/:id',
+        loadComponent: () => import('./admin/pages/admin-inquiry-detail/admin-inquiry-detail.component').then((item) => item.AdminInquiryDetailComponent),
+      },
+      {
+        path: 'inquiries',
+        loadComponent: () => import('./admin/pages/admin-inquiry-list/admin-inquiry-list.component').then((item) => item.AdminInquiryListComponent),
+      },
+      {
         path: ':resource/new',
         component: AdminResourceFormComponent,
       },
@@ -212,6 +258,28 @@ export const routes: Routes = [
       {
         path: 'umetnici/:slug',
         component: PublicArtistDetailComponent,
+      },
+      {
+        path: 'fundusi',
+        loadComponent: () => import('./public/pages/public-fundus/public-fundus.component').then((item) => item.PublicFundusComponent),
+      },
+      {
+        path: 'fundusi/kostimi/:slug',
+        loadComponent: () => import('./public/pages/public-fundus-detail/public-fundus-detail.component').then((item) => item.PublicFundusDetailComponent),
+        data: { kind: 'costume' },
+      },
+      {
+        path: 'fundusi/rekviziti-scenografija/:slug',
+        loadComponent: () => import('./public/pages/public-fundus-detail/public-fundus-detail.component').then((item) => item.PublicFundusDetailComponent),
+        data: { kind: 'prop' },
+      },
+      {
+        path: 'zakup-prostora',
+        loadComponent: () => import('./public/pages/public-rental-spaces/public-rental-spaces.component').then((item) => item.PublicRentalSpacesComponent),
+      },
+      {
+        path: 'zakup-prostora/:slug',
+        loadComponent: () => import('./public/pages/public-rental-space-detail/public-rental-space-detail.component').then((item) => item.PublicRentalSpaceDetailComponent),
       },
       {
         path: 'strana/:slug',

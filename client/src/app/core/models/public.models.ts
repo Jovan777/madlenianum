@@ -265,6 +265,8 @@ export interface PublicSiteSettings {
   partnerLogos: Array<{ label?: string; media?: PublicMedia | string | null; url?: string; displayOrder?: number }>;
   defaultSeo?: PublicSeo;
   contact?: { address?: string; generalEmail?: string; ticketOfficeEmail?: string; phones?: string[]; ticketOfficePhones?: string[] };
+  fundusContact?: { email?: string; phone?: string };
+  commercialContact?: { contactName?: string; email?: string; phone?: string; responseTimeText?: string };
 }
 
 export interface PublicSeat {

@@ -1,0 +1,12 @@
+<div class="lightbox" role="dialog" aria-modal="true" aria-label="Galerija fotografija" (click)="close()">
+  <div class="lightbox-content" (click)="$event.stopPropagation()">
+    <button class="close" type="button" aria-label="Zatvori galeriju" (click)="close()">×</button>
+    <button *ngIf="items().length > 1" class="previous" type="button" aria-label="Prethodna fotografija" (click)="previous()">‹</button>
+    <figure *ngIf="current() as item">
+      <img [src]="image(item)" [alt]="alt(item)" />
+      <figcaption *ngIf="caption(item)">{{ caption(item) }}</figcaption>
+    </figure>
+    <button *ngIf="items().length > 1" class="next" type="button" aria-label="Sledeća fotografija" (click)="next()">›</button>
+    <span class="counter" *ngIf="items().length > 1">{{ index() + 1 }} / {{ items().length }}</span>
+  </div>
+</div>

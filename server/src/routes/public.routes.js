@@ -14,6 +14,18 @@ const {
   sendContactMessage,
   getPublicSiteSettings,
 } = require("../controllers/public.controller");
+const {
+  getPublicCostume,
+  getPublicPropScenography,
+  listPublicCostumes,
+  listPublicPropsScenography,
+} = require("../controllers/fundus.controller");
+const {
+  createEventPlanningInquiry,
+  createRentalInquiry,
+  getPublicRentalSpace,
+  listPublicRentalSpaces,
+} = require("../controllers/rental.controller");
 
 const {
   getEventSeats,
@@ -42,6 +54,16 @@ router.get("/news/:slug", getNewsBySlug);
 
 router.get("/pages/:slug", getPageBySlug);
 router.get("/site-settings", getPublicSiteSettings);
+
+router.get("/fundus/costumes", listPublicCostumes);
+router.get("/fundus/costumes/:slug", getPublicCostume);
+router.get("/fundus/props-scenography", listPublicPropsScenography);
+router.get("/fundus/props-scenography/:slug", getPublicPropScenography);
+
+router.get("/rental-spaces", listPublicRentalSpaces);
+router.get("/rental-spaces/:slug", getPublicRentalSpace);
+router.post("/rental-inquiries", createRentalInquiry);
+router.post("/event-planning-inquiries", createEventPlanningInquiry);
 
 router.get("/events/:eventId/seats", getEventSeats);
 router.post("/events/:eventId/seats/lock", lockSeats);
