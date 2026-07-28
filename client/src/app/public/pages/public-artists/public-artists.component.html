@@ -1,22 +1,42 @@
-<div class="loading-state" *ngIf="isLoading()">Ucitavanje umetnika...</div>
+<div class="loading-state" *ngIf="isLoading()">Učitavanje umetnika...</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
-<section class="artists" *ngIf="!isLoading()">
-  <header>
-    <p class="eyebrow">Ansambl</p>
-    <h1>Umetnici</h1>
-    <p>Izvodjaci, autori i saradnici koji oblikuju repertoar Madlenianuma.</p>
-  </header>
+<main class="artists-page" *ngIf="!isLoading()">
+  <section class="artists-hero">
+    <div>
+      <p class="eyebrow">Ansambl Madlenianuma</p>
+      <h1>Umetnici</h1>
+      <p class="artists-hero__intro">Izvođači, autori i saradnici čiji talenat, iskustvo i posvećenost oblikuju naš repertoar.</p>
+    </div>
+    <aside *ngIf="artists().length">
+      <strong>{{ artists().length | number:'2.0-0' }}</strong>
+      <span>objavljena profila</span>
+    </aside>
+  </section>
 
-  <div class="empty-state" *ngIf="artists().length === 0">Umetnici jos nisu objavljeni.</div>
-
-  <div class="artist-grid" *ngIf="artists().length > 0">
-    <a *ngFor="let artist of artists(); let index = index" [routerLink]="['/umetnici', artist.slug]">
-      <img [src]="image(artist, index)" [alt]="name(artist)" />
+  <section class="artists-list" aria-labelledby="artists-list-title">
+    <header>
       <div>
-        <span>{{ professions(artist) }}</span>
-        <strong>{{ name(artist) }}</strong>
+        <p class="eyebrow">Lica scene</p>
+        <h2 id="artists-list-title">Naš ansambl</h2>
       </div>
-    </a>
-  </div>
-</section>
+      <p>Upoznajte umetnike i otkrijte predstave u kojima učestvuju.</p>
+    </header>
+
+    <div class="empty-state" *ngIf="artists().length === 0">Umetnici još nisu objavljeni.</div>
+
+    <div class="artist-grid" *ngIf="artists().length > 0">
+      <a class="artist-card" *ngFor="let artist of artists()" [routerLink]="['/umetnici', artist.slug]">
+        <figure>
+          <img *ngIf="image(artist); else portraitPlaceholder" [src]="image(artist)" [alt]="name(artist)" loading="lazy" />
+          <ng-template #portraitPlaceholder><span class="portrait-placeholder">{{ initials(artist) }}</span></ng-template>
+        </figure>
+        <div class="artist-card__copy">
+          <span class="artist-card__profession">{{ professions(artist) }}</span>
+          <h3>{{ name(artist) }}</h3>
+          <span class="artist-card__link">Profil umetnika <i aria-hidden="true">→</i></span>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>

@@ -1,5 +1,37 @@
-<section class="planning" id="planiranje">
-  <div class="planning-copy"><h2>Planirajte vaš događaj na vreme</h2><p>Kontaktirajte naš sektor komercijalnih poslova ili popunite brzu formu. {{responseText()}}</p><div class="contact"><h3>{{contactName()}}</h3><a *ngIf="phone()" [href]="'tel:'+phone()">{{phone()}}</a><a *ngIf="email()" [href]="'mailto:'+email()">{{email()}}</a></div></div>
-  <div class="success" *ngIf="reference();else planningForm"><h3>Hvala, upit je primljen</h3><p>Referentni broj: <strong>{{reference()}}</strong></p><p>Ovo je opšti upit za planiranje i ne predstavlja rezervaciju prostora.</p><p *ngIf="emailWarning()">Upit je sačuvan iako email obaveštenje trenutno nije poslato.</p></div>
-  <ng-template #planningForm><form [formGroup]="form" (ngSubmit)="submit()"><label>Ime *<input formControlName="firstName" autocomplete="given-name" /></label><label>Prezime *<input formControlName="lastName" autocomplete="family-name" /></label><label>Naziv kompanije<input formControlName="companyName" /></label><label>Email adresa *<input type="email" formControlName="email" autocomplete="email" /></label><label>Kontakt telefon *<input formControlName="phone" autocomplete="tel" /></label><label>Željeni prostor<select formControlName="preferredRentalSpace"><option value="">Nije odabran</option><option *ngFor="let space of spaces()" [value]="space.id">{{space.title}}</option></select></label><label>Datum<input type="date" formControlName="desiredDate" /></label><label>Okviran broj zvanica<input type="number" min="1" formControlName="approximateGuestCount" /></label><label>Tip događaja<input formControlName="eventType" placeholder="Konferencija, proslava, promocija..." /></label><label class="wide">Napomena<textarea rows="5" formControlName="note"></textarea></label><p class="error wide" *ngIf="error()">{{error()}}</p><button type="submit" [disabled]="submitting()">{{submitting()?'Slanje...':'Pošalji upit'}}</button></form></ng-template>
+<section class="planning" id="planiranje" aria-labelledby="planning-title">
+  <div class="planning-copy">
+    <h2 id="planning-title">Planirajte vaš događaj na vreme</h2>
+    <p>Kontaktirajte naš Sektor komercijalnih poslova direktno ili popunite brzu formu ispod, a {{responseText()}}</p>
+    <div class="contact">
+      <h3>Sektor komercijalnih poslova</h3>
+      <dl>
+        <div><dt>Kontakt osoba</dt><dd>{{contactName()}}</dd></div>
+        <div><dt>Telefon</dt><dd><a [href]="'tel:'+phone()">{{phone()}}</a></dd></div>
+        <div><dt>E-mail</dt><dd><a [href]="'mailto:'+email()">{{email()}}</a></dd></div>
+      </dl>
+    </div>
+  </div>
+  <div class="success" *ngIf="reference();else planningForm">
+    <span aria-hidden="true">✓</span>
+    <h3>Hvala, upit je primljen</h3>
+    <p>Referentni broj: <strong>{{reference()}}</strong></p>
+    <p>Naš tim će Vas kontaktirati u najkraćem roku.</p>
+    <p *ngIf="emailWarning()">Upit je sačuvan iako email obaveštenje trenutno nije poslato.</p>
+  </div>
+  <ng-template #planningForm>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label><span>Ime*</span><input formControlName="firstName" autocomplete="given-name" placeholder="Ime*" /></label>
+      <label><span>Prezime*</span><input formControlName="lastName" autocomplete="family-name" placeholder="Prezime*" /></label>
+      <label><span>Naziv kompanije</span><input formControlName="companyName" autocomplete="organization" placeholder="Naziv kompanije" /></label>
+      <label><span>Email adresa*</span><input type="email" formControlName="email" autocomplete="email" placeholder="Email adresa*" /></label>
+      <label><span>Kontakt telefon*</span><input formControlName="phone" autocomplete="tel" placeholder="Kontakt telefon*" /></label>
+      <label><span>Sala</span><select formControlName="preferredRentalSpace"><option value="">Sala</option><option *ngFor="let space of spaces()" [value]="space.id">{{space.title}}</option></select></label>
+      <label><span>Datum</span><input type="date" formControlName="desiredDate" /></label>
+      <label><span>Okviran broj zvanica</span><input type="number" min="1" formControlName="approximateGuestCount" placeholder="Okviran broj zvanica" /></label>
+      <label class="wide"><span>Tip događaja</span><input formControlName="eventType" placeholder="Tip događaja" /></label>
+      <label class="wide"><span>Napomena</span><textarea rows="4" formControlName="note" placeholder="Napomena"></textarea></label>
+      <p class="error wide" *ngIf="error()">{{error()}}</p>
+      <button type="submit" [disabled]="submitting()"><span class="send-icon" aria-hidden="true"></span>{{submitting()?'Slanje...':'Pošalji upit'}}</button>
+    </form>
+  </ng-template>
 </section>

@@ -2,13 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { PublicProduction } from '../../../core/models/public.models';
+import { PublicArtist, PublicExternalLink, PublicGalleryItem, PublicProduction } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicGalleryLightboxComponent } from '../../components/public-gallery-lightbox/public-gallery-lightbox.component';
 
 @Component({
   selector: 'app-public-artist-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PublicGalleryLightboxComponent],
   templateUrl: './public-artist-detail.component.html',
   styleUrl: './public-artist-detail.component.scss',
 })
@@ -16,8 +17,9 @@ export class PublicArtistDetailComponent implements OnInit {
   readonly publicApi = inject(PublicApiService);
   private readonly route = inject(ActivatedRoute);
 
-  readonly artist = signal<any | null>(null);
+  readonly artist = signal<PublicArtist | null>(null);
   readonly productions = signal<PublicProduction[]>([]);
+  readonly lightbox = signal<PublicGalleryItem[] | null>(null);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
 
@@ -26,7 +28,7 @@ export class PublicArtistDetailComponent implements OnInit {
 
     this.publicApi.getArtist(slug).subscribe({
       next: (response) => {
-        this.artist.set(this.publicApi.extractItem<any>(response, ['artist', 'item']));
+        this.artist.set(this.publicApi.extractItem<PublicArtist>(response, ['artist', 'item']));
         this.productions.set(this.publicApi.extractItems<PublicProduction>(response, ['productions']));
       },
       error: (error) => {
@@ -38,25 +40,54 @@ export class PublicArtistDetailComponent implements OnInit {
     });
   }
 
-  image(artist: any): string {
-    return this.publicApi.mediaUrl(artist?.image)
-      || this.publicApi.mediaUrl('/uploads/madlenianum/umetnici/nikola_rakocevic.jpg');
+  image(artist: PublicArtist): string {
+    return this.publicApi.mediaUrl(artist.image);
   }
 
-  name(artist: any): string {
-    return artist.displayName || artist.name || 'Umetnik';
+  name(artist: PublicArtist): string {
+    return artist.displayName || 'Umetnik';
   }
 
-  professions(artist: any): string {
+  professions(artist: PublicArtist): string {
     return Array.isArray(artist.professions) && artist.professions.length
       ? artist.professions.join(', ')
       : 'Ansambl';
   }
 
-  links(artist: any): any[] {
+  links(artist: PublicArtist): PublicExternalLink[] {
     return Array.isArray(artist.links)
-      ? artist.links.filter((link: any) => link?.url)
+      ? [...artist.links].filter((link) => link?.url).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
       : [];
+  }
+
+  linkType(link: PublicExternalLink): string {
+    const labels: Record<string, string> = {
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      youtube: 'YouTube',
+      linkedin: 'LinkedIn',
+      blog: 'Blog',
+      website: 'Web sajt',
+    };
+    return labels[(link.type || '').toLowerCase()] || 'Javni link';
+  }
+
+  gallery(artist: PublicArtist): PublicGalleryItem[] {
+    return Array.isArray(artist.galleryItems) ? artist.galleryItems : [];
+  }
+
+  galleryImage(item: PublicGalleryItem): string {
+    return this.publicApi.mediaUrl(item.media);
+  }
+
+  openGallery(items: PublicGalleryItem[], index: number): void {
+    this.lightbox.set([...items.slice(index), ...items.slice(0, index)]);
+  }
+
+  productionMeta(production: PublicProduction): string {
+    return production.roles?.length
+      ? `Uloga: ${production.roles.join(' / ')}`
+      : this.publicApi.typeLabel(production.type);
   }
 
   productionImage(production: PublicProduction, index: number): string {

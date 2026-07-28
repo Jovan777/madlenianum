@@ -1,3 +1,66 @@
-<section class="rental-hero"><div><h1>Vaš događaj u srcu kulture i glamura</h1><p>Madlenianum nudi pažljivo odabrane prostore za konferencije, koktele, promocije i proslave.</p><div><a class="outline" href="#prostori">Saznaj više</a><button type="button" (click)="scrollToPlanning()">Pošaljite upit za zakup</button></div></div></section>
-<p class="loading-state" *ngIf="loading()">Učitavanje prostora...</p><p class="error-state" *ngIf="error()">{{error()}}</p>
-<main *ngIf="!loading()&&!error()"><section class="spaces" id="prostori"><h2>Dostupne sale</h2><p class="empty" *ngIf="!spaces().length">Trenutno nema objavljenih prostora.</p><div class="space-grid"><article *ngFor="let space of spaces()"><img [src]="image(space)" [alt]="space.heroImage?.altText||space.title" loading="lazy" /><div class="facts"><span *ngIf="space.seatedCapacity">Sedeći: {{space.seatedCapacity}}</span><span *ngIf="space.standingCapacity">Stojeći: {{space.standingCapacity}}</span><span *ngIf="space.areaSqm">{{space.areaSqm}} m²</span><span *ngFor="let amenity of space.amenities|slice:0:2">{{amenity}}</span></div><h3>{{space.title}}</h3><p>{{space.shortDescription}}</p><div class="actions"><a [routerLink]="['/zakup-prostora',space.slug]">Saznaj više</a><a class="inquiry" [routerLink]="['/zakup-prostora',space.slug]" fragment="upit">Pošalji upit</a></div></article></div></section><app-public-event-planning-form [spaces]="spaces()" [settings]="settings()"/></main>
+<section class="rental-hero" aria-labelledby="rental-page-title">
+  <div class="rental-hero__content">
+    <h1 id="rental-page-title">Vaš događaj u srcu kulture i glamura</h1>
+    <p>
+      Madlenianum nudi ekskluzivne prostore za kongrese, konferencije, koktele,
+      modne revije i korporativne proslave. Spoj vrhunske tehnologije i tradicije.
+    </p>
+    <div class="rental-hero__actions">
+      <a class="hero-button hero-button--outline" href="#prostori">
+        <span class="info-icon" aria-hidden="true">i</span>
+        Saznaj više
+      </a>
+      <button class="hero-button hero-button--light" type="button" (click)="scrollToPlanning()">
+        <span class="message-icon" aria-hidden="true"></span>
+        Pošaljite upit za zakup
+      </button>
+    </div>
+  </div>
+</section>
+
+<p class="loading-state" *ngIf="loading()">Učitavanje prostora...</p>
+<p class="error-state" *ngIf="error()">{{ error() }}</p>
+
+<main *ngIf="!loading() && !error()">
+  <section class="spaces" id="prostori" aria-labelledby="spaces-title">
+    <h2 id="spaces-title">Dostupne sale</h2>
+
+    <p class="empty" *ngIf="!spaces().length">Trenutno nema objavljenih prostora.</p>
+
+    <div class="space-grid">
+      <article class="space-card" *ngFor="let space of spaces()">
+        <a class="space-card__image" [routerLink]="['/zakup-prostora', space.slug]">
+          <img
+            [src]="image(space)"
+            [alt]="space.heroImage?.altText || space.title"
+            loading="lazy"
+          />
+        </a>
+
+        <div class="space-card__facts" aria-label="Osnovni podaci o prostoru">
+          <span *ngFor="let fact of facts(space)">{{ fact }}</span>
+        </div>
+
+        <h3>{{ space.title }}</h3>
+        <p>{{ space.shortDescription }}</p>
+
+        <div class="space-card__actions">
+          <a class="card-button card-button--outline" [routerLink]="['/zakup-prostora', space.slug]">
+            <span class="info-icon" aria-hidden="true">i</span>
+            Saznaj više
+          </a>
+          <button class="card-button card-button--red" type="button" (click)="scrollToPlanning(space)">
+            <span class="message-icon" aria-hidden="true"></span>
+            Pošalji upit
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <app-public-event-planning-form
+    [spaces]="spaces()"
+    [settings]="settings()"
+    [preferredSpaceId]="selectedSpaceId()"
+  />
+</main>

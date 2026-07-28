@@ -11,6 +11,7 @@
     "seed:content": "node src/seed/phase3content.seed.js",
     "seed:phase3a": "node src/seed/phase3content.seed.js",
     "seed:phase6a": "node src/seed/phase6a.seed.js",
+    "seed:rental-spaces": "node src/seed/rentalSpaces.seed.js",
     "seed:remove-weight": "node src/seed/removeWeightFields.seed.js",
     "migrate:structured-content": "node src/migration/migrateStructuredContent.js",
     "migrate:phase4a-ticketing": "node src/migration/migratePhase4aTicketing.js",

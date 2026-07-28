@@ -10,6 +10,27 @@ export interface PublicMedia {
   path?: string;
 }
 
+export interface PublicExternalLink {
+  id?: string;
+  label?: string;
+  url: string;
+  type?: string;
+  displayOrder?: number;
+}
+
+export interface PublicArtist {
+  id?: string;
+  displayName: string;
+  slug: string;
+  professions?: string[];
+  biography?: string;
+  image?: PublicMedia | string | null;
+  gallery?: Array<PublicMedia | string>;
+  galleryItems?: PublicGalleryItem[];
+  links?: PublicExternalLink[];
+  seo?: PublicSeo;
+}
+
 export interface PublicProduction {
   _id?: string;
   id?: string;
@@ -38,6 +59,8 @@ export interface PublicProduction {
   subtitles?: string;
   premiereDate?: string;
   tags?: string[];
+  relationshipTypes?: string[];
+  roles?: string[];
   isFeatured?: boolean;
   status?: string;
   seo?: PublicSeo;

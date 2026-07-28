@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { PublicArtist } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
 
 @Component({
@@ -13,14 +14,14 @@ import { PublicApiService } from '../../../core/services/public-api.service';
 })
 export class PublicArtistsComponent implements OnInit {
   readonly publicApi = inject(PublicApiService);
-  readonly artists = signal<any[]>([]);
+  readonly artists = signal<PublicArtist[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
 
   ngOnInit(): void {
     this.publicApi.getArtists().subscribe({
       next: (response) => {
-        this.artists.set(this.publicApi.extractItems<any>(response, ['artists', 'items']));
+        this.artists.set(this.publicApi.extractItems<PublicArtist>(response, ['artists', 'items']));
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.message || 'Umetnici trenutno nisu dostupni.');
@@ -31,27 +32,25 @@ export class PublicArtistsComponent implements OnInit {
     });
   }
 
-  image(artist: any, index: number): string {
-    return this.publicApi.mediaUrl(artist.image) || this.artistFallback(index);
+  image(artist: PublicArtist): string {
+    return this.publicApi.mediaUrl(artist.image);
   }
 
-  name(artist: any): string {
-    return artist.displayName || artist.name || 'Umetnik';
+  name(artist: PublicArtist): string {
+    return artist.displayName || 'Umetnik';
   }
 
-  professions(artist: any): string {
+  professions(artist: PublicArtist): string {
     return Array.isArray(artist.professions) && artist.professions.length
       ? artist.professions.join(', ')
       : 'Ansambl';
   }
 
-  private artistFallback(index: number): string {
-    const images = [
-      '/uploads/madlenianum/umetnici/nikola_rakocevic.jpg',
-      '/uploads/madlenianum/umetnici/Tamara_Aleksic.jpg',
-      '/uploads/madlenianum/umetnici/ivan_vukovic.jpg',
-    ];
-
-    return this.publicApi.mediaUrl(images[Math.abs(index) % images.length]);
+  initials(artist: PublicArtist): string {
+    return this.name(artist)
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join('');
   }
 }
