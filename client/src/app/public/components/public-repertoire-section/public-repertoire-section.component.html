@@ -1,4 +1,4 @@
-<section class="repertoire-section">
+<section class="repertoire-section" data-motion="up">
   <div class="section-top">
     <h2>{{ heading() || 'Šta je na repertoaru' }}</h2>
     <div class="filters" role="tablist" aria-label="Filtriraj repertoar">
@@ -13,8 +13,8 @@
     </div>
   </div>
 
-  <div class="production-grid" *ngIf="visibleProductions().length; else emptyFilter">
-    <article *ngFor="let production of visibleProductions()">
+  <div class="production-grid" *ngIf="visibleProductions().length; else emptyFilter" data-motion-stagger>
+    <article *ngFor="let production of visibleProductions()" data-motion-item data-motion-card>
       <a class="image-link" [routerLink]="['/predstave', production.slug]">
         <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title" loading="lazy" />
         <div *ngIf="!image(production)" class="image-fallback" aria-hidden="true"></div>

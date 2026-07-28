@@ -1,4 +1,5 @@
 <section class="hero" tabindex="0" aria-roledescription="carousel" [attr.aria-label]="'Izdvojeno: ' + title()">
+  <ng-container *ngFor="let active of [activeSlide()]">
   <img
     *ngIf="imageUrl()"
     class="hero-image"
@@ -33,6 +34,7 @@
       <span class="sale-status" *ngIf="sale() && !sale()?.canPurchase">{{ sale()?.label }}</span>
     </div>
   </div>
+  </ng-container>
 
   <div class="slider-controls" *ngIf="slides().length > 1">
     <button type="button" (click)="previous()" aria-label="Prethodni slajd">‹</button>

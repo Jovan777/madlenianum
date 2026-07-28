@@ -2,11 +2,11 @@
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <ng-container *ngIf="!isLoading() && production() as item">
-  <section class="production-hero">
+  <section class="production-hero" data-motion="fade">
     <img class="hero-image" [src]="heroImage(item)" [alt]="item.title" />
     <div class="hero-shade"></div>
 
-    <div class="hero-content">
+    <div class="hero-content" data-motion="up">
       <p class="production-meta">{{ heroMeta(item) }}</p>
       <h1>{{ item.title }}</h1>
 
@@ -31,14 +31,14 @@
   </section>
 
   <main class="production-page">
-    <section class="synopsis-section">
-      <article class="synopsis-copy">
+    <section class="synopsis-section" data-motion="up">
+      <article class="synopsis-copy" data-motion="left">
         <h2>Sinopis</h2>
         <div class="rule"></div>
         <div class="rich-copy" [innerHTML]="synopsisHtml(item)"></div>
       </article>
 
-      <aside class="production-card" aria-label="Informacije o predstavi">
+      <aside class="production-card" aria-label="Informacije o predstavi" data-motion="right" data-motion-card>
         <p class="production-meta">{{ heroMeta(item) }}</p>
         <h2>{{ item.title }}</h2>
 
@@ -83,7 +83,7 @@
       </header>
 
       <div class="performance-track" aria-label="Sledeća izvođenja">
-        <article class="performance-card" *ngFor="let event of events()">
+        <article class="performance-card" *ngFor="let event of events()" data-motion="up" data-motion-card>
           <div class="performance-date">
             <strong>{{ eventDayMonth(event) }}</strong>
             <span>{{ eventTime(event) }}</span>
@@ -114,14 +114,14 @@
       </div>
     </section>
 
-    <section class="photo-section" *ngIf="galleryItems(item).length">
+    <section class="photo-section" *ngIf="galleryItems(item).length" data-motion="up">
       <header class="section-header section-header-invert">
         <h2>Fotografije</h2>
         <div class="rule"></div>
       </header>
 
-      <div class="photo-track">
-        <figure *ngFor="let media of galleryItems(item); let index = index">
+      <div class="photo-track" data-motion-stagger>
+        <figure *ngFor="let media of galleryItems(item); let index = index" data-motion-item data-motion-card>
           <img [src]="galleryImage(media, index)" [alt]="galleryAlt(media, item)" loading="lazy" />
         </figure>
       </div>
@@ -129,14 +129,14 @@
       <p class="photo-credit" *ngIf="galleryCredit(item)">Foto: {{ galleryCredit(item) }}</p>
     </section>
 
-    <section class="cast-section" *ngIf="castCards(item).length">
+    <section class="cast-section" *ngIf="castCards(item).length" data-motion="up">
       <header class="section-header">
         <h2>Glumci</h2>
         <div class="rule"></div>
       </header>
 
-      <div class="cast-grid">
-        <article class="cast-card" *ngFor="let member of castCards(item); let index = index">
+      <div class="cast-grid" data-motion-stagger>
+        <article class="cast-card" *ngFor="let member of castCards(item); let index = index" data-motion-item data-motion-card>
           <a class="cast-photo" *ngIf="artistSlug(member); else castPhotoOnly" [routerLink]="['/umetnici', artistSlug(member)]">
             <img [src]="castImage(member, index)" [alt]="castName(member)" loading="lazy" />
           </a>

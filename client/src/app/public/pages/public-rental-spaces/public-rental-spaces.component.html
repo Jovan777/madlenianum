@@ -1,4 +1,4 @@
-<section class="rental-hero" aria-labelledby="rental-page-title">
+<section class="rental-hero" aria-labelledby="rental-page-title" data-motion="fade">
   <div class="rental-hero__content">
     <h1 id="rental-page-title">Vaš događaj u srcu kulture i glamura</h1>
     <p>
@@ -22,13 +22,13 @@
 <p class="error-state" *ngIf="error()">{{ error() }}</p>
 
 <main *ngIf="!loading() && !error()">
-  <section class="spaces" id="prostori" aria-labelledby="spaces-title">
+  <section class="spaces" id="prostori" aria-labelledby="spaces-title" data-motion="up">
     <h2 id="spaces-title">Dostupne sale</h2>
 
     <p class="empty" *ngIf="!spaces().length">Trenutno nema objavljenih prostora.</p>
 
-    <div class="space-grid">
-      <article class="space-card" *ngFor="let space of spaces()">
+    <div class="space-grid" data-motion-stagger>
+      <article class="space-card" *ngFor="let space of spaces()" data-motion-item data-motion-card>
         <a class="space-card__image" [routerLink]="['/zakup-prostora', space.slug]">
           <img
             [src]="image(space)"
@@ -62,5 +62,6 @@
     [spaces]="spaces()"
     [settings]="settings()"
     [preferredSpaceId]="selectedSpaceId()"
+    data-motion="up"
   />
 </main>

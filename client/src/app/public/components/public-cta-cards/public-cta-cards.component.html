@@ -1,7 +1,7 @@
-<section class="cta-section" *ngIf="visibleCards().length">
+<section class="cta-section" *ngIf="visibleCards().length" data-motion="up">
   <h2>{{ heading() || 'Partnerstvo' }}</h2>
-  <div class="cta-grid">
-    <article *ngFor="let card of visibleCards()">
+  <div class="cta-grid" data-motion-stagger>
+    <article *ngFor="let card of visibleCards()" data-motion-item data-motion-card>
       <img *ngIf="media.resolve(card.image)" [src]="media.resolve(card.image)" [alt]="card.title" loading="lazy" />
       <div class="shade"></div>
       <div class="copy">

@@ -1,11 +1,11 @@
-<section class="featured-section" *ngIf="productions().length">
+<section class="featured-section" *ngIf="productions().length" data-motion="up">
   <header>
     <h2>{{ heading() || 'Ne propustite' }}</h2>
     <a routerLink="/predstave">Sve najave</a>
   </header>
 
-  <div class="feature-layout">
-    <article class="feature-card primary" *ngIf="productions()[0] as production">
+  <div class="feature-layout" data-motion-stagger>
+    <article class="feature-card primary" *ngIf="productions()[0] as production" data-motion-item data-motion-card>
       <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title" loading="lazy" />
       <div class="shade"></div>
       <div class="copy">
@@ -19,7 +19,7 @@
     </article>
 
     <div class="secondary-stack" *ngIf="productions().length > 1">
-      <article class="feature-card secondary" *ngFor="let production of productions().slice(1, 3)">
+      <article class="feature-card secondary" *ngFor="let production of productions().slice(1, 3)" data-motion-item data-motion-card>
         <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title" loading="lazy" />
         <div class="shade"></div>
         <div class="copy">

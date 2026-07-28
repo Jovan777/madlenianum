@@ -2,13 +2,13 @@
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <section class="productions" *ngIf="!isLoading()">
-  <header class="page-head">
+  <header class="page-head" data-motion="up">
     <p class="eyebrow">Repertoar</p>
     <h1>Predstave</h1>
     <p>Opera, drama, balet, koncerti i posebni scenski programi na jednom mestu.</p>
   </header>
 
-  <nav class="type-row" aria-label="Filter predstava" *ngIf="productions().length">
+  <nav class="type-row" aria-label="Filter predstava" *ngIf="productions().length" data-motion="fade">
     <a
       *ngFor="let type of types()"
       [routerLink]="['/predstave']"
@@ -23,11 +23,13 @@
     Nema objavljenih predstava za izabrani filter.
   </div>
 
-  <div class="work-grid" *ngIf="filteredProductions().length > 0">
+  <div class="work-grid" *ngIf="filteredProductions().length > 0" data-motion-stagger>
     <a
       class="work-card"
       *ngFor="let production of filteredProductions(); let index = index"
       [routerLink]="['/predstave', production.slug]"
+      data-motion-item
+      data-motion-card
     >
       <img [src]="image(production, index)" [alt]="production.title" />
       <div class="work-copy">

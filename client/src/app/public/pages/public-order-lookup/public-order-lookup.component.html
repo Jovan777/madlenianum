@@ -1,11 +1,11 @@
 <section class="order-page">
-  <header>
+  <header data-motion="up">
     <p class="eyebrow">Ulaznice</p>
     <h1>Pregled potvrde</h1>
     <p>Otvorite bezbedan link iz emaila ili unesite broj potvrde i email adresu.</p>
   </header>
 
-  <form class="lookup" [formGroup]="lookupForm" (ngSubmit)="lookup()">
+  <form class="lookup" [formGroup]="lookupForm" (ngSubmit)="lookup()" data-motion="up">
     <input aria-label="Broj potvrde" placeholder="MDL-..." formControlName="reference">
     <input aria-label="Email" type="email" placeholder="Email adresa" formControlName="email">
     <button class="btn btn-primary" type="submit" [disabled]="isLoading()">Pronađi</button>
@@ -14,7 +14,7 @@
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
   <p class="loading" *ngIf="isLoading()">Traženje potvrde...</p>
 
-  <article class="order-card" *ngIf="order() as item">
+  <article class="order-card" *ngIf="order() as item" data-motion="scale">
     <div class="order-head">
       <span>{{ item.orderTypeLabel }} · {{ item.statusLabel }}</span>
       <h2>{{ item.reference }}</h2>

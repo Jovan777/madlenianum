@@ -1,5 +1,5 @@
 <footer class="site-footer">
-  <div class="footer-inner">
+  <div class="footer-inner" data-motion="up">
     <div class="footer-groups" *ngIf="navigationGroups().length">
       <nav *ngFor="let group of navigationGroups()" [attr.aria-label]="group.title">
         <h2>{{ group.title }}</h2>
@@ -21,7 +21,7 @@
     </div>
   </div>
 
-  <div class="partner-row" *ngIf="partners().length">
+  <div class="partner-row" *ngIf="partners().length" data-motion="fade">
     <ng-container *ngFor="let partner of partners()">
       <a *ngIf="partner.url; else partnerOnly" [href]="partner.url" target="_blank" rel="noopener noreferrer"><img [src]="media.resolve(partner.media)" [alt]="partner.label || 'Partner'" loading="lazy" /></a>
       <ng-template #partnerOnly><img [src]="media.resolve(partner.media)" [alt]="partner.label || 'Partner'" loading="lazy" /></ng-template>

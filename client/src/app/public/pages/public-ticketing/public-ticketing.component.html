@@ -1,9 +1,9 @@
 <div class="loading-state" *ngIf="isLoading()">Učitavanje sale...</div>
 
 <section class="ticket-page" *ngIf="!isLoading() && event() as currentEvent">
-  <app-public-ticket-event-card [event]="currentEvent" />
+  <app-public-ticket-event-card [event]="currentEvent" data-motion="up" />
 
-  <nav class="stepper" aria-label="Koraci rezervacije i kupovine">
+  <nav class="stepper" aria-label="Koraci rezervacije i kupovine" data-motion="fade">
     <span [class.active]="step() === 1" [class.done]="step() > 1"><b>1</b> Sedišta</span>
     <span [class.active]="step() === 2" [class.done]="step() > 2"><b>2</b> Podaci</span>
     <span [class.active]="step() === 3" [class.done]="step() > 3"><b>3</b> Potvrda</span>
@@ -13,8 +13,8 @@
   <p class="alert error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
   <p class="alert success" *ngIf="successMessage()">{{ successMessage() }}</p>
 
-  <div class="ticket-grid" *ngIf="step() === 1">
-    <section class="map-panel">
+  <div class="ticket-grid" *ngIf="step() === 1" data-motion="fade">
+    <section class="map-panel" data-motion="left">
       <header class="map-heading">
         <div>
           <p class="eyebrow">Plan sale</p>
@@ -37,7 +37,7 @@
       />
     </section>
 
-    <aside class="checkout-card">
+    <aside class="checkout-card" data-motion="right">
       <p class="eyebrow">Vaš izbor</p>
       <div class="selection-count">
         <strong>{{ selectedSeats().length }}</strong>
@@ -77,7 +77,7 @@
     </aside>
   </div>
 
-  <div class="details-step" *ngIf="step() === 2">
+  <div class="details-step" *ngIf="step() === 2" data-motion="up">
     <form class="customer-card" [formGroup]="customerForm" (ngSubmit)="continueToReview()">
       <p class="eyebrow">Podaci gosta</p>
       <h2>Kontakt podaci</h2>
@@ -119,7 +119,7 @@
     </aside>
   </div>
 
-  <div class="details-step" *ngIf="step() === 3">
+  <div class="details-step" *ngIf="step() === 3" data-motion="up">
     <section class="review-card">
       <p class="eyebrow">Potvrda</p>
       <h2>Proverite podatke i izaberite akciju</h2>
@@ -162,7 +162,7 @@
     </section>
   </div>
 
-  <section class="confirmation" *ngIf="step() === 4 && order() as completedOrder">
+  <section class="confirmation" *ngIf="step() === 4 && order() as completedOrder" data-motion="scale">
     <span class="confirmation-mark" aria-hidden="true">✓</span>
     <p class="eyebrow">{{ completedStatusLabel() }}</p>
     <h2>Hvala, potvrda je kreirana.</h2>

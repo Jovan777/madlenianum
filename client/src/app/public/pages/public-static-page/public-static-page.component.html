@@ -7,10 +7,10 @@
     <app-public-contact-view *ngIf="isContact(item); else standardPage" [page]="item" />
 
     <ng-template #standardPage>
-      <section class="static-page">
-        <div class="page-image"><img [src]="image(item)" [alt]="item.title" /></div>
+      <section class="static-page" data-motion="up">
+        <div class="page-image" data-motion="left" data-motion-card><img [src]="image(item)" [alt]="item.title" /></div>
 
-        <article>
+        <article data-motion="right">
           <p class="eyebrow">Madlenianum</p>
           <h1>{{ item.title }}</h1>
           <div class="body" [innerHTML]="content(item)"></div>

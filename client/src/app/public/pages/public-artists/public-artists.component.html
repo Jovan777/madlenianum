@@ -2,7 +2,7 @@
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <main class="artists-page" *ngIf="!isLoading()">
-  <section class="artists-hero">
+  <section class="artists-hero" data-motion="up">
     <div>
       <p class="eyebrow">Ansambl Madlenianuma</p>
       <h1>Umetnici</h1>
@@ -14,7 +14,7 @@
     </aside>
   </section>
 
-  <section class="artists-list" aria-labelledby="artists-list-title">
+  <section class="artists-list" aria-labelledby="artists-list-title" data-motion="up">
     <header>
       <div>
         <p class="eyebrow">Lica scene</p>
@@ -25,8 +25,8 @@
 
     <div class="empty-state" *ngIf="artists().length === 0">Umetnici još nisu objavljeni.</div>
 
-    <div class="artist-grid" *ngIf="artists().length > 0">
-      <a class="artist-card" *ngFor="let artist of artists()" [routerLink]="['/umetnici', artist.slug]">
+    <div class="artist-grid" *ngIf="artists().length > 0" data-motion-stagger>
+      <a class="artist-card" *ngFor="let artist of artists()" [routerLink]="['/umetnici', artist.slug]" data-motion-item data-motion-card>
         <figure>
           <img *ngIf="image(artist); else portraitPlaceholder" [src]="image(artist)" [alt]="name(artist)" loading="lazy" />
           <ng-template #portraitPlaceholder><span class="portrait-placeholder">{{ initials(artist) }}</span></ng-template>

@@ -34,6 +34,17 @@
   --admin-gold: #e7c46d;
   --admin-gold-text: #6f4b13;
   --admin-shadow: 0 16px 40px rgba(33, 25, 15, 0.1);
+
+  --motion-duration-quick: 180ms;
+  --motion-duration-base: 380ms;
+  --motion-duration-slow: 820ms;
+  --motion-duration-hero: 1200ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0.65, 0.3, 1);
+  --motion-ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-distance: 44px;
+  --motion-stagger-step: 110ms;
+  --motion-hover-lift: -7px;
+  --motion-modal-scale: 0.95;
 }
 
 html {
@@ -94,6 +105,11 @@ img {
   min-height: 100vh;
 }
 
+.public-shell > main > router-outlet + * {
+  display: block;
+  animation: motion-route-enter var(--motion-duration-slow) var(--motion-ease-emphasis) both;
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -151,7 +167,11 @@ img {
   font-weight: 850;
   letter-spacing: 0;
   text-transform: uppercase;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition:
+    transform var(--motion-duration-quick) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+    background var(--motion-duration-quick) var(--motion-ease-standard),
+    border-color var(--motion-duration-quick) var(--motion-ease-standard);
 }
 
 .btn:hover {
@@ -196,6 +216,242 @@ img {
   color: var(--muted);
 }
 
+.public-shell [data-motion].motion-reveal-ready,
+.public-shell [data-motion-item].motion-reveal-ready {
+  opacity: 0;
+  transform: translate3d(0, var(--motion-distance), 0);
+  transition:
+    opacity var(--motion-duration-slow) var(--motion-ease-standard),
+    transform var(--motion-duration-slow) var(--motion-ease-emphasis);
+  transition-delay: calc(var(--motion-stagger-step) * var(--motion-index, 0));
+  will-change: opacity, transform;
+}
+
+.public-shell .motion-reveal-ready.motion-fade {
+  transform: none;
+}
+
+.public-shell .motion-reveal-ready.motion-left {
+  transform: translate3d(calc(var(--motion-distance) * -1), 0, 0);
+}
+
+.public-shell .motion-reveal-ready.motion-right {
+  transform: translate3d(var(--motion-distance), 0, 0);
+}
+
+.public-shell .motion-reveal-ready.motion-scale {
+  transform: scale(var(--motion-modal-scale));
+}
+
+.public-shell .motion-reveal-ready.motion-reveal-visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+.public-shell [data-motion-card] {
+  transition:
+    transform var(--motion-duration-base) var(--motion-ease-emphasis),
+    box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-quick) var(--motion-ease-standard);
+}
+
+.public-shell [data-motion-card] img {
+  transition: transform var(--motion-duration-slow) var(--motion-ease-emphasis);
+}
+
+.public-shell button,
+.public-shell a,
+.public-shell input,
+.public-shell textarea,
+.public-shell select {
+  transition-duration: var(--motion-duration-quick);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+.public-shell input,
+.public-shell textarea,
+.public-shell select {
+  transition-property: border-color, box-shadow, background-color;
+}
+
+.public-shell .form-validation,
+.public-shell .form-error,
+.public-shell .form-success,
+.public-shell .alert,
+.public-shell .success-state,
+.public-shell .error-state {
+  animation: motion-feedback-in var(--motion-duration-base) var(--motion-ease-emphasis) both;
+}
+
+@keyframes motion-feedback-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-shell [data-motion-card]:hover,
+  .public-shell [data-motion-card]:focus-within {
+    transform: translate3d(0, var(--motion-hover-lift), 0);
+  }
+
+  .public-shell [data-motion-card]:hover img,
+  .public-shell [data-motion-card]:focus-within img {
+    transform: scale(1.04);
+  }
+}
+
+/* Shared public navigation motion. Menus remain mounted so their exit can finish. */
+.public-shell .language-menu,
+.public-shell .mega-menu,
+.public-shell .menu-backdrop,
+.public-shell .mobile-panel {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.public-shell .language-menu {
+  transform: translate3d(0, -8px, 0) scale(0.98);
+  transform-origin: top right;
+  transition:
+    visibility 0s linear var(--motion-duration-base),
+    opacity var(--motion-duration-base) var(--motion-ease-standard),
+    transform var(--motion-duration-base) var(--motion-ease-emphasis);
+}
+
+.public-shell .mega-menu {
+  transform: translate3d(0, -18px, 0);
+  transform-origin: top center;
+  transition:
+    visibility 0s linear var(--motion-duration-slow),
+    opacity var(--motion-duration-slow) var(--motion-ease-standard),
+    transform var(--motion-duration-slow) var(--motion-ease-emphasis);
+}
+
+.public-shell .menu-backdrop {
+  backdrop-filter: blur(0);
+  transition:
+    visibility 0s linear var(--motion-duration-slow),
+    opacity var(--motion-duration-slow) var(--motion-ease-standard),
+    backdrop-filter var(--motion-duration-slow) var(--motion-ease-standard);
+}
+
+.public-shell .mobile-panel {
+  transform: translate3d(0, -24px, 0);
+  transition:
+    visibility 0s linear var(--motion-duration-slow),
+    opacity var(--motion-duration-slow) var(--motion-ease-standard),
+    transform var(--motion-duration-slow) var(--motion-ease-emphasis);
+}
+
+.public-shell .language-menu.is-open,
+.public-shell .mega-menu.is-open,
+.public-shell .menu-backdrop.is-open,
+.public-shell .mobile-panel.is-open {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.public-shell .menu-backdrop.is-open {
+  backdrop-filter: blur(3px);
+}
+
+.public-shell .mega-menu.is-open .compact-menu-heading,
+.public-shell .mega-menu.is-open .repertoire-card,
+.public-shell .mega-menu.is-open .repertoire-secondary,
+.public-shell .mega-menu.is-open .partner-grid > a,
+.public-shell .mega-menu.is-open .rental-grid > a {
+  animation: motion-menu-item-in 560ms var(--motion-ease-emphasis) both;
+}
+
+.public-shell .mega-menu.is-open :is(.repertoire-card, .partner-grid > a, .rental-grid > a):nth-child(2) { animation-delay: 45ms; }
+.public-shell .mega-menu.is-open :is(.repertoire-card, .partner-grid > a, .rental-grid > a):nth-child(3) { animation-delay: 90ms; }
+.public-shell .mega-menu.is-open :is(.repertoire-card, .partner-grid > a, .rental-grid > a):nth-child(4) { animation-delay: 135ms; }
+.public-shell .mega-menu.is-open :is(.repertoire-card, .partner-grid > a, .rental-grid > a):nth-child(5) { animation-delay: 180ms; }
+.public-shell .mega-menu.is-open :is(.repertoire-card, .partner-grid > a, .rental-grid > a):nth-child(6) { animation-delay: 225ms; }
+.public-shell .mega-menu.is-open :is(.repertoire-card, .partner-grid > a, .rental-grid > a):nth-child(7) { animation-delay: 270ms; }
+.public-shell .mega-menu.is-open :is(.repertoire-card, .partner-grid > a, .rental-grid > a):nth-child(8) { animation-delay: 315ms; }
+
+.public-shell .mobile-panel.is-open .mobile-main-links > a,
+.public-shell .mobile-panel.is-open section,
+.public-shell .mobile-panel.is-open .mobile-languages {
+  animation: motion-menu-item-in 520ms var(--motion-ease-emphasis) both;
+}
+
+.public-shell .mobile-panel.is-open .mobile-main-links > a:nth-child(2) { animation-delay: 45ms; }
+.public-shell .mobile-panel.is-open .mobile-main-links > a:nth-child(3) { animation-delay: 90ms; }
+.public-shell .mobile-panel.is-open .mobile-main-links > a:nth-child(4) { animation-delay: 135ms; }
+.public-shell .mobile-panel.is-open section:first-of-type { animation-delay: 180ms; }
+.public-shell .mobile-panel.is-open section:nth-of-type(2) { animation-delay: 225ms; }
+.public-shell .mobile-panel.is-open .mobile-languages { animation-delay: 270ms; }
+
+@keyframes motion-menu-item-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+}
+
+/* Existing editorial rules become a recurring, drawn gold signature. */
+.public-shell .motion-reveal-ready :is(.eyebrow, .section-kicker)::before,
+.public-shell :is(.eyebrow, .section-kicker).motion-reveal-ready::before {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 760ms var(--motion-ease-emphasis) 180ms;
+}
+
+.public-shell .motion-reveal-visible :is(.eyebrow, .section-kicker)::before,
+.public-shell :is(.eyebrow, .section-kicker).motion-reveal-visible::before {
+  transform: scaleX(1);
+}
+
+.public-shell :is(.view-tabs, .fundus-tabs, .filters, .date-tabs, .pagination) button {
+  transition:
+    color var(--motion-duration-base) var(--motion-ease-standard),
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard),
+    transform var(--motion-duration-base) var(--motion-ease-emphasis);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-shell :is(.view-tabs, .fundus-tabs, .filters, .date-tabs, .pagination) button:hover {
+    transform: translate3d(0, -2px, 0);
+  }
+
+  .public-shell footer a:hover {
+    transform: translate3d(3px, 0, 0);
+  }
+}
+
+.public-shell .current-programme,
+.public-shell .announcements,
+.public-shell .archive,
+.public-shell .details-step,
+.public-shell .ticket-grid,
+.public-shell .confirmation {
+  animation: motion-content-enter var(--motion-duration-base) var(--motion-ease-emphasis) both;
+}
+
+@keyframes motion-route-enter {
+  from {
+    opacity: 0.3;
+    transform: translate3d(0, 14px, 0);
+  }
+}
+
+@keyframes motion-content-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
 .error-state {
   color: var(--red);
 }
@@ -224,6 +480,8 @@ img {
 @media (max-width: 640px) {
   :root {
     --container: min(100vw - 24px, 1240px);
+    --motion-distance: 18px;
+    --motion-stagger-step: 55ms;
   }
 
   .display-title {
@@ -236,5 +494,30 @@ img {
 
   .btn {
     width: 100%;
+  }
+}
+
+html.motion-reduced {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .public-shell *,
+  .public-shell *::before,
+  .public-shell *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .public-shell .motion-reveal-ready,
+  .public-shell .motion-reveal-visible,
+  .public-shell [data-motion-card]:hover,
+  .public-shell [data-motion-card]:focus-within,
+  .public-shell [data-motion-card] img {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -27,6 +27,10 @@ export class PublicVideoModalComponent implements AfterViewInit, OnDestroy {
   readonly closed = output<void>();
   readonly closeButton = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly document = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly previousFocus = this.document.activeElement as HTMLElement | null;
+  private readonly previousOverflow = this.document.body.style.overflow;
 
   readonly embedUrl = computed<SafeResourceUrl | null>(() => {
     const safeUrl = this.buildEmbedUrl(this.video());
@@ -34,7 +38,7 @@ export class PublicVideoModalComponent implements AfterViewInit, OnDestroy {
   });
 
   constructor() {
-    document.body.style.overflow = 'hidden';
+    this.document.body.style.overflow = 'hidden';
   }
 
   ngAfterViewInit(): void {
@@ -42,12 +46,30 @@ export class PublicVideoModalComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    document.body.style.overflow = '';
+    this.document.body.style.overflow = this.previousOverflow;
+    this.previousFocus?.focus();
   }
 
   @HostListener('document:keydown.escape')
   close(): void {
     this.closed.emit();
+  }
+
+  @HostListener('document:keydown.tab', ['$event'])
+  trapFocus(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    const focusable = Array.from(this.host.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], iframe, [tabindex]:not([tabindex="-1"])'));
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (!first || !last) return;
+
+    if (keyboardEvent.shiftKey && this.document.activeElement === first) {
+      keyboardEvent.preventDefault();
+      last.focus();
+    } else if (!keyboardEvent.shiftKey && this.document.activeElement === last) {
+      keyboardEvent.preventDefault();
+      first.focus();
+    }
   }
 
   private buildEmbedUrl(video: PublicVideo): string {

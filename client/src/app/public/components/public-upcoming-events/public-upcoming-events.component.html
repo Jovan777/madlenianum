@@ -1,4 +1,4 @@
-<section class="upcoming-section">
+<section class="upcoming-section" data-motion="up">
   <header class="section-header">
     <h2>{{ heading() || 'Predstojeći događaji' }}</h2>
     <a routerLink="/repertoar">Pogledaj ceo repertoar</a>
@@ -18,8 +18,8 @@
       </button>
     </div>
 
-    <div class="event-list" role="tabpanel">
-      <article class="event-card" *ngFor="let event of selectedGroup()?.events">
+    <div class="event-list" role="tabpanel" data-motion-stagger>
+      <article class="event-card" *ngFor="let event of selectedGroup()?.events" data-motion-item data-motion-card>
         <div class="poster-wrap">
           <img *ngIf="image(event)" [src]="image(event)" [alt]="production(event)?.title || 'Predstava'" loading="lazy" />
           <div *ngIf="!image(event)" class="poster-fallback" aria-hidden="true"></div>

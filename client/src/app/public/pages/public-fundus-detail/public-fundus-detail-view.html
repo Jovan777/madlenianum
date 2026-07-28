@@ -2,12 +2,12 @@
 <p class="error-state" *ngIf="error()">{{ error() }} <a routerLink="/fundusi">Nazad na Fundus</a></p>
 
 <article *ngIf="item() as entry" class="detail">
-  <section class="detail-hero">
-    <button type="button" class="main-image" [class.main-image--costume]="isCostume(entry)" [class.main-image--interactive]="entry.galleryItems.length" (click)="openGallery(0)">
+  <section class="detail-hero" data-motion="up">
+    <button type="button" class="main-image" [class.main-image--costume]="isCostume(entry)" [class.main-image--interactive]="entry.galleryItems.length" (click)="openGallery(0)" data-motion="left" data-motion-card>
       <img [src]="image(entry.mainImage)" [alt]="entry.mainImage?.altText || entry.title" />
       <span *ngIf="entry.galleryItems.length">Otvori galeriju</span>
     </button>
-    <div class="copy">
+    <div class="copy" data-motion="right">
       <a class="back" routerLink="/fundusi"><span aria-hidden="true">←</span> Nazad na Fundus</a>
       <p class="eyebrow">{{ sectionLabel() }}</p>
       <p class="item-type">{{ isCostume(entry) ? gender(entry.gender) : type(entry.itemType) }}</p>
@@ -18,9 +18,9 @@
     </div>
   </section>
 
-  <section class="facts-section" aria-labelledby="facts-title">
+  <section class="facts-section" aria-labelledby="facts-title" data-motion="up">
     <div class="section-heading"><p class="eyebrow">Podaci o predmetu</p><h2 id="facts-title">Karakteristike</h2></div>
-    <dl class="facts-grid">
+    <dl class="facts-grid" data-motion-stagger>
       <div><dt>Inventarski broj</dt><dd>{{ entry.inventoryNumber }}</dd></div>
       <div><dt>Stanje</dt><dd>{{ condition(entry.condition) }}</dd></div>
       <ng-container *ngIf="isCostume(entry)">
@@ -41,25 +41,25 @@
     </dl>
   </section>
 
-  <section class="related-production" *ngIf="entry.relatedProduction as production">
+  <section class="related-production" *ngIf="entry.relatedProduction as production" data-motion="up">
     <div class="section-heading"><p class="eyebrow">Povezano sa predmetom</p><h2>Predstava</h2></div>
-    <a class="production-card" [routerLink]="['/predstave', production.slug]">
+    <a class="production-card" [routerLink]="['/predstave', production.slug]" data-motion-card>
       <figure><img [src]="relatedProductionImage(production)" [alt]="production.title" loading="lazy" /></figure>
       <div><p>{{ production.type || 'Predstava' }}</p><h3>{{ production.title }}</h3><span>Pogledajte predstavu <b aria-hidden="true">↗</b></span></div>
     </a>
   </section>
 
-  <section class="gallery" *ngIf="entry.galleryItems.length" aria-labelledby="gallery-title">
+  <section class="gallery" *ngIf="entry.galleryItems.length" aria-labelledby="gallery-title" data-motion="up">
     <div class="section-heading"><p class="eyebrow">Detalji predmeta</p><h2 id="gallery-title">Galerija</h2></div>
-    <div class="gallery-grid">
-      <button *ngFor="let galleryItem of entry.galleryItems; let i = index" type="button" (click)="openGallery(i)">
+    <div class="gallery-grid" data-motion-stagger>
+      <button *ngFor="let galleryItem of entry.galleryItems; let i = index" type="button" (click)="openGallery(i)" data-motion-item data-motion-card>
         <img [src]="image(galleryItem.media)" [alt]="galleryItem.altText || entry.title" loading="lazy" />
         <span *ngIf="galleryItem.caption">{{ galleryItem.caption }}</span>
       </button>
     </div>
   </section>
 
-  <section class="contact">
+  <section class="contact" data-motion="up">
     <div><p class="eyebrow">Kontakt Fundusa</p><h2>Informacije o predmetu</h2><p>Za dostupnost, korišćenje ili dodatne podatke o predmetu obratite se Madlenianumu.</p></div>
     <div class="contact-links">
       <a *ngIf="contactPhone()" [href]="'tel:' + contactPhone()"><span>Telefon</span>{{ contactPhone() }}</a>

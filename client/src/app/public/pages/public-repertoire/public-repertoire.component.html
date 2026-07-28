@@ -1,5 +1,5 @@
 <section class="repertoire-page">
-  <header class="repertoire-hero">
+  <header class="repertoire-hero" data-motion="fade">
     <img [src]="heroImage()" alt="Velika scena Madlenianuma" />
     <div class="hero-shade"></div>
     <div class="hero-content">
@@ -27,8 +27,8 @@
   </div>
 
   <main *ngIf="!isLoading() && !errorMessage()">
-    <section class="current-programme" *ngIf="activeView() === 'current'">
-      <div class="filter-row">
+    <section class="current-programme" *ngIf="activeView() === 'current'" data-motion="fade">
+      <div class="filter-row" data-motion="fade">
         <label class="filter-control">
           <span class="sr-only">Scena</span>
           <select [value]="activeVenue()" (change)="setVenue($any($event.target).value)">
@@ -51,7 +51,7 @@
         <p>Promenite scenu ili žanr da biste videli druge događaje.</p>
       </div>
 
-      <section class="month-group" *ngFor="let month of monthGroups(); let monthIndex = index">
+      <section class="month-group" *ngFor="let month of monthGroups(); let monthIndex = index" data-motion="up">
         <h2 class="month-name">{{ month.label }}</h2>
         <div class="month-events">
           <section class="date-group" *ngFor="let date of month.dateGroups; let dateIndex = index">
@@ -61,6 +61,8 @@
                 *ngFor="let event of date.events; let eventIndex = index"
                 [event]="event"
                 [imageIndex]="monthIndex + dateIndex + eventIndex"
+                data-motion="up"
+                data-motion-card
               />
             </div>
           </section>
@@ -68,12 +70,13 @@
       </section>
     </section>
 
-    <section class="announcements" *ngIf="activeView() === 'announced'">
+    <section class="announcements" *ngIf="activeView() === 'announced'" data-motion="fade">
       <app-public-repertoire-announcement
         *ngFor="let production of announcements(); let index = index"
         [production]="production"
         [imageIndex]="index"
         [alignRight]="index % 2 === 1"
+        data-motion="up"
       />
 
       <div class="empty-panel dark" *ngIf="announcements().length === 0">
@@ -82,7 +85,7 @@
       </div>
     </section>
 
-    <section class="archive" *ngIf="activeView() === 'archive'">
+    <section class="archive" *ngIf="activeView() === 'archive'" data-motion="fade">
       <div class="archive-filters">
         <label class="filter-control">
           <span class="sr-only">Scena</span>
@@ -117,11 +120,13 @@
         </label>
       </div>
 
-      <div class="archive-grid" *ngIf="archiveEntries().length">
+      <div class="archive-grid" *ngIf="archiveEntries().length" data-motion-stagger>
         <app-public-repertoire-archive-card
           *ngFor="let entry of archiveEntries(); let index = index"
           [production]="entry.production"
           [imageIndex]="index"
+          data-motion-item
+          data-motion-card
         />
       </div>
 

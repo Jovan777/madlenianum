@@ -1,8 +1,8 @@
 <div class="lightbox" role="dialog" aria-modal="true" aria-label="Galerija fotografija" (click)="close()">
   <div class="lightbox-content" (click)="$event.stopPropagation()">
-    <button class="close" type="button" aria-label="Zatvori galeriju" (click)="close()">×</button>
+    <button #closeButton class="close" type="button" aria-label="Zatvori galeriju" (click)="close()">×</button>
     <button *ngIf="items().length > 1" class="previous" type="button" aria-label="Prethodna fotografija" (click)="previous()">‹</button>
-    <figure *ngIf="current() as item">
+    <figure *ngFor="let item of [current()]">
       <img [src]="image(item)" [alt]="alt(item)" />
       <figcaption *ngIf="caption(item)">{{ caption(item) }}</figcaption>
     </figure>

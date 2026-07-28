@@ -1,4 +1,4 @@
-<section class="fundus-hero" aria-labelledby="fundus-title">
+<section class="fundus-hero" aria-labelledby="fundus-title" data-motion="fade">
   <img class="fundus-hero__image" [src]="heroImage()" alt="" aria-hidden="true" />
   <div class="fundus-hero__inner">
     <h1 id="fundus-title">Fundusi</h1>
@@ -23,7 +23,7 @@
 
 <main class="fundus-content">
   <div class="fundus-content__inner">
-    <form class="fundus-filters" [formGroup]="filters" (ngSubmit)="apply()">
+    <form class="fundus-filters" [formGroup]="filters" (ngSubmit)="apply()" data-motion="up">
       <label class="search-field">
         <span class="sr-only">Pretraga</span>
         <input formControlName="q" placeholder="Pretraga" autocomplete="off" />
@@ -77,11 +77,13 @@
       </div>
       <p class="state" *ngIf="!loading() && !error() && total() === 0">Nema objavljenih predmeta za izabrane filtere.</p>
 
-      <div class="fundus-grid" *ngIf="!loading() && !error() && total() > 0">
+      <div class="fundus-grid" *ngIf="!loading() && !error() && total() > 0" data-motion-stagger>
         <a
           class="fundus-card"
           *ngFor="let item of visibleItems(); trackBy: trackById"
           [routerLink]="detailRoute(item)"
+          data-motion-item
+          data-motion-card
         >
           <span class="fundus-card__image">
             <img [src]="image(item)" [alt]="item.mainImage?.altText || item.title" loading="lazy" />
@@ -90,7 +92,7 @@
         </a>
       </div>
 
-      <nav class="pagination" *ngIf="totalPages() > 1" aria-label="Stranice fundusa">
+      <nav class="pagination" *ngIf="totalPages() > 1" aria-label="Stranice fundusa" data-motion="fade">
         <button type="button" aria-label="Prva stranica" [disabled]="page() === 1" (click)="changePage(1)">|‹</button>
         <button type="button" aria-label="Prethodna stranica" [disabled]="page() === 1" (click)="changePage(page() - 1)">‹</button>
         <button

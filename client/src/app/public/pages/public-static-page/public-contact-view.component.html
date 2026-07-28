@@ -1,4 +1,4 @@
-<section class="contact-hero" [style.background-image]="'url(' + heroImage() + ')'">
+<section class="contact-hero" [style.background-image]="'url(' + heroImage() + ')'" data-motion="fade">
   <div class="contact-hero__shade"></div>
   <div class="contact-hero__content">
     <p class="eyebrow">Madlenianum</p>
@@ -8,20 +8,20 @@
 </section>
 
 <main class="contact-page">
-  <section class="contact-intro">
+  <section class="contact-intro" data-motion="up">
     <div><p class="eyebrow">Razgovarajmo</p><h2>Posetite nas ili nam pišite</h2></div>
     <div class="contact-intro__copy" [innerHTML]="page?.contact?.introduction || page?.body"></div>
   </section>
 
-  <section class="contact-facts" aria-label="Kontakt podaci">
-    <div class="contact-fact"><span>Adresa</span><strong>{{ address() }}</strong></div>
-    <div class="contact-fact"><span>Telefon</span><a [href]="phoneHref()">{{ phone() }}</a></div>
-    <div class="contact-fact"><span>E-mail</span><a [href]="'mailto:' + email()">{{ email() }}</a></div>
-    <div class="contact-fact"><span>Radno vreme</span><strong>{{ officeHours() }}</strong></div>
+  <section class="contact-facts" aria-label="Kontakt podaci" data-motion-stagger>
+    <div class="contact-fact" data-motion-item data-motion-card><span>Adresa</span><strong>{{ address() }}</strong></div>
+    <div class="contact-fact" data-motion-item data-motion-card><span>Telefon</span><a [href]="phoneHref()">{{ phone() }}</a></div>
+    <div class="contact-fact" data-motion-item data-motion-card><span>E-mail</span><a [href]="'mailto:' + email()">{{ email() }}</a></div>
+    <div class="contact-fact" data-motion-item data-motion-card><span>Radno vreme</span><strong>{{ officeHours() }}</strong></div>
   </section>
 
-  <section class="contact-workspace">
-    <div class="contact-map">
+  <section class="contact-workspace" data-motion="up">
+    <div class="contact-map" data-motion="left">
       <iframe [src]="mapUrl" title="Lokacija Madlenianuma" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       <div class="contact-map__footer">
         <div><span>Naša lokacija</span><strong>{{ address() }}</strong></div>
@@ -29,7 +29,7 @@
       </div>
     </div>
 
-    <div class="contact-form-wrap">
+    <div class="contact-form-wrap" data-motion="right">
       <p class="eyebrow">Pošaljite poruku</p>
       <h2>Kako možemo da pomognemo?</h2>
       <p class="form-lead">Popunite formu i naš tim će Vam odgovoriti u najkraćem roku.</p>
@@ -46,7 +46,7 @@
     </div>
   </section>
 
-  <section class="contact-extra" *ngIf="additionalItems().length || socialLinks().length">
+  <section class="contact-extra" *ngIf="additionalItems().length || socialLinks().length" data-motion="up">
     <div *ngFor="let item of additionalItems()"><span>{{ item.label }}</span><a *ngIf="item.link; else plainValue" [href]="item.link">{{ item.value }}</a><ng-template #plainValue><strong>{{ item.value }}</strong></ng-template></div>
     <div *ngIf="socialLinks().length"><span>Pratite nas</span><p><a *ngFor="let link of socialLinks()" [href]="link.url" target="_blank" rel="noreferrer">{{ link.label || link.platform }}</a></p></div>
   </section>

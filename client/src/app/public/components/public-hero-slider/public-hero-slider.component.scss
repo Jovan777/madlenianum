@@ -26,6 +26,7 @@
   z-index: -3;
   object-fit: cover;
   object-position: center 32%;
+  animation: hero-media-enter var(--motion-duration-hero) var(--motion-ease-emphasis) both;
 }
 .hero-fallback {
   z-index: -3;
@@ -56,6 +57,7 @@
   margin-bottom: 0.55rem;
   font-size: 0.86rem;
   text-transform: uppercase;
+  animation: hero-element-enter 680ms var(--motion-ease-emphasis) 80ms both;
 }
 .meta-row > span:first-child {
   color: #d4b263;
@@ -73,6 +75,7 @@
   font-size: clamp(3.1rem, 4.25vw, 4rem);
   font-weight: 400;
   line-height: 1;
+  animation: hero-title-enter 900ms var(--motion-ease-emphasis) 150ms both;
 }
 .hero-content > p {
   max-width: 592px;
@@ -80,12 +83,14 @@
   color: #f2f2f2;
   font-size: 1rem;
   line-height: 1.45;
+  animation: hero-element-enter 760ms var(--motion-ease-emphasis) 280ms both;
 }
 .hero-actions {
   display: flex;
   gap: 1.5rem;
   align-items: center;
   flex-wrap: wrap;
+  animation: hero-element-enter 760ms var(--motion-ease-emphasis) 390ms both;
 }
 .outline-action,
 .ticket-action,
@@ -119,6 +124,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  animation: hero-controls-enter 620ms var(--motion-ease-emphasis) 520ms both;
 }
 .slider-controls > button {
   width: 38px;
@@ -143,6 +149,57 @@
 }
 .indicators button.active {
   background: #fff;
+}
+
+.outline-action,
+.ticket-action,
+.slider-controls button,
+.indicators button {
+  transition:
+    transform var(--motion-duration-quick) var(--motion-ease-standard),
+    color var(--motion-duration-quick) var(--motion-ease-standard),
+    border-color var(--motion-duration-quick) var(--motion-ease-standard),
+    background-color var(--motion-duration-quick) var(--motion-ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .outline-action:hover,
+  .ticket-action:hover,
+  .slider-controls > button:hover {
+    transform: translateY(-2px);
+  }
+
+  .indicators button:hover {
+    transform: scale(1.25);
+  }
+}
+
+@keyframes hero-media-enter {
+  from {
+    opacity: 0.25;
+    transform: translate3d(1.5%, 0, 0) scale(1.09);
+  }
+}
+
+@keyframes hero-element-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 30px, 0);
+  }
+}
+
+@keyframes hero-title-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(-34px, 0, 0);
+  }
+}
+
+@keyframes hero-controls-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(-22px, 0, 0);
+  }
 }
 .hero a:focus-visible,
 .hero button:focus-visible {
@@ -184,8 +241,15 @@
     bottom: 2rem;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  * {
-    scroll-behavior: auto !important;
+@media all {
+  :host-context(.motion-reduced) {
+  .hero-image,
+  .meta-row,
+  .hero h1,
+  .hero-content > p,
+  .hero-actions,
+  .slider-controls {
+    animation: none;
+  }
   }
 }

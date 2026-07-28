@@ -16,7 +16,7 @@
         <button class="language-trigger" type="button" aria-label="Izbor jezika" aria-haspopup="true" [attr.aria-expanded]="languageMenuOpen()" (click)="toggleLanguageMenu()">
           <img src="/madlenianum/about/Serbia.png" alt="Srpski" /><span class="language-code">SR</span><span class="chevron" aria-hidden="true"></span>
         </button>
-        <div class="language-menu" *ngIf="languageMenuOpen()">
+        <div class="language-menu" [class.is-open]="languageMenuOpen()" [attr.aria-hidden]="!languageMenuOpen()" [attr.inert]="languageMenuOpen() ? null : ''">
           <button type="button" class="selected" title="Srpski"><img src="/madlenianum/about/Serbia.png" alt="" />Srpski</button>
           <button type="button" title="English"><img src="/madlenianum/about/United States.png" alt="" />English</button>
         </div>
@@ -27,7 +27,7 @@
   </div>
 </header>
 
-<nav class="mega-menu repertoire-menu" *ngIf="openDesktopMenu() === 'repertoire'" aria-label="Repertoar">
+<nav class="mega-menu repertoire-menu" [class.is-open]="openDesktopMenu() === 'repertoire'" [attr.aria-hidden]="openDesktopMenu() !== 'repertoire'" [attr.inert]="openDesktopMenu() === 'repertoire' ? null : ''" aria-label="Repertoar">
   <div class="mega-menu-inner">
     <h2>Aktuelno</h2>
     <div class="repertoire-grid">
@@ -39,7 +39,7 @@
   </div>
 </nav>
 
-<nav class="mega-menu partnership-menu" *ngIf="openDesktopMenu() === 'partners'" aria-label="Partnerstvo">
+<nav class="mega-menu partnership-menu" [class.is-open]="openDesktopMenu() === 'partners'" [attr.aria-hidden]="openDesktopMenu() !== 'partners'" [attr.inert]="openDesktopMenu() === 'partners' ? null : ''" aria-label="Partnerstvo">
   <div class="mega-menu-inner compact-menu-inner">
     <div class="compact-menu-heading"><div><p>Partnerstvo</p><h2>Zepter svet</h2></div><span>Kompanije, institucije i brendovi povezani zajedničkom vizijom.</span></div>
     <div class="partner-grid">
@@ -48,7 +48,7 @@
   </div>
 </nav>
 
-<nav class="mega-menu rental-menu" *ngIf="openDesktopMenu() === 'rental'" aria-label="Fundusi i zakup">
+<nav class="mega-menu rental-menu" [class.is-open]="openDesktopMenu() === 'rental'" [attr.aria-hidden]="openDesktopMenu() !== 'rental'" [attr.inert]="openDesktopMenu() === 'rental' ? null : ''" aria-label="Fundusi i zakup">
   <div class="mega-menu-inner compact-menu-inner rental-inner">
     <div class="compact-menu-heading"><div><p>Istražite</p><h2>Fundusi i prostori</h2></div></div>
     <div class="rental-grid">
@@ -60,9 +60,9 @@
   </div>
 </nav>
 
-<div class="menu-backdrop" *ngIf="menuOpen() || openDesktopMenu()" (click)="closeMenu()"></div>
+<div class="menu-backdrop" [class.is-open]="menuOpen() || openDesktopMenu()" aria-hidden="true" (click)="closeMenu()"></div>
 
-<nav id="mobile-navigation" class="mobile-panel" *ngIf="menuOpen()" aria-label="Mobilna navigacija">
+<nav id="mobile-navigation" class="mobile-panel" [class.is-open]="menuOpen()" [attr.aria-hidden]="!menuOpen()" [attr.inert]="menuOpen() ? null : ''" aria-label="Mobilna navigacija">
   <div class="mobile-main-links"><a routerLink="/repertoar" routerLinkActive="active" (click)="closeMenu()">Repertoar</a><a routerLink="/vesti" routerLinkActive="active" (click)="closeMenu()">Vesti</a><a routerLink="/strana/o-nama" routerLinkActive="active" (click)="closeMenu()">O Madlenianumu</a><a routerLink="/strana/kontakt" routerLinkActive="active" (click)="closeMenu()">Kontakt</a></div>
   <section><h2>Fundusi i zakup</h2><a *ngFor="let item of rentalItems" [routerLink]="item.path" (click)="closeMenu()">{{ item.label }}</a></section>
   <section><h2>Partnerstvo</h2><div class="mobile-partners"><a *ngFor="let item of partnerItems" [href]="item.url" target="_blank" rel="noreferrer" [attr.aria-label]="item.label"><img [src]="item.image" [alt]="item.label" /></a></div></section>

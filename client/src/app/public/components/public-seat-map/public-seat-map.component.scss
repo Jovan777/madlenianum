@@ -185,10 +185,17 @@
   background-image: url("/madlenianum/seat-free.png");
   outline: 4px solid #d2a620;
   outline-offset: 1px;
+  animation: seat-selection-confirm var(--motion-duration-quick) var(--motion-ease-emphasis);
 }
 
 .seat.own-lock {
   background-image: url("/madlenianum/seat-reserved.png");
+}
+
+@keyframes seat-selection-confirm {
+  50% {
+    filter: brightness(1.12);
+  }
 }
 
 .seat.accessible::after {
@@ -228,6 +235,11 @@ button:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .seat.selected,
+  .seat.own-lock {
+    animation: none;
+  }
+
   .map-viewport {
     scroll-behavior: auto;
   }

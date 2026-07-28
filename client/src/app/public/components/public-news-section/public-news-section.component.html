@@ -1,4 +1,4 @@
-<section class="news-section" *ngIf="items().length">
+<section class="news-section" *ngIf="items().length" data-motion="up">
   <div class="section-top">
     <h2>{{ heading() || 'Iza kulisa' }}</h2>
     <div class="filters" role="tablist" aria-label="Filtriraj objave">
@@ -13,8 +13,8 @@
     </div>
   </div>
 
-  <div class="news-grid" *ngIf="visibleItems().length; else emptyNews">
-    <article *ngFor="let item of visibleItems()">
+  <div class="news-grid" *ngIf="visibleItems().length; else emptyNews" data-motion-stagger>
+    <article *ngFor="let item of visibleItems()" data-motion-item data-motion-card>
       <div class="meta">
         <span>{{ display.newsCategory(item.category) }}</span>
         <time *ngIf="item.publishedAt" [attr.datetime]="item.publishedAt">{{ display.dayMonth(item.publishedAt) }}</time>

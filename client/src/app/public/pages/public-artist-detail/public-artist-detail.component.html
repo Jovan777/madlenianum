@@ -2,12 +2,12 @@
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <main class="artist-profile" *ngIf="!isLoading() && artist() as item">
-  <section class="profile-hero">
-    <figure class="portrait">
+  <section class="profile-hero" data-motion="up">
+    <figure class="portrait" data-motion="left">
       <img *ngIf="image(item)" [src]="image(item)" [alt]="name(item)" />
     </figure>
 
-    <article class="profile-copy">
+    <article class="profile-copy" data-motion="right">
       <a class="back-link" routerLink="/umetnici"><span aria-hidden="true">←</span> Svi umetnici</a>
       <p class="eyebrow">{{ professions(item) }}</p>
       <h1>{{ name(item) }}</h1>
@@ -15,8 +15,8 @@
 
       <section class="public-links" *ngIf="links(item).length" aria-labelledby="public-links-title">
         <h2 id="public-links-title">Pronađite umetnika online</h2>
-        <div>
-          <a *ngFor="let link of links(item)" [href]="link.url" target="_blank" rel="noopener noreferrer">
+        <div data-motion-stagger>
+          <a *ngFor="let link of links(item)" [href]="link.url" target="_blank" rel="noopener noreferrer" data-motion-item data-motion-card>
             <span>{{ linkType(link) }}</span>
             <strong>{{ link.label || linkType(link) }}</strong>
             <i aria-hidden="true">↗</i>
@@ -27,7 +27,7 @@
   </section>
 
   <ng-container *ngIf="gallery(item) as galleryItems">
-    <section class="artist-gallery" *ngIf="galleryItems.length">
+    <section class="artist-gallery" *ngIf="galleryItems.length" data-motion="up">
       <header class="section-head">
         <div>
           <p class="eyebrow">Iza scene</p>
@@ -35,8 +35,8 @@
         </div>
         <p>Fotografije povezane sa umetnikom i njegovim radom u Madlenianumu.</p>
       </header>
-      <div class="gallery-grid">
-        <button *ngFor="let galleryItem of galleryItems; let index = index" type="button" (click)="openGallery(galleryItems, index)" [attr.aria-label]="'Otvori fotografiju ' + (index + 1)">
+      <div class="gallery-grid" data-motion-stagger>
+        <button *ngFor="let galleryItem of galleryItems; let index = index" type="button" (click)="openGallery(galleryItems, index)" [attr.aria-label]="'Otvori fotografiju ' + (index + 1)" data-motion-item data-motion-card>
           <img [src]="galleryImage(galleryItem)" [alt]="galleryItem.altText || name(item)" loading="lazy" />
           <span *ngIf="galleryItem.caption">{{ galleryItem.caption }}</span>
         </button>
@@ -44,7 +44,7 @@
     </section>
   </ng-container>
 
-  <section class="artist-productions" *ngIf="productions().length > 0">
+  <section class="artist-productions" *ngIf="productions().length > 0" data-motion="up">
     <header class="section-head">
       <div>
         <p class="eyebrow">Na sceni</p>
@@ -53,8 +53,8 @@
       <p>Predstave iz repertoara u kojima ovaj umetnik učestvuje.</p>
     </header>
 
-    <div class="production-grid">
-      <a *ngFor="let production of productions(); let index = index" [routerLink]="['/predstave', production.slug]">
+    <div class="production-grid" data-motion-stagger>
+      <a *ngFor="let production of productions(); let index = index" [routerLink]="['/predstave', production.slug]" data-motion-item data-motion-card>
         <figure><img [src]="productionImage(production, index)" [alt]="production.title" loading="lazy" /></figure>
         <div>
           <span>{{ publicApi.typeLabel(production.type) }}</span>
