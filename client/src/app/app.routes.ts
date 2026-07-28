@@ -260,6 +260,14 @@ export const routes: Routes = [
         component: PublicArtistDetailComponent,
       },
       {
+        path: 'vesti',
+        loadComponent: () => import('./public/pages/public-news/public-news.component').then((item) => item.PublicNewsComponent),
+      },
+      {
+        path: 'vesti/:slug',
+        loadComponent: () => import('./public/pages/public-news-detail/public-news-detail.component').then((item) => item.PublicNewsDetailComponent),
+      },
+      {
         path: 'fundusi',
         loadComponent: () => import('./public/pages/public-fundus/public-fundus.component').then((item) => item.PublicFundusComponent),
       },

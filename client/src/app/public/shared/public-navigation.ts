@@ -10,6 +10,19 @@ export interface PublicRepertoireMenuItem {
   queryParams?: Record<string, string>;
 }
 
+export interface PublicPartnerMenuItem {
+  label: string;
+  url: string;
+  image: string;
+}
+
+export interface PublicRentalMenuItem {
+  label: string;
+  description: string;
+  path: string;
+  image: string;
+}
+
 export const PUBLIC_NAVIGATION: PublicNavigationItem[] = [
   { label: 'Repertoar', path: '/repertoar' },
   { label: 'Predstave', path: '/predstave' },
@@ -46,6 +59,32 @@ export const PUBLIC_REPERTOIRE_MENU: PublicRepertoireMenuItem[] = [
   },
 ];
 
+export const PUBLIC_PARTNER_MENU: PublicPartnerMenuItem[] = [
+  { label: 'Zepter International', url: 'https://www.zepter.rs/', image: '/madlenianum/brands/ZepterLogo.png' },
+  { label: 'Zepter Medical', url: 'https://medicrada.com/', image: '/madlenianum/brands/ZepterMedical.png' },
+  { label: 'Zepter Yachts', url: 'https://philipzepteryachts.com/', image: '/madlenianum/brands/ZepterYacths.png' },
+  { label: 'Muzej Zepter', url: 'https://zeptermuzej.rs/', image: '/madlenianum/brands/MuzejZepter.png' },
+  { label: 'Palata umetnosti Madlena', url: 'https://palataumetnostimadlena.rs/', image: '/madlenianum/brands/PalataUmetnostiMadlena.jpg' },
+  { label: 'ZepterMe', url: 'https://zepterme.rs/', image: '/madlenianum/brands/Zepterme.svg' },
+  { label: 'Zepter Dental', url: 'https://zepterdental.com/', image: '/madlenianum/brands/zepter dental.png' },
+  { label: 'Zepter Hotels', url: 'https://www.hotelzepter.rs/en/', image: '/madlenianum/brands/zepter hotels logo.png' },
+];
+
+export const PUBLIC_RENTAL_MENU: PublicRentalMenuItem[] = [
+  {
+    label: 'Fundusi i rekviziti',
+    description: 'Kostimi, scenski rekviziti i scenografija iz fundusa Madlenianuma.',
+    path: '/fundusi',
+    image: '/madlenianum/fundus_wallpaper.png',
+  },
+  {
+    label: 'Zakup prostora',
+    description: 'Sale i reprezentativni prostori za događaje, konferencije i proslave.',
+    path: '/zakup-prostora',
+    image: '/madlenianum/zakup_prostora/madlenianum_sale_wallpaper.jpg',
+  },
+];
+
 const PUBLIC_EXACT_ROUTES = new Set([
   '/',
   '/repertoar',
@@ -53,6 +92,7 @@ const PUBLIC_EXACT_ROUTES = new Set([
   '/umetnici',
   '/fundusi',
   '/zakup-prostora',
+  '/vesti',
   '/strana/o-nama',
   '/strana/kontakt',
   '/porudzbina',
@@ -71,6 +111,7 @@ export function isAvailablePublicDestination(value: string): boolean {
   return PUBLIC_EXACT_ROUTES.has(url)
     || /^\/predstave\/[^/]+$/.test(url)
     || /^\/umetnici\/[^/]+$/.test(url)
+    || /^\/vesti\/[^/]+$/.test(url)
     || /^\/fundusi\/(kostimi|rekviziti-scenografija)\/[^/]+$/.test(url)
     || /^\/zakup-prostora\/[^/]+$/.test(url)
     || /^\/kupovina\/[^/]+$/.test(url)

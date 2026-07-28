@@ -11,6 +11,7 @@ import {
   PublicHomeResponse,
   PublicEvent,
   PublicListResponse,
+  PublicNews,
   PublicOrder,
   PublicProduction,
   PublicRepertoireResponse,
@@ -68,6 +69,14 @@ export class PublicApiService {
 
   getProduction(slug: string) {
     return this.http.get<any>(`${this.apiUrl}/public/productions/${slug}`);
+  }
+
+  getNews() {
+    return this.http.get<PublicListResponse<PublicNews>>(`${this.apiUrl}/public/news`);
+  }
+
+  getNewsItem(slug: string) {
+    return this.http.get<{ success: boolean; item: PublicNews }>(`${this.apiUrl}/public/news/${encodeURIComponent(slug)}`);
   }
 
   getArtists() {

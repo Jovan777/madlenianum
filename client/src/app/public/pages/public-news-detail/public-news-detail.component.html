@@ -1,0 +1,30 @@
+<p class="state" *ngIf="loading()">Učitavanje vesti...</p>
+<p class="state state--error" *ngIf="error()">{{ error() }} <a routerLink="/vesti">Nazad na vesti</a></p>
+
+<article *ngIf="item() as news" class="news-detail">
+  <header class="article-hero">
+    <img [src]="heroImage(news)" [alt]="news.image ? news.title : ''" />
+    <div><a routerLink="/vesti"><span aria-hidden="true">←</span> Sve vesti</a><p>{{ display.newsCategory(news.category) }}</p><h1>{{ news.title }}</h1><time *ngIf="news.publishedAt" [attr.datetime]="news.publishedAt">{{ display.dayMonth(news.publishedAt) }}</time></div>
+  </header>
+
+  <div class="article-layout">
+    <main class="article-body">
+      <p class="subtitle" *ngIf="news.subtitle">{{ news.subtitle }}</p>
+      <p class="excerpt" *ngIf="news.excerpt">{{ news.excerpt }}</p>
+      <div class="rich-text" [innerHTML]="news.body"></div>
+
+      <section class="article-gallery" *ngIf="news.galleryItems?.length">
+        <h2>Galerija</h2>
+        <div><button *ngFor="let galleryItem of news.galleryItems; let i = index" type="button" (click)="openGallery(i)"><img [src]="image(galleryItem.media)" [alt]="galleryItem.altText || news.title" loading="lazy" /></button></div>
+      </section>
+    </main>
+
+    <aside *ngIf="news.relatedProduction || news.attachment || news.externalLinks?.length">
+      <section *ngIf="news.relatedProduction as production"><p>Povezana predstava</p><h2>{{ production.title }}</h2><a [routerLink]="['/predstave', production.slug]">Pogledajte predstavu →</a></section>
+      <section *ngIf="news.attachment"><p>Dokument</p><a [href]="image(news.attachment)" target="_blank" rel="noreferrer">Otvorite prilog ↗</a></section>
+      <section *ngIf="news.externalLinks?.length"><p>Dodatni linkovi</p><a *ngFor="let link of news.externalLinks" [href]="link.url" target="_blank" rel="noreferrer">{{ link.label || link.url }} ↗</a></section>
+    </aside>
+  </div>
+</article>
+
+<app-public-gallery-lightbox *ngIf="lightbox() as images" [items]="images" (closed)="lightbox.set(null)" />

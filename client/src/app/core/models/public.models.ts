@@ -216,6 +216,13 @@ export interface PublicNews {
   category?: string;
   image?: PublicMedia | string | null;
   relatedProduction?: PublicProduction | null;
+  body?: string;
+  gallery?: Array<PublicMedia | string>;
+  galleryItems?: PublicGalleryItem[];
+  attachment?: PublicMedia | string | null;
+  externalLinks?: PublicExternalLink[];
+  isFeatured?: boolean;
+  seo?: PublicSeo;
   publishedAt?: string;
 }
 

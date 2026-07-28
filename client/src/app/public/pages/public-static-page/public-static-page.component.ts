@@ -3,11 +3,13 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicContactViewComponent } from './public-contact-view.component';
+import { PublicAboutViewComponent } from './public-about-view.component';
 
 @Component({
   selector: 'app-public-static-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PublicContactViewComponent, PublicAboutViewComponent],
   templateUrl: './public-static-page.component.html',
   styleUrl: './public-static-page.component.scss',
 })
@@ -54,6 +56,10 @@ export class PublicStaticPageComponent implements OnInit {
 
   isContact(page: any): boolean {
     return page.slug === 'kontakt' || page.pageType === 'contact';
+  }
+
+  isAbout(page: any): boolean {
+    return page.slug === 'o-nama' || page.pageType === 'about';
   }
 
   fallbackTitle(slug: string): string {

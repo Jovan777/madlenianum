@@ -1,0 +1,53 @@
+<section class="contact-hero" [style.background-image]="'url(' + heroImage() + ')'">
+  <div class="contact-hero__shade"></div>
+  <div class="contact-hero__content">
+    <p class="eyebrow">Madlenianum</p>
+    <h1>{{ page?.title || 'Kontakt' }}</h1>
+    <p>Tu smo za informacije o programu, ulaznicama, saradnji i organizaciji događaja.</p>
+  </div>
+</section>
+
+<main class="contact-page">
+  <section class="contact-intro">
+    <div><p class="eyebrow">Razgovarajmo</p><h2>Posetite nas ili nam pišite</h2></div>
+    <div class="contact-intro__copy" [innerHTML]="page?.contact?.introduction || page?.body"></div>
+  </section>
+
+  <section class="contact-facts" aria-label="Kontakt podaci">
+    <div class="contact-fact"><span>Adresa</span><strong>{{ address() }}</strong></div>
+    <div class="contact-fact"><span>Telefon</span><a [href]="phoneHref()">{{ phone() }}</a></div>
+    <div class="contact-fact"><span>E-mail</span><a [href]="'mailto:' + email()">{{ email() }}</a></div>
+    <div class="contact-fact"><span>Radno vreme</span><strong>{{ officeHours() }}</strong></div>
+  </section>
+
+  <section class="contact-workspace">
+    <div class="contact-map">
+      <iframe [src]="mapUrl" title="Lokacija Madlenianuma" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div class="contact-map__footer">
+        <div><span>Naša lokacija</span><strong>{{ address() }}</strong></div>
+        <a [href]="page?.contact?.mapUrl || 'https://maps.google.com/?q=Madlenianum+Zemun'" target="_blank" rel="noreferrer">Otvori mapu</a>
+      </div>
+    </div>
+
+    <div class="contact-form-wrap">
+      <p class="eyebrow">Pošaljite poruku</p>
+      <h2>Kako možemo da pomognemo?</h2>
+      <p class="form-lead">Popunite formu i naš tim će Vam odgovoriti u najkraćem roku.</p>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <label>Ime i prezime *<input type="text" formControlName="fullName" autocomplete="name" /></label>
+        <div class="form-row"><label>E-mail *<input type="email" formControlName="email" autocomplete="email" /></label><label>Telefon<input type="tel" formControlName="phone" autocomplete="tel" /></label></div>
+        <label>Naslov poruke<input type="text" formControlName="subject" /></label>
+        <label>Poruka *<textarea formControlName="message" rows="5"></textarea></label>
+        <p class="form-validation" *ngIf="form.touched && form.invalid">Unesite ime, ispravnu e-mail adresu i poruku od najmanje 10 karaktera.</p>
+        <p class="form-success" *ngIf="sent()">Hvala Vam. Poruka je uspešno poslata.</p>
+        <p class="form-error" *ngIf="error()">{{ error() }}</p>
+        <button type="submit" [disabled]="sending()">{{ sending() ? 'Slanje...' : 'Pošaljite poruku' }}<span aria-hidden="true">→</span></button>
+      </form>
+    </div>
+  </section>
+
+  <section class="contact-extra" *ngIf="additionalItems().length || socialLinks().length">
+    <div *ngFor="let item of additionalItems()"><span>{{ item.label }}</span><a *ngIf="item.link; else plainValue" [href]="item.link">{{ item.value }}</a><ng-template #plainValue><strong>{{ item.value }}</strong></ng-template></div>
+    <div *ngIf="socialLinks().length"><span>Pratite nas</span><p><a *ngFor="let link of socialLinks()" [href]="link.url" target="_blank" rel="noreferrer">{{ link.label || link.platform }}</a></p></div>
+  </section>
+</main>

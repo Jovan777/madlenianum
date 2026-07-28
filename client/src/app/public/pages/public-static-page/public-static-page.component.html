@@ -1,21 +1,22 @@
 <div class="loading-state" *ngIf="isLoading()">Ucitavanje strane...</div>
 
-<section class="static-page" *ngIf="!isLoading() && page() as item">
-  <div class="page-image">
-    <img [src]="image(item)" [alt]="item.title" />
-  </div>
+<ng-container *ngIf="!isLoading() && page() as item">
+  <app-public-about-view *ngIf="isAbout(item); else contactOrStandard" [page]="item" />
 
-  <article>
-    <p class="eyebrow">Madlenianum</p>
-    <h1>{{ item.title }}</h1>
-    <div class="body" [innerHTML]="content(item)"></div>
+  <ng-template #contactOrStandard>
+    <app-public-contact-view *ngIf="isContact(item); else standardPage" [page]="item" />
 
-    <div class="contact-strip" *ngIf="isContact(item)">
-      <span>Blagajna</span>
-      <strong>Program i karte su dostupni kroz repertoar.</strong>
-      <a routerLink="/repertoar">Otvori program</a>
-    </div>
+    <ng-template #standardPage>
+      <section class="static-page">
+        <div class="page-image"><img [src]="image(item)" [alt]="item.title" /></div>
 
-    <a class="cta" routerLink="/repertoar">Program</a>
-  </article>
-</section>
+        <article>
+          <p class="eyebrow">Madlenianum</p>
+          <h1>{{ item.title }}</h1>
+          <div class="body" [innerHTML]="content(item)"></div>
+          <a class="cta" routerLink="/repertoar">Program</a>
+        </article>
+      </section>
+    </ng-template>
+  </ng-template>
+</ng-container>
