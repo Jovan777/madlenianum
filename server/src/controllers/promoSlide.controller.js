@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const PromoSlide = require("../models/PromoSlide");
 const { promoSlideDto } = require("../services/cmsDto.service");
+const { assignLocalizedPayload } = require("../services/localizedContent.service");
 const { applyAudit, applyPublishing, createHttpError, escapeRegex, paginationFrom, sendList } = require("../services/cms.service");
 
 const populateSlide = (query) => query
@@ -33,7 +34,7 @@ const getPromoSlideById = asyncHandler(async (req, res) => {
 const previewPromoSlide = asyncHandler(async (req, res) => {
   const slide = await populateSlide(PromoSlide.findById(req.params.id));
   if (!slide) throw createHttpError(404, "Slajd nije pronadjen.");
-  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: promoSlideDto(slide) });
+  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: promoSlideDto(slide, req.query.lang) });
 });
 
 const createPromoSlide = asyncHandler(async (req, res) => {
@@ -48,7 +49,7 @@ const updatePromoSlide = asyncHandler(async (req, res) => {
   const slide = await PromoSlide.findById(req.params.id);
   if (!slide) throw createHttpError(404, "Slajd nije pronadjen.");
   const previousStatus = slide.status;
-  Object.assign(slide, req.body);
+  assignLocalizedPayload(slide, req.body);
   applyAudit(slide, req.admin);
   applyPublishing(slide, previousStatus);
   await slide.save();

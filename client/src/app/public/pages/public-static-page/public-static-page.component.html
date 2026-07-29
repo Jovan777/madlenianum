@@ -1,4 +1,4 @@
-<div class="loading-state" *ngIf="isLoading()">Ucitavanje strane...</div>
+<div class="loading-state" *ngIf="isLoading()">{{ 'common.loading' | publicTranslate }}</div>
 
 <ng-container *ngIf="!isLoading() && page() as item">
   <app-public-about-view *ngIf="isAbout(item); else contactOrStandard" [page]="item" />
@@ -14,7 +14,7 @@
           <p class="eyebrow">Madlenianum</p>
           <h1>{{ item.title }}</h1>
           <div class="body" [innerHTML]="content(item)"></div>
-          <a class="cta" routerLink="/repertoar">Program</a>
+          <a class="cta" [routerLink]="locale.equivalentPath('/repertoar', locale.current())">{{ 'repertoire.title' | publicTranslate }}</a>
         </article>
       </section>
     </ng-template>

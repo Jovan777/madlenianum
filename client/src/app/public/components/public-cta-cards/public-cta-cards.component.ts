@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 
 import { PublicHomepageCta } from '../../../core/models/public.models';
 import { MediaUrlService } from '../../../core/services/media-url.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 import { isAvailablePublicDestination, isExternalUrl } from '../../shared/public-navigation';
 
 @Component({
@@ -18,6 +20,12 @@ export class PublicCtaCardsComponent {
   readonly heading = input('Partnerstvo');
   readonly media = inject(MediaUrlService);
   readonly isExternal = isExternalUrl;
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
+
+  internalPath(path: string): string {
+    return this.locale.equivalentPath(path, this.locale.current());
+  }
 
   readonly visibleCards = computed(() => this.cards()
     .filter((card) => card.title && card.url && isAvailablePublicDestination(card.url))

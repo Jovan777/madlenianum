@@ -1,13 +1,13 @@
-<div class="loading-state" *ngIf="isLoading()">Učitavanje sale...</div>
+<div class="loading-state" *ngIf="isLoading()">{{ 'ticketing.loading' | publicTranslate }}</div>
 
 <section class="ticket-page" *ngIf="!isLoading() && event() as currentEvent">
   <app-public-ticket-event-card [event]="currentEvent" data-motion="up" />
 
-  <nav class="stepper" aria-label="Koraci rezervacije i kupovine" data-motion="fade">
-    <span [class.active]="step() === 1" [class.done]="step() > 1"><b>1</b> Sedišta</span>
-    <span [class.active]="step() === 2" [class.done]="step() > 2"><b>2</b> Podaci</span>
-    <span [class.active]="step() === 3" [class.done]="step() > 3"><b>3</b> Potvrda</span>
-    <span [class.active]="step() === 4"><b>4</b> Završeno</span>
+  <nav class="stepper" [attr.aria-label]="'ticketing.steps' | publicTranslate" data-motion="fade">
+    <span [class.active]="step() === 1" [class.done]="step() > 1"><b>1</b> {{ 'ticketing.seats' | publicTranslate }}</span>
+    <span [class.active]="step() === 2" [class.done]="step() > 2"><b>2</b> {{ 'ticketing.details' | publicTranslate }}</span>
+    <span [class.active]="step() === 3" [class.done]="step() > 3"><b>3</b> {{ 'ticketing.confirmation' | publicTranslate }}</span>
+    <span [class.active]="step() === 4"><b>4</b> {{ 'ticketing.complete' | publicTranslate }}</span>
   </nav>
 
   <p class="alert error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
@@ -17,11 +17,11 @@
     <section class="map-panel" data-motion="left">
       <header class="map-heading">
         <div>
-          <p class="eyebrow">Plan sale</p>
-          <h2>Izaberite sedišta</h2>
-          <span>{{ availabilityCount() }} dostupno</span>
+          <p class="eyebrow">{{ 'ticketing.seatingPlan' | publicTranslate }}</p>
+          <h2>{{ 'ticketing.chooseSeats' | publicTranslate }}</h2>
+          <span>{{ availableLabel() }}</span>
         </div>
-        <button type="button" class="refresh" (click)="loadSeats()" [disabled]="isWorking()">Osveži</button>
+        <button type="button" class="refresh" (click)="loadSeats()" [disabled]="isWorking()">{{ 'ticketing.refresh' | publicTranslate }}</button>
       </header>
 
       <app-public-seat-map
@@ -38,91 +38,91 @@
     </section>
 
     <aside class="checkout-card" data-motion="right">
-      <p class="eyebrow">Vaš izbor</p>
+      <p class="eyebrow">{{ 'ticketing.yourSelection' | publicTranslate }}</p>
       <div class="selection-count">
         <strong>{{ selectedSeats().length }}</strong>
-        <span>izabrane karte</span>
+        <span>{{ 'ticketing.selectedTickets' | publicTranslate }}</span>
       </div>
 
       <div class="empty-selection" *ngIf="selectedSeats().length === 0">
-        Kliknite slobodna sedišta na planu sale.
+        {{ 'ticketing.clickSeats' | publicTranslate }}
       </div>
 
       <div class="seat-list" *ngIf="selectedSeats().length > 0">
         <article *ngFor="let seat of selectedSeats()">
           <div>
             <strong>{{ seat.label }}</strong>
-            <span>{{ seat.priceCategory?.name || seat.priceCategory?.code || 'Karta' }}</span>
+            <span>{{ seat.priceCategory?.name || seat.priceCategory?.code || ('ticketing.ticket' | publicTranslate) }}</span>
           </div>
           <small>{{ seat.price?.amount || 0 | number }} {{ seat.price?.currency || 'RSD' }}</small>
         </article>
       </div>
 
       <div class="total">
-        <span>Ukupno</span>
+        <span>{{ 'ticketing.total' | publicTranslate }}</span>
         <strong>{{ selectedTotal() | number }} {{ selectedCurrency() }}</strong>
       </div>
 
       <div class="checkout-actions">
         <button class="btn btn-ghost" type="button"
           [disabled]="isWorking() || selectedSeatIds().length === 0"
-          (click)="beginCheckout('reserve')">Rezerviši</button>
+          (click)="beginCheckout('reserve')">{{ 'ticketing.reserve' | publicTranslate }}</button>
         <button class="btn btn-gold" type="button"
           [disabled]="isWorking() || selectedSeatIds().length === 0"
-          (click)="beginCheckout('purchase')">Kupi</button>
+          (click)="beginCheckout('purchase')">{{ 'ticketing.purchase' | publicTranslate }}</button>
         <button class="clear-selection" type="button"
           [disabled]="isWorking() || selectedSeatIds().length === 0"
-          (click)="resetSelection()">Poništi izbor</button>
+          (click)="resetSelection()">{{ 'ticketing.clearSelection' | publicTranslate }}</button>
       </div>
     </aside>
   </div>
 
   <div class="details-step" *ngIf="step() === 2" data-motion="up">
     <form class="customer-card" [formGroup]="customerForm" (ngSubmit)="continueToReview()">
-      <p class="eyebrow">Podaci gosta</p>
-      <h2>Kontakt podaci</h2>
-      <p class="form-intro">Nalog nije potreban. Podaci se koriste samo za ovu rezervaciju ili kupovinu.</p>
+      <p class="eyebrow">{{ 'ticketing.guestDetails' | publicTranslate }}</p>
+      <h2>{{ 'ticketing.contactDetails' | publicTranslate }}</h2>
+      <p class="form-intro">{{ 'ticketing.noAccount' | publicTranslate }}</p>
 
       <div class="form-grid">
         <label>
-          Ime
+          {{ 'ticketing.firstName' | publicTranslate }}
           <input type="text" formControlName="firstName" autocomplete="given-name" />
           <small *ngIf="fieldError('firstName')">{{ fieldError('firstName') }}</small>
         </label>
         <label>
-          Prezime
+          {{ 'ticketing.lastName' | publicTranslate }}
           <input type="text" formControlName="lastName" autocomplete="family-name" />
           <small *ngIf="fieldError('lastName')">{{ fieldError('lastName') }}</small>
         </label>
         <label>
-          Email
+          {{ 'forms.email' | publicTranslate }}
           <input type="email" formControlName="email" autocomplete="email" />
           <small *ngIf="fieldError('email')">{{ fieldError('email') }}</small>
         </label>
         <label>
-          Telefon <span class="optional">(opciono)</span>
+          {{ 'ticketing.phoneOptional' | publicTranslate }} <span class="optional">({{ 'ticketing.optional' | publicTranslate }})</span>
           <input type="tel" formControlName="phone" autocomplete="tel" />
           <small *ngIf="fieldError('phone')">{{ fieldError('phone') }}</small>
         </label>
       </div>
 
       <div class="form-actions">
-        <button class="btn btn-ghost" type="button" (click)="backToSeats()" [disabled]="isWorking()">Nazad</button>
-        <button class="btn btn-primary" type="submit" [disabled]="isWorking()">Nastavi</button>
+        <button class="btn btn-ghost" type="button" (click)="backToSeats()" [disabled]="isWorking()">{{ 'common.back' | publicTranslate }}</button>
+        <button class="btn btn-primary" type="submit" [disabled]="isWorking()">{{ 'ticketing.continue' | publicTranslate }}</button>
       </div>
     </form>
 
     <aside class="step-summary">
-      <strong>Sedišta su sačuvana još {{ holdExpiresLabel() }}</strong>
-      <span>{{ selectedSeats().length }} karte · {{ selectedTotal() | number }} {{ selectedCurrency() }}</span>
-      <small>Po isteku vremena sedišta se automatski oslobađaju.</small>
+      <strong>{{ holdRemainingLabel() }}</strong>
+      <span>{{ selectedTicketsLabel() }} · {{ selectedTotal() | number }} {{ selectedCurrency() }}</span>
+      <small>{{ 'ticketing.holdNotice' | publicTranslate }}</small>
     </aside>
   </div>
 
   <div class="details-step" *ngIf="step() === 3" data-motion="up">
     <section class="review-card">
-      <p class="eyebrow">Potvrda</p>
-      <h2>Proverite podatke i izaberite akciju</h2>
+      <p class="eyebrow">{{ 'ticketing.confirmation' | publicTranslate }}</p>
+      <h2>{{ 'ticketing.reviewTitle' | publicTranslate }}</h2>
 
       <div class="review-contact">
         <strong>{{ customerForm.controls.firstName.value }} {{ customerForm.controls.lastName.value }}</strong>
@@ -133,30 +133,30 @@
 
       <div class="review-seats">
         <article *ngFor="let seat of selectedSeats()">
-          <span>{{ seat.section || 'Sala' }} · red {{ seat.row || '-' }} · sedište {{ seat.number || '-' }}</span>
+          <span>{{ seat.section || ('ticketing.hall' | publicTranslate) }} · {{ 'ticketing.row' | publicTranslate }} {{ seat.row || '-' }} · {{ 'ticketing.seat' | publicTranslate }} {{ seat.number || '-' }}</span>
           <strong>{{ seat.price?.amount || 0 | number }} {{ seat.price?.currency || 'RSD' }}</strong>
         </article>
       </div>
 
       <div class="total review-total">
-        <span>Ukupno</span>
+        <span>{{ 'ticketing.total' | publicTranslate }}</span>
         <strong>{{ selectedTotal() | number }} {{ selectedCurrency() }}</strong>
       </div>
 
-      <p class="hold-line">Sedišta su sačuvana još {{ holdExpiresLabel() }}</p>
-      <p class="payment-note">Opcija „Kupi“ pokreće kupovinu, ali bez povezanog platnog provajdera ne označava porudžbinu kao plaćenu.</p>
+      <p class="hold-line">{{ holdRemainingLabel() }}</p>
+      <p class="payment-note">{{ 'ticketing.paymentNotice' | publicTranslate }}</p>
 
       <div class="review-actions">
-        <button class="btn btn-ghost" type="button" (click)="backToCustomer()" [disabled]="isWorking()">Izmeni podatke</button>
+        <button class="btn btn-ghost" type="button" (click)="backToCustomer()" [disabled]="isWorking()">{{ 'ticketing.editDetails' | publicTranslate }}</button>
         <button class="btn btn-light-action" type="button"
           [class.recommended]="desiredAction() === 'reserve'"
           (click)="submitOrder('reserve')" [disabled]="isWorking()">
-          {{ isWorking() && desiredAction() === 'reserve' ? 'Potvrđivanje...' : 'Rezerviši' }}
+          {{ (isWorking() && desiredAction() === 'reserve' ? 'ticketing.confirming' : 'ticketing.reserve') | publicTranslate }}
         </button>
         <button class="btn btn-gold" type="button"
           [class.recommended]="desiredAction() === 'purchase'"
           (click)="submitOrder('purchase')" [disabled]="isWorking()">
-          {{ isWorking() && desiredAction() === 'purchase' ? 'Potvrđivanje...' : 'Kupi' }}
+          {{ (isWorking() && desiredAction() === 'purchase' ? 'ticketing.confirming' : 'ticketing.purchase') | publicTranslate }}
         </button>
       </div>
     </section>
@@ -165,29 +165,29 @@
   <section class="confirmation" *ngIf="step() === 4 && order() as completedOrder" data-motion="scale">
     <span class="confirmation-mark" aria-hidden="true">✓</span>
     <p class="eyebrow">{{ completedStatusLabel() }}</p>
-    <h2>Hvala, potvrda je kreirana.</h2>
+    <h2>{{ 'ticketing.thankYou' | publicTranslate }}</h2>
     <p class="confirmation-copy" *ngIf="completedOrder.status === 'reserved'">
-      Sedišta su rezervisana do navedenog roka.
+      {{ 'ticketing.reservedUntil' | publicTranslate }}
     </p>
     <p class="confirmation-copy" *ngIf="completedOrder.status === 'pending_payment'">
-      Kupovina je pokrenuta, ali plaćanje još nije potvrđeno.
+      {{ 'ticketing.purchasePending' | publicTranslate }}
     </p>
-    <p class="reference-label">Broj potvrde</p>
+    <p class="reference-label">{{ 'ticketing.reference' | publicTranslate }}</p>
     <strong class="reference">{{ orderReference() }}</strong>
 
     <div class="confirmation-grid">
-      <div><span>Događaj</span><strong>{{ completedOrder.event.productionTitle || 'Događaj' }}</strong></div>
-      <div><span>Status</span><strong>{{ completedOrder.statusLabel }}</strong></div>
-      <div><span>Sedišta</span><strong>{{ confirmedSeats().length }}</strong></div>
-      <div><span>Ukupno</span><strong>{{ completedOrder.totalAmount | number }} {{ completedOrder.currency }}</strong></div>
+      <div><span>{{ 'ticketing.event' | publicTranslate }}</span><strong>{{ completedOrder.event.productionTitle || ('ticketing.event' | publicTranslate) }}</strong></div>
+      <div><span>{{ 'ticketing.status' | publicTranslate }}</span><strong>{{ completedOrder.statusLabel }}</strong></div>
+      <div><span>{{ 'ticketing.seats' | publicTranslate }}</span><strong>{{ confirmedSeats().length }}</strong></div>
+      <div><span>{{ 'ticketing.total' | publicTranslate }}</span><strong>{{ completedOrder.totalAmount | number }} {{ completedOrder.currency }}</strong></div>
     </div>
 
     <p class="expiry" *ngIf="completedOrder.expiresAt">
-      Rok važi do {{ completedOrder.expiresAt | date:'dd.MM.yyyy. HH:mm' }}.
+      {{ expiryLabel(completedOrder.expiresAt) }}
     </p>
-    <p class="email-note" *ngIf="emailStatus() === 'sent'">Potvrda je poslata na {{ completedOrder.customer.email }}.</p>
+    <p class="email-note" *ngIf="emailStatus() === 'sent'">{{ emailSentLabel(completedOrder.customer.email) }}</p>
     <p class="email-note warning" *ngIf="emailStatus() === 'failed' || emailStatus() === 'not_configured'">
-      Porudžbina je sačuvana, ali email trenutno nije poslat. Sačuvajte broj potvrde.
+      {{ 'ticketing.emailNotSent' | publicTranslate }}
     </p>
 
     <div class="confirmed-seats">
@@ -196,9 +196,9 @@
 
     <div class="confirmation-actions">
       <a class="btn btn-primary"
-        [routerLink]="['/porudzbina', orderReference()]"
-        [queryParams]="publicAccessToken() ? { token: publicAccessToken() } : {}">Detalji potvrde</a>
-      <a class="btn btn-ghost" routerLink="/repertoar">Nazad na program</a>
+        [routerLink]="locale.orderPath(orderReference())"
+        [queryParams]="publicAccessToken() ? { token: publicAccessToken() } : {}">{{ 'ticketing.confirmationDetails' | publicTranslate }}</a>
+      <a class="btn btn-ghost" [routerLink]="locale.equivalentPath('/repertoar', locale.current())">{{ 'repertoire.backToProgram' | publicTranslate }}</a>
     </div>
   </section>
 </section>

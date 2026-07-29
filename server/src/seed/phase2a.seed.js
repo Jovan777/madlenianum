@@ -10,6 +10,24 @@ const SeatMap = require("../models/SeatMap");
 const Seat = require("../models/Seat");
 const Production = require("../models/Production");
 const Event = require("../models/Event");
+const seedEnglishContent = require("./seedEnglishContent");
+
+const meaningfulTranslationValues = (value = {}) => Object.fromEntries(
+  Object.entries(value || {}).filter(([, entry]) => (
+    Array.isArray(entry) ? entry.length > 0 : entry !== undefined && entry !== null && entry !== ""
+  ))
+);
+
+const seedTranslations = (existing, sr, en) => ({
+  sr: {
+    ...meaningfulTranslationValues(sr),
+    ...meaningfulTranslationValues(existing?.sr),
+  },
+  en: {
+    ...meaningfulTranslationValues(en),
+    ...meaningfulTranslationValues(existing?.en),
+  },
+});
 
 const romanRows = [
   "I",
@@ -50,6 +68,8 @@ const getOrCreatePriceCategory = async ({ code, name, description }) => {
 };
 
 const getOrCreateVenue = async () => {
+  const existing = await Venue.findOne({ slug: "velika-scena" }).select("translations").lean();
+  const english = seedEnglishContent.venues["velika-scena"];
   return Venue.findOneAndUpdate(
     { slug: "velika-scena" },
     {
@@ -77,6 +97,21 @@ const getOrCreateVenue = async () => {
             "12 loža x 4 sedišta, 2 lože x 3 sedišta i centralna loža od 8 sedišta.",
         },
       ],
+      translations: seedTranslations(
+        existing?.translations,
+        {
+          slug: "velika-scena",
+          name: "Velika scena",
+          description: "Velika scena Madlenianuma.",
+        },
+        {
+          ...english,
+          sections: [
+            { name: "Stalls", key: "parter", capacity: 442, isNumbered: true, description: english.sections[0].description },
+            { name: "Gallery", key: "galerija", capacity: 62, isNumbered: true, description: english.sections[1].description },
+          ],
+        }
+      ),
       status: "published",
     },
     {
@@ -88,6 +123,8 @@ const getOrCreateVenue = async () => {
 };
 
 const getOrCreateSmallVenue = async () => {
+  const existing = await Venue.findOne({ slug: "mala-scena" }).select("translations").lean();
+  const english = seedEnglishContent.venues["mala-scena"];
   return Venue.findOneAndUpdate(
     { slug: "mala-scena" },
     {
@@ -107,6 +144,20 @@ const getOrCreateSmallVenue = async () => {
           description: "Osnovna sekcija za Malu scenu.",
         },
       ],
+      translations: seedTranslations(
+        existing?.translations,
+        {
+          slug: "mala-scena",
+          name: "Mala scena",
+          description: "Mala scena Madlenianuma.",
+        },
+        {
+          ...english,
+          sections: [
+            { name: "Studio Stage", key: "mala-scena", capacity: 0, isNumbered: false, description: english.sections[0].description },
+          ],
+        }
+      ),
       status: "published",
     },
     {
@@ -430,11 +481,13 @@ const seedSeats = async ({ seatMap, venue, categoryI, categoryII, categoryIII })
 };
 
 const getOrCreateGiulioCesareProduction = async (venue) => {
+  const slug = "julije-cezar-u-egiptu";
+  const existing = await Production.findOne({ slug }).select("translations").lean();
   return Production.findOneAndUpdate(
-    { slug: "julije-cezar-u-egiptu" },
+    { slug },
     {
       title: "JULIJE CEZAR U EGIPTU",
-      slug: "julije-cezar-u-egiptu",
+      slug,
       type: "opera",
       authorComposer: "Georg Fridrih Hendl",
       originalTitle: "Giulio Cesare in Egitto",
@@ -533,6 +586,23 @@ const getOrCreateGiulioCesareProduction = async (venue) => {
       ],
       season: "2025/2026",
       tags: ["opera", "premijera", "barokna opera", "velika scena"],
+      translations: seedTranslations(
+        existing?.translations,
+        {
+          slug,
+          title: "JULIJE CEZAR U EGIPTU",
+          authorComposer: "Georg Fridrih Hendl",
+          originalTitle: "Giulio Cesare in Egitto",
+          subtitle: "Barokna opera u tri cina",
+          shortDescription: "Jedno od najznacajnijih dela barokne opere i vrhunac Hendelovog opernog stvaralastva.",
+          description: "Barokna opera Giulio Cesare in Egitto prati istorijski susret rimskog vojskovodje Julija Cezara i egipatske kraljice Kleopatre.",
+          synopsis: "Politicke intrige, borba za vlast, izdaja i osveta cine okvir u kojem se razvija snazna ljubavna prica.",
+          performanceLanguage: "sr",
+          season: "2025/2026",
+          tags: ["opera", "premijera", "barokna opera", "velika scena"],
+        },
+        seedEnglishContent.productions[slug]
+      ),
       seo: {
         title: "JULIJE CEZAR U EGIPTU | Madlenianum",
         description:

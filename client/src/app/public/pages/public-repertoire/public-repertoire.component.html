@@ -1,54 +1,54 @@
 <section class="repertoire-page">
   <header class="repertoire-hero" data-motion="fade">
-    <img [src]="heroImage()" alt="Velika scena Madlenianuma" />
+    <img [src]="heroImage()" [alt]="'repertoire.title' | publicTranslate" />
     <div class="hero-shade"></div>
     <div class="hero-content">
-      <h1>Repertoar</h1>
-      <nav class="view-tabs" aria-label="Delovi repertoara">
+      <h1>{{ 'repertoire.title' | publicTranslate }}</h1>
+      <nav class="view-tabs" [attr.aria-label]="'repertoire.sections' | publicTranslate">
         <button
           *ngFor="let view of views"
           type="button"
           [class.active]="view.value === activeView()"
           [attr.aria-current]="view.value === activeView() ? 'page' : null"
           (click)="selectView(view.value)"
-        >{{ view.label }}</button>
+        >{{ viewLabel(view.value) }}</button>
       </nav>
     </div>
   </header>
 
   <div class="loading-panel" *ngIf="isLoading()" aria-live="polite">
     <span></span><span></span><span></span>
-    <p>Učitavanje repertoara...</p>
+    <p>{{ 'repertoire.loading' | publicTranslate }}</p>
   </div>
 
   <div class="error-panel" *ngIf="errorMessage()">
     <p>{{ errorMessage() }}</p>
-    <button type="button" (click)="retry()">Pokušaj ponovo</button>
+    <button type="button" (click)="retry()">{{ 'common.retry' | publicTranslate }}</button>
   </div>
 
   <main *ngIf="!isLoading() && !errorMessage()">
     <section class="current-programme" *ngIf="activeView() === 'current'" data-motion="fade">
       <div class="filter-row" data-motion="fade">
         <label class="filter-control">
-          <span class="sr-only">Scena</span>
+          <span class="sr-only">{{ 'repertoire.venue' | publicTranslate }}</span>
           <select [value]="activeVenue()" (change)="setVenue($any($event.target).value)">
-            <option value="all">Scena</option>
+            <option value="all">{{ 'repertoire.venue' | publicTranslate }}</option>
             <option *ngFor="let venue of venueOptions()" [value]="venue">{{ venue }}</option>
           </select>
         </label>
 
         <label class="filter-control">
-          <span class="sr-only">Žanr</span>
+          <span class="sr-only">{{ 'repertoire.genre' | publicTranslate }}</span>
           <select [value]="activeGenre()" (change)="setGenre($any($event.target).value)">
-            <option value="all">Žanr</option>
-            <option *ngFor="let genre of genreFilters" [value]="genre.value">{{ genre.label }}</option>
+            <option value="all">{{ 'repertoire.genre' | publicTranslate }}</option>
+            <option *ngFor="let genre of genreFilters" [value]="genre.value">{{ genreLabel(genre.value) }}</option>
           </select>
         </label>
       </div>
 
       <div class="empty-panel" *ngIf="monthGroups().length === 0">
-        <h2>Nema termina za izabrane filtere.</h2>
-        <p>Promenite scenu ili žanr da biste videli druge događaje.</p>
+        <h2>{{ 'repertoire.noCurrent' | publicTranslate }}</h2>
+        <p>{{ 'repertoire.changeFilters' | publicTranslate }}</p>
       </div>
 
       <section class="month-group" *ngFor="let month of monthGroups(); let monthIndex = index" data-motion="up">
@@ -80,41 +80,41 @@
       />
 
       <div class="empty-panel dark" *ngIf="announcements().length === 0">
-        <h2>Trenutno nema novih najava.</h2>
-        <p>Novi naslovi biće objavljeni čim program bude potvrđen.</p>
+        <h2>{{ 'repertoire.noAnnouncements' | publicTranslate }}</h2>
+        <p>{{ 'repertoire.newTitlesSoon' | publicTranslate }}</p>
       </div>
     </section>
 
     <section class="archive" *ngIf="activeView() === 'archive'" data-motion="fade">
       <div class="archive-filters">
         <label class="filter-control">
-          <span class="sr-only">Scena</span>
+          <span class="sr-only">{{ 'repertoire.venue' | publicTranslate }}</span>
           <select [value]="activeVenue()" (change)="setVenue($any($event.target).value)">
-            <option value="all">Scena</option>
+            <option value="all">{{ 'repertoire.venue' | publicTranslate }}</option>
             <option *ngFor="let venue of venueOptions()" [value]="venue">{{ venue }}</option>
           </select>
         </label>
 
         <label class="filter-control">
-          <span class="sr-only">Žanr</span>
+          <span class="sr-only">{{ 'repertoire.genre' | publicTranslate }}</span>
           <select [value]="activeGenre()" (change)="setGenre($any($event.target).value)">
-            <option value="all">Žanr</option>
-            <option *ngFor="let genre of genreFilters" [value]="genre.value">{{ genre.label }}</option>
+            <option value="all">{{ 'repertoire.genre' | publicTranslate }}</option>
+            <option *ngFor="let genre of genreFilters" [value]="genre.value">{{ genreLabel(genre.value) }}</option>
           </select>
         </label>
 
         <label class="filter-control">
-          <span class="sr-only">Režija</span>
+          <span class="sr-only">{{ 'repertoire.director' | publicTranslate }}</span>
           <select [value]="activeDirector()" (change)="setDirector($any($event.target).value)">
-            <option value="all">Režija</option>
+            <option value="all">{{ 'repertoire.director' | publicTranslate }}</option>
             <option *ngFor="let director of directorOptions()" [value]="director">{{ director }}</option>
           </select>
         </label>
 
         <label class="filter-control">
-          <span class="sr-only">Tekst</span>
+          <span class="sr-only">{{ 'repertoire.writer' | publicTranslate }}</span>
           <select [value]="activeWriter()" (change)="setWriter($any($event.target).value)">
-            <option value="all">Tekst</option>
+            <option value="all">{{ 'repertoire.writer' | publicTranslate }}</option>
             <option *ngFor="let writer of writerOptions()" [value]="writer">{{ writer }}</option>
           </select>
         </label>
@@ -131,8 +131,8 @@
       </div>
 
       <div class="empty-panel" *ngIf="archiveEntries().length === 0">
-        <h2>Nema arhivskih predstava za izabrane filtere.</h2>
-        <p>Promenite neki od filtera da biste videli druge naslove.</p>
+        <h2>{{ 'repertoire.noArchive' | publicTranslate }}</h2>
+        <p>{{ 'repertoire.changeAnyFilter' | publicTranslate }}</p>
       </div>
     </section>
   </main>

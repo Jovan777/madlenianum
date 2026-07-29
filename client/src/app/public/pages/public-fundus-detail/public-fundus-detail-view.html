@@ -1,56 +1,56 @@
-<p class="loading-state" *ngIf="loading()">Učitavanje...</p>
-<p class="error-state" *ngIf="error()">{{ error() }} <a routerLink="/fundusi">Nazad na Fundus</a></p>
+<p class="loading-state" *ngIf="loading()">{{ 'fundus.loading' | publicTranslate }}</p>
+<p class="error-state" *ngIf="error()">{{ error() }} <a [routerLink]="locale.fundusPath()">{{ 'fundus.back' | publicTranslate }}</a></p>
 
 <article *ngIf="item() as entry" class="detail">
   <section class="detail-hero" data-motion="up">
     <button type="button" class="main-image" [class.main-image--costume]="isCostume(entry)" [class.main-image--interactive]="entry.galleryItems.length" (click)="openGallery(0)" data-motion="left" data-motion-card>
       <img [src]="image(entry.mainImage)" [alt]="entry.mainImage?.altText || entry.title" />
-      <span *ngIf="entry.galleryItems.length">Otvori galeriju</span>
+      <span *ngIf="entry.galleryItems.length">{{ 'fundus.openGallery' | publicTranslate }}</span>
     </button>
     <div class="copy" data-motion="right">
-      <a class="back" routerLink="/fundusi"><span aria-hidden="true">←</span> Nazad na Fundus</a>
+      <a class="back" [routerLink]="locale.fundusPath()"><span aria-hidden="true">←</span> {{ 'fundus.back' | publicTranslate }}</a>
       <p class="eyebrow">{{ sectionLabel() }}</p>
       <p class="item-type">{{ isCostume(entry) ? gender(entry.gender) : type(entry.itemType) }}</p>
       <h1>{{ entry.title }}</h1>
       <p class="lead" *ngIf="isCostume(entry) && entry.shortDescription">{{ entry.shortDescription }}</p>
       <div class="rich" [innerHTML]="entry.description"></div>
-      <p class="availability" *ngIf="entry.availabilityNote"><span>Dostupnost</span>{{ entry.availabilityNote }}</p>
+      <p class="availability" *ngIf="entry.availabilityNote"><span>{{ 'fundus.availability' | publicTranslate }}</span>{{ entry.availabilityNote }}</p>
     </div>
   </section>
 
   <section class="facts-section" aria-labelledby="facts-title" data-motion="up">
-    <div class="section-heading"><p class="eyebrow">Podaci o predmetu</p><h2 id="facts-title">Karakteristike</h2></div>
+    <div class="section-heading"><p class="eyebrow">{{ 'fundus.itemData' | publicTranslate }}</p><h2 id="facts-title">{{ 'fundus.characteristics' | publicTranslate }}</h2></div>
     <dl class="facts-grid" data-motion-stagger>
-      <div><dt>Inventarski broj</dt><dd>{{ entry.inventoryNumber }}</dd></div>
-      <div><dt>Stanje</dt><dd>{{ condition(entry.condition) }}</dd></div>
+      <div><dt>{{ 'fundus.inventoryNumber' | publicTranslate }}</dt><dd>{{ entry.inventoryNumber }}</dd></div>
+      <div><dt>{{ 'fundus.condition' | publicTranslate }}</dt><dd>{{ condition(entry.condition) }}</dd></div>
       <ng-container *ngIf="isCostume(entry)">
-        <div><dt>Namena</dt><dd>{{ gender(entry.gender) }}</dd></div>
-        <div *ngIf="entry.epoch"><dt>Epoha</dt><dd>{{ entry.epoch }}</dd></div>
-        <div *ngIf="entry.size"><dt>Veličina</dt><dd>{{ entry.size }}</dd></div>
-        <div *ngIf="entry.material"><dt>Materijal</dt><dd>{{ entry.material }}</dd></div>
-        <div *ngIf="entry.color"><dt>Boja</dt><dd>{{ entry.color }}</dd></div>
+        <div><dt>{{ 'fundus.purpose' | publicTranslate }}</dt><dd>{{ gender(entry.gender) }}</dd></div>
+        <div *ngIf="entry.epoch"><dt>{{ 'fundus.epoch' | publicTranslate }}</dt><dd>{{ entry.epoch }}</dd></div>
+        <div *ngIf="entry.size"><dt>{{ 'fundus.size' | publicTranslate }}</dt><dd>{{ entry.size }}</dd></div>
+        <div *ngIf="entry.material"><dt>{{ 'fundus.material' | publicTranslate }}</dt><dd>{{ entry.material }}</dd></div>
+        <div *ngIf="entry.color"><dt>{{ 'fundus.color' | publicTranslate }}</dt><dd>{{ entry.color }}</dd></div>
       </ng-container>
       <ng-container *ngIf="!isCostume(entry)">
-        <div><dt>Vrsta</dt><dd>{{ type(entry.itemType) }}</dd></div>
-        <div *ngIf="entry.category"><dt>Kategorija</dt><dd>{{ entry.category }}</dd></div>
-        <div *ngIf="entry.epochOrStyle"><dt>Epoha / stil</dt><dd>{{ entry.epochOrStyle }}</dd></div>
-        <div *ngIf="entry.material"><dt>Materijal</dt><dd>{{ entry.material }}</dd></div>
-        <div *ngIf="entry.dimensions?.note"><dt>Dimenzije</dt><dd>{{ entry.dimensions?.note }}</dd></div>
-        <div *ngIf="entry.weight"><dt>Težina</dt><dd>{{ entry.weight }} kg</dd></div>
+        <div><dt>{{ 'fundus.itemType' | publicTranslate }}</dt><dd>{{ type(entry.itemType) }}</dd></div>
+        <div *ngIf="entry.category"><dt>{{ 'fundus.category' | publicTranslate }}</dt><dd>{{ entry.category }}</dd></div>
+        <div *ngIf="entry.epochOrStyle"><dt>{{ 'fundus.epochStyle' | publicTranslate }}</dt><dd>{{ entry.epochOrStyle }}</dd></div>
+        <div *ngIf="entry.material"><dt>{{ 'fundus.material' | publicTranslate }}</dt><dd>{{ entry.material }}</dd></div>
+        <div *ngIf="entry.dimensions?.note"><dt>{{ 'fundus.dimensions' | publicTranslate }}</dt><dd>{{ entry.dimensions?.note }}</dd></div>
+        <div *ngIf="entry.weight"><dt>{{ 'fundus.weight' | publicTranslate }}</dt><dd>{{ entry.weight }} kg</dd></div>
       </ng-container>
     </dl>
   </section>
 
   <section class="related-production" *ngIf="entry.relatedProduction as production" data-motion="up">
-    <div class="section-heading"><p class="eyebrow">Povezano sa predmetom</p><h2>Predstava</h2></div>
-    <a class="production-card" [routerLink]="['/predstave', production.slug]" data-motion-card>
+    <div class="section-heading"><p class="eyebrow">{{ 'fundus.relatedEyebrow' | publicTranslate }}</p><h2>{{ 'fundus.production' | publicTranslate }}</h2></div>
+    <a class="production-card" [routerLink]="locale.productionPath(production.slug)" data-motion-card>
       <figure><img [src]="relatedProductionImage(production)" [alt]="production.title" loading="lazy" /></figure>
-      <div><p>{{ production.type || 'Predstava' }}</p><h3>{{ production.title }}</h3><span>Pogledajte predstavu <b aria-hidden="true">↗</b></span></div>
+      <div><p>{{ production.type || ('fundus.production' | publicTranslate) }}</p><h3>{{ production.title }}</h3><span>{{ 'fundus.viewProduction' | publicTranslate }} <b aria-hidden="true">↗</b></span></div>
     </a>
   </section>
 
   <section class="gallery" *ngIf="entry.galleryItems.length" aria-labelledby="gallery-title" data-motion="up">
-    <div class="section-heading"><p class="eyebrow">Detalji predmeta</p><h2 id="gallery-title">Galerija</h2></div>
+    <div class="section-heading"><p class="eyebrow">{{ 'fundus.itemDetails' | publicTranslate }}</p><h2 id="gallery-title">{{ 'common.gallery' | publicTranslate }}</h2></div>
     <div class="gallery-grid" data-motion-stagger>
       <button *ngFor="let galleryItem of entry.galleryItems; let i = index" type="button" (click)="openGallery(i)" data-motion-item data-motion-card>
         <img [src]="image(galleryItem.media)" [alt]="galleryItem.altText || entry.title" loading="lazy" />
@@ -60,10 +60,10 @@
   </section>
 
   <section class="contact" data-motion="up">
-    <div><p class="eyebrow">Kontakt Fundusa</p><h2>Informacije o predmetu</h2><p>Za dostupnost, korišćenje ili dodatne podatke o predmetu obratite se Madlenianumu.</p></div>
+    <div><p class="eyebrow">{{ 'fundus.contactEyebrow' | publicTranslate }}</p><h2>{{ 'fundus.itemInformation' | publicTranslate }}</h2><p>{{ 'fundus.contactText' | publicTranslate }}</p></div>
     <div class="contact-links">
-      <a *ngIf="contactPhone()" [href]="'tel:' + contactPhone()"><span>Telefon</span>{{ contactPhone() }}</a>
-      <a *ngIf="contactEmail()" [href]="'mailto:' + contactEmail()"><span>E-mail</span>{{ contactEmail() }}</a>
+      <a *ngIf="contactPhone()" [href]="'tel:' + contactPhone()"><span>{{ 'forms.phone' | publicTranslate }}</span>{{ contactPhone() }}</a>
+      <a *ngIf="contactEmail()" [href]="'mailto:' + contactEmail()"><span>{{ 'forms.email' | publicTranslate }}</span>{{ contactEmail() }}</a>
     </div>
   </section>
 </article>

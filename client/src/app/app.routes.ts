@@ -220,8 +220,58 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'en',
+    component: PublicLayoutComponent,
+    data: { locale: 'en' },
+    children: [
+      { path: '', component: PublicHomeComponent },
+      { path: 'repertoire', component: PublicRepertoireComponent },
+      { path: 'productions', component: PublicProductionsComponent },
+      { path: 'productions/:slug', component: PublicProductionDetailComponent },
+      { path: 'tickets/:eventId', component: PublicTicketingComponent },
+      { path: 'order', component: PublicOrderLookupComponent },
+      { path: 'order/:identifier', component: PublicOrderLookupComponent },
+      { path: 'artists', component: PublicArtistsComponent },
+      { path: 'artists/:slug', component: PublicArtistDetailComponent },
+      {
+        path: 'news',
+        loadComponent: () => import('./public/pages/public-news/public-news.component').then((item) => item.PublicNewsComponent),
+      },
+      {
+        path: 'news/:slug',
+        loadComponent: () => import('./public/pages/public-news-detail/public-news-detail.component').then((item) => item.PublicNewsDetailComponent),
+      },
+      {
+        path: 'fundus',
+        loadComponent: () => import('./public/pages/public-fundus/public-fundus.component').then((item) => item.PublicFundusComponent),
+      },
+      {
+        path: 'fundus/costumes/:slug',
+        loadComponent: () => import('./public/pages/public-fundus-detail/public-fundus-detail.component').then((item) => item.PublicFundusDetailComponent),
+        data: { kind: 'costume', locale: 'en' },
+      },
+      {
+        path: 'fundus/props-scenography/:slug',
+        loadComponent: () => import('./public/pages/public-fundus-detail/public-fundus-detail.component').then((item) => item.PublicFundusDetailComponent),
+        data: { kind: 'prop', locale: 'en' },
+      },
+      {
+        path: 'venue-rental',
+        loadComponent: () => import('./public/pages/public-rental-spaces/public-rental-spaces.component').then((item) => item.PublicRentalSpacesComponent),
+      },
+      {
+        path: 'venue-rental/:slug',
+        loadComponent: () => import('./public/pages/public-rental-space-detail/public-rental-space-detail.component').then((item) => item.PublicRentalSpaceDetailComponent),
+      },
+      { path: 'page/:slug', component: PublicStaticPageComponent },
+      { path: 'about', component: PublicStaticPageComponent, data: { staticSlug: 'o-nama', locale: 'en' } },
+      { path: 'contact', component: PublicStaticPageComponent, data: { staticSlug: 'kontakt', locale: 'en' } },
+    ],
+  },
+  {
     path: '',
     component: PublicLayoutComponent,
+    data: { locale: 'sr' },
     children: [
       {
         path: '',

@@ -72,6 +72,25 @@ const publicDepartmentContactSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const settingsTranslationSchema = new mongoose.Schema({
+  siteName: { type: String, trim: true, default: "" },
+  shortDescription: { type: String, trim: true, default: "" },
+  contactAddress: { type: String, trim: true, default: "" },
+  fundusResponseTimeText: { type: String, trim: true, default: "" },
+  commercialResponseTimeText: { type: String, trim: true, default: "" },
+  maintenanceMessage: { type: String, trim: true, default: "" },
+  socialLinks: [{ sourceId: mongoose.Schema.Types.ObjectId, label: String }],
+  legalLinks: [{ sourceId: mongoose.Schema.Types.ObjectId, label: String }],
+  footerNavigation: [{
+    sourceId: mongoose.Schema.Types.ObjectId,
+    title: String,
+    links: [{ sourceId: mongoose.Schema.Types.ObjectId, label: String }],
+  }],
+  partnerLogos: [{ sourceId: mongoose.Schema.Types.ObjectId, label: String }],
+  seoTitle: { type: String, trim: true, default: "" },
+  seoDescription: { type: String, trim: true, default: "" },
+}, { _id: false });
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, enum: ["default"], unique: true, default: "default", immutable: true },
@@ -92,6 +111,7 @@ const siteSettingsSchema = new mongoose.Schema(
     languages: [{ type: String, enum: ["sr", "en"] }],
     defaultLanguage: { type: String, enum: ["sr", "en"], default: "sr" },
     maintenanceMessage: { type: String, trim: true, default: "" },
+    translations: { sr: settingsTranslationSchema, en: settingsTranslationSchema },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "AdminUser" },
   },
   { timestamps: true }

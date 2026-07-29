@@ -1,16 +1,189 @@
-<div class="add-bar"><label>Tip nove sekcije<select [value]="newType" (change)="newType = $any($event.target).value"><option *ngFor="let type of types" [value]="type[0]">{{type[1]}}</option></select></label><button type="button" (click)="addSection()">Dodaj sekciju</button></div>
+<div class="add-bar" *ngIf="!translationMode">
+  <label
+    >Tip nove sekcije<select [value]="newType" (change)="newType = $any($event.target).value">
+      <option *ngFor="let type of types" [value]="type[0]">{{ type[1] }}</option>
+    </select></label
+  ><button type="button" (click)="addSection()">Dodaj sekciju</button>
+</div>
 <p class="empty" *ngIf="!array.length">Nema sekcija. Dodajte prvi kontrolisani blok sadrzaja.</p>
-<details open *ngFor="let group of groups();let index=index" [formGroup]="group" class="section-card">
-  <summary><strong>{{index+1}}. {{typeLabel(group.get('sectionType')?.value)}}</strong><span>{{group.get('enabled')?.value?'Vidljiva':'Sakrivena'}}</span></summary>
-  <div class="section-actions"><label class="check"><input type="checkbox" formControlName="enabled"/>Sekcija je ukljucena</label><div><button type="button" (click)="move(array,index,-1)" [disabled]="index===0">Gore</button><button type="button" (click)="move(array,index,1)" [disabled]="index===array.length-1">Dole</button><button type="button" class="danger" (click)="removeSection(index)">Ukloni</button></div></div>
-  <div class="grid"><label>Naslov<input formControlName="heading"/></label><label>Nadnaslov<input formControlName="eyebrow"/></label><label class="wide">Podnaslov<input formControlName="subtitle"/></label></div>
+<details
+  open
+  *ngFor="let group of groups(); let index = index"
+  [formGroup]="group"
+  class="section-card"
+>
+  <summary>
+    <strong>{{ index + 1 }}. {{ typeLabel(group.get('sectionType')?.value) }}</strong
+    ><span>{{ group.get('enabled')?.value ? 'Vidljiva' : 'Sakrivena' }}</span>
+  </summary>
+  <div class="section-actions" *ngIf="!translationMode">
+    <label class="check"
+      ><input type="checkbox" formControlName="enabled" />Sekcija je ukljucena</label
+    >
+    <div>
+      <button type="button" (click)="move(array, index, -1)" [disabled]="index === 0">Gore</button
+      ><button
+        type="button"
+        (click)="move(array, index, 1)"
+        [disabled]="index === array.length - 1"
+      >
+        Dole</button
+      ><button type="button" class="danger" (click)="removeSection(index)">Ukloni</button>
+    </div>
+  </div>
+  <div class="grid">
+    <label>Naslov<input formControlName="heading" /></label
+    ><label>Nadnaslov<input formControlName="eyebrow" /></label
+    ><label class="wide">Podnaslov<input formControlName="subtitle" /></label>
+  </div>
   <ng-container [ngSwitch]="group.get('sectionType')?.value">
-    <div *ngSwitchCase="'hero'" class="type-fields"><app-rich-text-editor label="Kratak tekst" formControlName="body"/><app-media-picker label="Pozadinska slika" mode="single" mediaKind="image" [value]="selection(group,'backgroundImage')" (selectionChange)="updateMedia(group,'backgroundImage',$event)"/><div class="grid"><label>CTA tekst<input formControlName="ctaLabel"/></label><label>CTA putanja ili URL<input formControlName="ctaUrl"/></label></div></div>
-    <div *ngSwitchCase="'text-image'" class="type-fields"><app-rich-text-editor label="Tekst" formControlName="body"/><app-media-picker label="Slika" mode="single" mediaKind="image" [value]="selection(group,'image')" (selectionChange)="updateMedia(group,'image',$event)"/><div class="grid"><label>Pozicija slike<select formControlName="imagePosition"><option value="left">Levo</option><option value="right">Desno</option></select></label><label>Opis slike<input formControlName="caption"/></label><label>CTA tekst<input formControlName="ctaLabel"/></label><label>CTA putanja ili URL<input formControlName="ctaUrl"/></label></div></div>
-    <div *ngSwitchCase="'timeline'" class="type-fields"><div class="row-title"><h4>Stavke vremenske linije</h4><button type="button" (click)="addTimeline(group)">Dodaj stavku</button></div><div formArrayName="timelineItems"><div class="repeat" *ngFor="let row of rows(timeline(group));let rowIndex=index" [formGroupName]="rowIndex"><div class="grid"><label>Godina / period<input formControlName="period"/></label><label>Naslov<input formControlName="title"/></label><label class="wide">Opis<textarea rows="2" formControlName="description"></textarea></label></div><app-media-picker label="Slika stavke" mode="single" mediaKind="image" [value]="selection(row,'image')" (selectionChange)="updateMedia(row,'image',$event)"/><div class="row-buttons"><button type="button" (click)="move(timeline(group),rowIndex,-1)">Gore</button><button type="button" (click)="move(timeline(group),rowIndex,1)">Dole</button><button type="button" class="danger" (click)="removeRow(timeline(group),rowIndex)">Ukloni</button></div></div></div></div>
-    <div *ngSwitchCase="'features'" class="type-fields"><div class="row-title"><h4>Karakteristike</h4><button type="button" (click)="addFeature(group)">Dodaj stavku</button></div><div formArrayName="featureItems"><div class="repeat" *ngFor="let row of rows(features(group));let rowIndex=index" [formGroupName]="rowIndex"><div class="grid"><label>Naslov<input formControlName="title"/></label><label>Ikonica (opciono)<input formControlName="iconKey"/></label><label class="wide">Opis<textarea rows="2" formControlName="description"></textarea></label></div><app-media-picker label="Slika" mode="single" mediaKind="image" [value]="selection(row,'image')" (selectionChange)="updateMedia(row,'image',$event)"/><div class="row-buttons"><button type="button" (click)="move(features(group),rowIndex,-1)">Gore</button><button type="button" (click)="move(features(group),rowIndex,1)">Dole</button><button type="button" class="danger" (click)="removeRow(features(group),rowIndex)">Ukloni</button></div></div></div></div>
-    <div *ngSwitchCase="'video'" class="type-fields"><app-rich-text-editor label="Prateci tekst" formControlName="body"/><div class="grid"><label>Video naslov<input formControlName="videoTitle"/></label><label>YouTube/Vimeo URL<input type="url" formControlName="videoUrl"/></label></div><app-media-picker label="Pozadinska slika" mode="single" mediaKind="image" [value]="selection(group,'backgroundImage')" (selectionChange)="updateMedia(group,'backgroundImage',$event)"/></div>
-    <div *ngSwitchCase="'quote'" class="type-fields"><label>Citat<textarea rows="4" formControlName="quote"></textarea></label><div class="grid"><label>Autor<input formControlName="authorName"/></label><label>Uloga autora<input formControlName="authorRole"/></label></div><app-media-picker label="Slika autora" mode="single" mediaKind="image" [value]="selection(group,'image')" (selectionChange)="updateMedia(group,'image',$event)"/></div>
-    <app-structured-gallery-editor *ngSwitchCase="'gallery'" formControlName="galleryItems"/>
+    <div *ngSwitchCase="'hero'" class="type-fields">
+      <app-rich-text-editor label="Kratak tekst" formControlName="body" /><app-media-picker
+        *ngIf="!translationMode"
+        label="Pozadinska slika"
+        mode="single"
+        mediaKind="image"
+        [value]="selection(group, 'backgroundImage')"
+        (selectionChange)="updateMedia(group, 'backgroundImage', $event)"
+      />
+      <div class="grid">
+        <label>CTA tekst<input formControlName="ctaLabel" /></label
+        ><label *ngIf="!translationMode"
+          >CTA putanja ili URL<input formControlName="ctaUrl"
+        /></label>
+      </div>
+    </div>
+    <div *ngSwitchCase="'text-image'" class="type-fields">
+      <app-rich-text-editor label="Tekst" formControlName="body" /><app-media-picker
+        *ngIf="!translationMode"
+        label="Slika"
+        mode="single"
+        mediaKind="image"
+        [value]="selection(group, 'image')"
+        (selectionChange)="updateMedia(group, 'image', $event)"
+      />
+      <div class="grid">
+        <label *ngIf="!translationMode"
+          >Pozicija slike<select formControlName="imagePosition">
+            <option value="left">Levo</option>
+            <option value="right">Desno</option>
+          </select></label
+        ><label>Opis slike<input formControlName="caption" /></label
+        ><label>CTA tekst<input formControlName="ctaLabel" /></label
+        ><label *ngIf="!translationMode"
+          >CTA putanja ili URL<input formControlName="ctaUrl"
+        /></label>
+      </div>
+    </div>
+    <div *ngSwitchCase="'timeline'" class="type-fields">
+      <div class="row-title">
+        <h4>Stavke vremenske linije</h4>
+        <button *ngIf="!translationMode" type="button" (click)="addTimeline(group)">
+          Dodaj stavku
+        </button>
+      </div>
+      <div formArrayName="timelineItems">
+        <div
+          class="repeat"
+          *ngFor="let row of rows(timeline(group)); let rowIndex = index"
+          [formGroupName]="rowIndex"
+        >
+          <div class="grid">
+            <label>Godina / period<input formControlName="period" /></label
+            ><label>Naslov<input formControlName="title" /></label
+            ><label class="wide"
+              >Opis<textarea rows="2" formControlName="description"></textarea>
+            </label>
+          </div>
+          <app-media-picker
+            *ngIf="!translationMode"
+            label="Slika stavke"
+            mode="single"
+            mediaKind="image"
+            [value]="selection(row, 'image')"
+            (selectionChange)="updateMedia(row, 'image', $event)"
+          />
+          <div class="row-buttons" *ngIf="!translationMode">
+            <button type="button" (click)="move(timeline(group), rowIndex, -1)">Gore</button
+            ><button type="button" (click)="move(timeline(group), rowIndex, 1)">Dole</button
+            ><button type="button" class="danger" (click)="removeRow(timeline(group), rowIndex)">
+              Ukloni
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngSwitchCase="'features'" class="type-fields">
+      <div class="row-title">
+        <h4>Karakteristike</h4>
+        <button *ngIf="!translationMode" type="button" (click)="addFeature(group)">
+          Dodaj stavku
+        </button>
+      </div>
+      <div formArrayName="featureItems">
+        <div
+          class="repeat"
+          *ngFor="let row of rows(features(group)); let rowIndex = index"
+          [formGroupName]="rowIndex"
+        >
+          <div class="grid">
+            <label>Naslov<input formControlName="title" /></label
+            ><label *ngIf="!translationMode"
+              >Ikonica (opciono)<input formControlName="iconKey" /></label
+            ><label class="wide"
+              >Opis<textarea rows="2" formControlName="description"></textarea>
+            </label>
+          </div>
+          <app-media-picker
+            *ngIf="!translationMode"
+            label="Slika"
+            mode="single"
+            mediaKind="image"
+            [value]="selection(row, 'image')"
+            (selectionChange)="updateMedia(row, 'image', $event)"
+          />
+          <div class="row-buttons" *ngIf="!translationMode">
+            <button type="button" (click)="move(features(group), rowIndex, -1)">Gore</button
+            ><button type="button" (click)="move(features(group), rowIndex, 1)">Dole</button
+            ><button type="button" class="danger" (click)="removeRow(features(group), rowIndex)">
+              Ukloni
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngSwitchCase="'video'" class="type-fields">
+      <app-rich-text-editor label="Prateci tekst" formControlName="body" />
+      <div class="grid">
+        <label>Video naslov<input formControlName="videoTitle" /></label
+        ><label *ngIf="!translationMode"
+          >YouTube/Vimeo URL<input type="url" formControlName="videoUrl"
+        /></label>
+      </div>
+      <app-media-picker
+        *ngIf="!translationMode"
+        label="Pozadinska slika"
+        mode="single"
+        mediaKind="image"
+        [value]="selection(group, 'backgroundImage')"
+        (selectionChange)="updateMedia(group, 'backgroundImage', $event)"
+      />
+    </div>
+    <div *ngSwitchCase="'quote'" class="type-fields">
+      <label>Citat<textarea rows="4" formControlName="quote"></textarea></label>
+      <div class="grid">
+        <label>Autor<input formControlName="authorName" /></label
+        ><label>Uloga autora<input formControlName="authorRole" /></label>
+      </div>
+      <app-media-picker
+        *ngIf="!translationMode"
+        label="Slika autora"
+        mode="single"
+        mediaKind="image"
+        [value]="selection(group, 'image')"
+        (selectionChange)="updateMedia(group, 'image', $event)"
+      />
+    </div>
+    <app-structured-gallery-editor *ngSwitchCase="'gallery'" formControlName="galleryItems" />
   </ng-container>
 </details>

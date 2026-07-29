@@ -54,14 +54,24 @@ export const EMAIL_STATUS_OPTIONS: Array<{ value: InquiryEmailStatus | ''; label
   { value: 'not_configured', label: 'Email nije podešen' },
 ];
 
-export const costumeGenderLabel = (value?: string): string =>
-  COSTUME_GENDER_OPTIONS.find((option) => option.value === value)?.label || 'Nije navedeno';
+const EN_GENDER: Record<string, string> = { female: 'Women', male: 'Men', unisex: 'Unisex', children: 'Children', other: 'Other' };
+const EN_CONDITION: Record<string, string> = { excellent: 'Excellent', good: 'Good', fair: 'Fair', needs_repair: 'Needs repair', archived: 'Out of use' };
+const EN_PROP_TYPE: Record<string, string> = { prop: 'Prop', scenography: 'Scenography' };
 
-export const conditionLabel = (value?: string): string =>
-  FUNDUS_CONDITION_OPTIONS.find((option) => option.value === value)?.label || 'Nije navedeno';
+export const costumeGenderLabel = (value?: string, locale: 'sr' | 'en' = 'sr'): string =>
+  locale === 'en'
+    ? EN_GENDER[value || ''] || 'Not specified'
+    : COSTUME_GENDER_OPTIONS.find((option) => option.value === value)?.label || 'Nije navedeno';
 
-export const propTypeLabel = (value?: string): string =>
-  PROP_TYPE_OPTIONS.find((option) => option.value === value)?.label || 'Predmet';
+export const conditionLabel = (value?: string, locale: 'sr' | 'en' = 'sr'): string =>
+  locale === 'en'
+    ? EN_CONDITION[value || ''] || 'Not specified'
+    : FUNDUS_CONDITION_OPTIONS.find((option) => option.value === value)?.label || 'Nije navedeno';
+
+export const propTypeLabel = (value?: string, locale: 'sr' | 'en' = 'sr'): string =>
+  locale === 'en'
+    ? EN_PROP_TYPE[value || ''] || 'Item'
+    : PROP_TYPE_OPTIONS.find((option) => option.value === value)?.label || 'Predmet';
 
 export const inquiryStatusLabel = (value?: string): string =>
   INQUIRY_STATUS_OPTIONS.find((option) => option.value === value)?.label || value || 'Nepoznato';

@@ -37,11 +37,19 @@ const CREATIVE_ROLE_KEYS = [
 
 const translationSchema = new mongoose.Schema(
   {
+    slug: { type: String, lowercase: true, trim: true },
     title: String,
+    authorComposer: String,
+    originalTitle: String,
     subtitle: String,
     shortDescription: String,
     description: String,
     synopsis: String,
+    performanceLanguage: String,
+    subtitles: String,
+    season: String,
+    tags: [String],
+    announcementText: String,
     seoTitle: String,
     seoDescription: String,
   },
@@ -55,6 +63,13 @@ const creditSchema = new mongoose.Schema(
     artist: { type: mongoose.Schema.Types.ObjectId, ref: "Artist" },
     name: { type: String, trim: true, default: "" },
     note: { type: String, trim: true, default: "" },
+    translations: {
+      en: {
+        label: { type: String, trim: true, default: "" },
+        name: { type: String, trim: true, default: "" },
+        note: { type: String, trim: true, default: "" },
+      },
+    },
     displayOrder: { type: Number, min: 0, default: 0 },
     // Legacy fields remain readable until the structured-content migration is complete.
     role: { type: String, trim: true, default: "" },
@@ -69,6 +84,13 @@ const castMemberSchema = new mongoose.Schema(
     name: { type: String, trim: true, default: "" },
     role: { type: String, trim: true, default: "" },
     note: { type: String, trim: true, default: "" },
+    translations: {
+      en: {
+        name: { type: String, trim: true, default: "" },
+        role: { type: String, trim: true, default: "" },
+        note: { type: String, trim: true, default: "" },
+      },
+    },
     displayOrder: { type: Number, min: 0, default: 0 },
     // Legacy cast fields.
     character: { type: String, trim: true, default: "" },
@@ -94,6 +116,9 @@ const videoSchema = new mongoose.Schema(
       },
     },
     title: { type: String, trim: true, default: "" },
+    translations: {
+      en: { title: { type: String, trim: true, default: "" } },
+    },
     thumbnail: { type: mongoose.Schema.Types.ObjectId, ref: "Media" },
     isTrailer: { type: Boolean, default: false },
     displayOrder: { type: Number, min: 0, default: 0 },
@@ -113,6 +138,13 @@ const reviewSchema = new mongoose.Schema(
     },
     publishedAt: Date,
     note: { type: String, trim: true, default: "" },
+    translations: {
+      en: {
+        title: { type: String, trim: true, default: "" },
+        publication: { type: String, trim: true, default: "" },
+        note: { type: String, trim: true, default: "" },
+      },
+    },
     displayOrder: { type: Number, min: 0, default: 0 },
   },
   { _id: true }
@@ -177,6 +209,11 @@ const productionSchema = new mongoose.Schema(
 productionSchema.pre("validate", function () {
   if (!this.slug && this.title) this.slug = slugify(this.title);
   if (this.isModified("slug") && this.slug) this.slug = slugify(this.slug);
+  if (this.translations?.en) {
+    this.translations.en.slug = this.translations.en.slug ? slugify(this.translations.en.slug) : undefined;
+    this.translations.en.description = sanitizeRichText(this.translations.en.description);
+    this.translations.en.synopsis = sanitizeRichText(this.translations.en.synopsis);
+  }
 
   this.description = sanitizeRichText(this.description);
   this.synopsis = sanitizeRichText(this.synopsis);
@@ -230,6 +267,7 @@ productionSchema.pre("validate", function () {
 productionSchema.index({ status: 1, type: 1, title: 1 });
 productionSchema.index({ status: 1, isFeatured: -1, updatedAt: -1 });
 productionSchema.index({ season: 1, status: 1 });
+productionSchema.index({ "translations.en.slug": 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("Production", productionSchema, "productions");
 module.exports.PRODUCTION_TYPES = PRODUCTION_TYPES;

@@ -8,9 +8,10 @@ import { MediaPickerComponent } from '../media-picker/media-picker.component';
 export class VideoLinksEditorComponent {
   @Input({required:true}) array!:FormArray;
   @Input() providers:Array<{value:string;label:string}>=[];
+  @Input() language:'sr'|'en'='sr';
   constructor(private readonly fb:FormBuilder){}
   groups():FormGroup[]{return this.array.controls as FormGroup[];}
-  add(value:Record<string,unknown>={}):void{this.array.push(this.fb.group({provider:[String(value['provider']||'youtube'),Validators.required],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],title:[String(value['title']||'')],thumbnail:[String(value['thumbnail']||'')],isTrailer:[Boolean(value['isTrailer'])],displayOrder:[this.array.length]}));this.array.markAsDirty();}
+  add(value:Record<string,unknown>={}):void{this.array.push(this.fb.group({provider:[String(value['provider']||'youtube'),Validators.required],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],title:[String(value['title']||'')],translations:this.fb.group({en:this.fb.group({title:['']})}),thumbnail:[String(value['thumbnail']||'')],isTrailer:[Boolean(value['isTrailer'])],displayOrder:[this.array.length]}));this.array.markAsDirty();}
   setTrailer(index:number):void{this.array.controls.forEach((item,itemIndex)=>item.get('isTrailer')?.setValue(itemIndex===index));this.array.markAsDirty();}
   thumbnailValue(group:FormGroup):MediaSelectionValue[]{const value=group.get('thumbnail')?.value;return value?[value]:[];}
   updateThumbnail(group:FormGroup,selection:MediaSelectionResult):void{group.get('thumbnail')?.setValue(selection.ids[0]||'');group.markAsDirty();}

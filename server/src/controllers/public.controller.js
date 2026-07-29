@@ -21,17 +21,24 @@ const {
   siteSettingsDto,
 } = require("../services/cmsDto.service");
 const { populateArtist, populateNews, populatePage, populateProduction } = require("../services/cmsPopulate.service");
-const { createHttpError, escapeRegex, publicPublishedFilter } = require("../services/cms.service");
+const { combineFilters, createHttpError, escapeRegex, publicPublishedFilter } = require("../services/cms.service");
 const { getResolvedHomepage } = require("../services/homepage.service");
 const { populateSiteSettings } = require("../services/siteSettings.service");
+const {
+  localeAvailabilityFilter,
+  localeMessage,
+  localizedSearchFields,
+  localizedSlugQuery,
+} = require("../services/locale.service");
 
 const getHome = asyncHandler(async (req, res) => {
-  const data = await getResolvedHomepage();
+  const data = await getResolvedHomepage(req.locale);
   res.json({ success: true, ...data, data });
 });
 
-const activeAnnouncementFilter = (now) => ({
+const activeAnnouncementFilter = (now, locale = "sr") => ({
   ...publicPublishedFilter(now),
+  ...localeAvailabilityFilter(locale),
   "announcement.isAnnounced": true,
   $and: [
     { $or: [{ "announcement.startsAt": null }, { "announcement.startsAt": { $exists: false } }, { "announcement.startsAt": { $lte: now } }] },
@@ -51,7 +58,7 @@ const getRepertoire = asyncHandler(async (req, res) => {
   const monthEnd = new Date(year, month, 1, 0, 0, 0);
 
   if (view === "announced") {
-    const announcementFilter = activeAnnouncementFilter(now);
+    const announcementFilter = activeAnnouncementFilter(now, req.locale);
     const monthFilter = hasExplicitMonth
       ? { "announcement.month": month, "announcement.year": year }
       : {};
@@ -73,7 +80,7 @@ const getRepertoire = asyncHandler(async (req, res) => {
       monthCounts.set(key, item);
     });
     const availableMonths = Array.from(monthCounts.values()).slice(0, 18);
-    const announcementItems = announcements.map(productionDto);
+    const announcementItems = announcements.map((item) => productionDto(item, req.locale));
     const data = { view, month, year, events: [], announcements: announcementItems, availableMonths };
     res.json({ success: true, view, events: [], announcements: announcementItems, availableMonths, data });
     return;
@@ -98,16 +105,16 @@ const getRepertoire = asyncHandler(async (req, res) => {
     .sort("startsAt")
     .populate({
       path: "production",
-      match: publicPublishedFilter(now),
+      match: { ...publicPublishedFilter(now), ...localeAvailabilityFilter(req.locale) },
       populate: [{ path: "poster" }, { path: "creativeTeam.artist", populate: { path: "image" } }],
     })
     .populate("venue"),
     Event.find({ status: eventStatus, startsAt: availableDateFilter })
       .sort("startsAt")
       .select("startsAt production")
-      .populate({ path: "production", match: publicPublishedFilter(now), select: "_id" }),
+      .populate({ path: "production", match: { ...publicPublishedFilter(now), ...localeAvailabilityFilter(req.locale) }, select: "_id" }),
   ]);
-  const items = events.filter((event) => event.production).map(eventDto);
+  const items = events.filter((event) => event.production).map((event) => eventDto(event, req.locale));
   const monthCounts = new Map();
 
   availableEventDates
@@ -134,44 +141,53 @@ const getRepertoire = asyncHandler(async (req, res) => {
 });
 
 const listProductions = asyncHandler(async (req, res) => {
-  const filter = publicPublishedFilter();
+  const filter = { ...publicPublishedFilter(), ...localeAvailabilityFilter(req.locale) };
   if (req.query.type) filter.type = req.query.type;
   if (req.query.isOnRepertoire !== undefined) filter.isOnRepertoire = req.query.isOnRepertoire === "true";
   if (req.query.q) {
     const search = new RegExp(escapeRegex(req.query.q), "i");
-    filter.$and = [{ $or: [{ title: search }, { authorComposer: search }, { shortDescription: search }] }];
+    filter.$and = [{ $or: localizedSearchFields(["title", "authorComposer", "shortDescription"], req.locale).map((field) => ({ [field]: search })) }];
   }
   const items = await populateProduction(Production.find(filter).sort("-isFeatured title"));
-  res.json({ success: true, items: items.map(productionSummaryDto) });
+  res.json({ success: true, locale: req.locale, items: items.map((item) => productionSummaryDto(item, req.locale)) });
 });
 
 const getProductionBySlug = asyncHandler(async (req, res) => {
-  const production = await populateProduction(Production.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
-  if (!production) throw createHttpError(404, "Predstava nije pronadjena.");
+  const production = await populateProduction(Production.findOne(combineFilters(
+    localizedSlugQuery(req.params.slug, req.locale),
+    publicPublishedFilter(),
+    localeAvailabilityFilter(req.locale)
+  )));
+  if (!production) throw createHttpError(404, localeMessage("productionNotFound", req.locale));
   const events = await Event.find({ production: production._id, status: "scheduled", startsAt: { $gte: new Date() } })
     .sort("startsAt")
     .populate("venue");
-  const item = productionDto(production);
-  const upcomingEvents = events.map((event) => eventDto({ ...event.toObject(), production }));
+  const item = productionDto(production, req.locale);
+  const upcomingEvents = events.map((event) => eventDto({ ...event.toObject(), production }, req.locale));
   res.json({ success: true, item, production: item, events: upcomingEvents, upcomingEvents });
 });
 
 const listArtists = asyncHandler(async (req, res) => {
-  const filter = publicPublishedFilter();
+  const filter = { ...publicPublishedFilter(), ...localeAvailabilityFilter(req.locale, ["displayName", "slug"]) };
   if (req.query.q) {
     const search = new RegExp(escapeRegex(req.query.q), "i");
-    filter.$and = [{ $or: [{ displayName: search }, { professions: search }] }];
+    filter.$and = [{ $or: localizedSearchFields(["displayName", "professions"], req.locale).map((field) => ({ [field]: search })) }];
   }
   const items = await populateArtist(Artist.find(filter).sort("displayName"));
-  res.json({ success: true, items: items.map(artistDto) });
+  res.json({ success: true, locale: req.locale, items: items.map((item) => artistDto(item, req.locale)) });
 });
 
 const getArtistBySlug = asyncHandler(async (req, res) => {
-  const artist = await populateArtist(Artist.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
-  if (!artist) throw createHttpError(404, "Umetnik nije pronadjen.");
+  const artist = await populateArtist(Artist.findOne(combineFilters(
+    localizedSlugQuery(req.params.slug, req.locale),
+    publicPublishedFilter(),
+    localeAvailabilityFilter(req.locale, ["displayName", "slug"])
+  )));
+  if (!artist) throw createHttpError(404, localeMessage("artistNotFound", req.locale));
 
   const productions = await populateProduction(Production.find({
     ...publicPublishedFilter(),
+    ...localeAvailabilityFilter(req.locale),
     $and: [{
       $or: [
         { "creativeTeam.artist": artist._id },
@@ -182,63 +198,75 @@ const getArtistBySlug = asyncHandler(async (req, res) => {
   }).sort("title"));
 
   const relatedProductions = productions.map((production) => {
-    const credits = creativeTeamDto(production).filter((credit) => idOf(credit.artist) === String(artist._id));
-    const cast = castDto(production).filter((member) => idOf(member.artist) === String(artist._id));
+    const credits = creativeTeamDto(production, req.locale).filter((credit) => idOf(credit.artist) === String(artist._id));
+    const cast = castDto(production, req.locale).filter((member) => idOf(member.artist) === String(artist._id));
     return {
-      ...productionSummaryDto(production),
+      ...productionSummaryDto(production, req.locale),
       relationshipTypes: [credits.length ? "creativeTeam" : null, cast.length ? "cast" : null].filter(Boolean),
       credits: credits.map((credit) => ({ roleKey: credit.roleKey, label: credit.label })),
       roles: cast.map((member) => member.role).filter(Boolean),
     };
   });
 
-  const item = { ...artistDto(artist), relatedProductions };
+  const item = { ...artistDto(artist, req.locale), relatedProductions };
   res.json({ success: true, item, artist: item, productions: relatedProductions });
 });
 
 const listNews = asyncHandler(async (req, res) => {
-  const filter = publicPublishedFilter();
+  const filter = { ...publicPublishedFilter(), ...localeAvailabilityFilter(req.locale, ["title", "slug", "excerpt"]) };
   if (req.query.category) filter.category = req.query.category;
   const items = await populateNews(News.find(filter).sort("-publishedAt -createdAt"));
-  res.json({ success: true, items: items.map(newsDto) });
+  res.json({ success: true, locale: req.locale, items: items.map((item) => newsDto(item, req.locale)) });
 });
 
 const getNewsBySlug = asyncHandler(async (req, res) => {
-  const item = await populateNews(News.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
-  if (!item) throw createHttpError(404, "Vest nije pronadjena.");
-  res.json({ success: true, item: newsDto(item) });
+  const item = await populateNews(News.findOne(combineFilters(
+    localizedSlugQuery(req.params.slug, req.locale),
+    publicPublishedFilter(),
+    localeAvailabilityFilter(req.locale, ["title", "slug", "excerpt"])
+  )));
+  if (!item) throw createHttpError(404, localeMessage("newsNotFound", req.locale));
+  res.json({ success: true, locale: req.locale, item: newsDto(item, req.locale) });
 });
 
 const getPageBySlug = asyncHandler(async (req, res) => {
-  const item = await populatePage(StaticPage.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
-  if (!item) throw createHttpError(404, "Strana nije pronadjena.");
-  const response = pageDto(item);
+  const slugFilter = req.locale === "en"
+    ? { $or: [{ slug: req.params.slug }, { "translations.en.slug": req.params.slug }] }
+    : localizedSlugQuery(req.params.slug, req.locale);
+  const item = await populatePage(StaticPage.findOne(combineFilters(
+    slugFilter,
+    publicPublishedFilter(),
+    localeAvailabilityFilter(req.locale)
+  )));
+  if (!item) throw createHttpError(404, localeMessage("pageNotFound", req.locale));
+  const response = pageDto(item, req.locale);
   if (item.pageType === "contact") {
     const settings = await populateSiteSettings(SiteSettings.findOne({ key: "default" }));
-    response.organizationContact = siteSettingsDto(settings).contact;
-    response.socialLinks = siteSettingsDto(settings).socialLinks;
+    response.organizationContact = siteSettingsDto(settings, req.locale).contact;
+    response.socialLinks = siteSettingsDto(settings, req.locale).socialLinks;
   }
   res.json({ success: true, item: response });
 });
 
 const getPublicSiteSettings = asyncHandler(async (req, res) => {
   const settings = await populateSiteSettings(SiteSettings.findOne({ key: "default" }));
-  res.json({ success: true, item: siteSettingsDto(settings) });
+  res.json({ success: true, locale: req.locale, item: siteSettingsDto(settings, req.locale) });
 });
 
 const subscribeNewsletter = asyncHandler(async (req, res) => {
-  const { email, fullName, language } = req.body;
-  if (!email) throw createHttpError(400, "Email je obavezan.");
+  const { email, fullName } = req.body;
+  if (!email) throw createHttpError(400, localeMessage("requiredEmail", req.locale));
   await NewsletterSubscriber.findOneAndUpdate(
     { email: email.toLowerCase() },
-    { email: email.toLowerCase(), fullName: fullName || "", language: language || "sr", status: "active", source: "website", consentAt: new Date() },
+    { email: email.toLowerCase(), fullName: fullName || "", language: req.locale, status: "active", source: "website", consentAt: new Date() },
     { upsert: true, returnDocument: "after", runValidators: true }
   );
-  res.status(201).json({ success: true, message: "Prijava je sacuvana." });
+  res.status(201).json({ success: true, message: localeMessage("newsletterSaved", req.locale) });
 });
 
 const sendContactMessage = asyncHandler(async (req, res) => {
   await ContactMessage.create({
+    locale: req.locale,
     fullName: req.body.fullName,
     email: req.body.email,
     phone: req.body.phone || "",
@@ -246,7 +274,7 @@ const sendContactMessage = asyncHandler(async (req, res) => {
     message: req.body.message,
     sourcePage: req.body.sourcePage || "",
   });
-  res.status(201).json({ success: true, message: "Poruka je sacuvana." });
+  res.status(201).json({ success: true, message: localeMessage("contactSaved", req.locale) });
 });
 
 module.exports = {

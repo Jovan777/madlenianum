@@ -34,6 +34,12 @@ const eventSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    translations: {
+      en: {
+        badge: { type: String, default: "" },
+        ticketingNote: { type: String, default: "" },
+      },
+    },
     status: {
       type: String,
       enum: [...EVENT_STATUSES, ...Object.keys(LEGACY_EVENT_STATUS_MAP)],

@@ -10,6 +10,17 @@ export interface PublicMedia {
   path?: string;
 }
 
+export interface PublicLocalizationMeta {
+  locale?: 'sr' | 'en';
+  availableLocales?: Array<'sr' | 'en'>;
+  slugs?: { sr?: string; en?: string };
+  translationComplete?: boolean;
+  translations?: {
+    sr?: Record<string, unknown>;
+    en?: Record<string, unknown>;
+  };
+}
+
 export interface PublicExternalLink {
   id?: string;
   label?: string;
@@ -18,7 +29,7 @@ export interface PublicExternalLink {
   displayOrder?: number;
 }
 
-export interface PublicArtist {
+export interface PublicArtist extends PublicLocalizationMeta {
   id?: string;
   displayName: string;
   slug: string;
@@ -31,7 +42,7 @@ export interface PublicArtist {
   seo?: PublicSeo;
 }
 
-export interface PublicProduction {
+export interface PublicProduction extends PublicLocalizationMeta {
   _id?: string;
   id?: string;
   title: string;
@@ -113,6 +124,13 @@ export interface PublicGalleryItem {
   caption?: string;
   credit?: string;
   altText?: string;
+  translations?: {
+    en?: {
+      caption?: string;
+      credit?: string;
+      altText?: string;
+    };
+  };
   displayOrder?: number;
 }
 
@@ -207,7 +225,7 @@ export interface PublicPromoSlide {
   buttonLabel?: string;
 }
 
-export interface PublicNews {
+export interface PublicNews extends PublicLocalizationMeta {
   id?: string;
   title: string;
   slug: string;
@@ -369,6 +387,7 @@ export interface PublicOrderEvent {
 }
 
 export interface PublicOrder {
+  locale?: 'sr' | 'en';
   reference: string;
   orderType: 'reservation' | 'purchase';
   orderTypeLabel: string;

@@ -1,7 +1,7 @@
 <section class="repertoire-section" data-motion="up">
   <div class="section-top">
-    <h2>{{ heading() || 'Šta je na repertoaru' }}</h2>
-    <div class="filters" role="tablist" aria-label="Filtriraj repertoar">
+    <h2>{{ heading() || i18n.t('home.repertoire') }}</h2>
+    <div class="filters" role="tablist" [attr.aria-label]="i18n.t('repertoire.title')">
       <button
         *ngFor="let filter of filters"
         type="button"
@@ -9,13 +9,13 @@
         [class.active]="filter.value === activeFilter()"
         [attr.aria-selected]="filter.value === activeFilter()"
         (click)="activeFilter.set(filter.value)"
-      >{{ filter.label }}</button>
+      >{{ filterLabel(filter.value) }}</button>
     </div>
   </div>
 
   <div class="production-grid" *ngIf="visibleProductions().length; else emptyFilter" data-motion-stagger>
     <article *ngFor="let production of visibleProductions()" data-motion-item data-motion-card>
-      <a class="image-link" [routerLink]="['/predstave', production.slug]">
+      <a class="image-link" [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production.slug]">
         <img *ngIf="image(production)" [src]="image(production)" [alt]="production.title" loading="lazy" />
         <div *ngIf="!image(production)" class="image-fallback" aria-hidden="true"></div>
       </a>
@@ -24,13 +24,13 @@
         <span *ngIf="production.venue?.name">{{ production.venue?.name }}</span>
       </div>
       <h3>{{ production.title }}</h3>
-      <a class="details" [routerLink]="['/predstave', production.slug]">ⓘ Saznaj više</a>
+      <a class="details" [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production.slug]">ⓘ {{ i18n.t('common.learnMore') }}</a>
     </article>
   </div>
 
   <ng-template #emptyFilter>
-    <p class="filter-empty">U ovoj kategoriji trenutno nema objavljenih predstava.</p>
+    <p class="filter-empty">{{ i18n.t('home.noProductions') }}</p>
   </ng-template>
 
-  <a class="all-link" routerLink="/predstave">Pogledaj sve predstave</a>
+  <a class="all-link" [routerLink]="locale.equivalentPath('/predstave', locale.current())">{{ i18n.t('repertoire.allProductions') }}</a>
 </section>

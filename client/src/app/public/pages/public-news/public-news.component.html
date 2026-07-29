@@ -1,18 +1,18 @@
 <section class="news-hero" data-motion="fade">
   <img src="/madlenianum/madlenianum_zgrada.jpg" alt="" aria-hidden="true" />
-  <div><p>Aktuelno</p><h1>Vesti</h1><span>Novosti, priče i događaji iz Madlenianuma.</span></div>
+  <div><p>{{ i18n.t('news.eyebrow') }}</p><h1>{{ i18n.t('news.title') }}</h1><span>{{ i18n.t('news.subtitle') }}</span></div>
 </section>
 
 <main class="news-page">
-  <header><div><p>Madlenianum</p><h2>Najnovije vesti</h2></div><span>Pratite repertoar, umetnike i dešavanja iza scene.</span></header>
-  <p class="state" *ngIf="loading()">Učitavanje vesti...</p>
+  <header><div><p>Madlenianum</p><h2>{{ i18n.t('news.latest') }}</h2></div><span>{{ i18n.t('news.follow') }}</span></header>
+  <p class="state" *ngIf="loading()">{{ i18n.t('common.loading') }}</p>
   <p class="state state--error" *ngIf="error()">{{ error() }}</p>
-  <p class="state" *ngIf="!loading() && !error() && !items().length">Trenutno nema objavljenih vesti.</p>
+  <p class="state" *ngIf="!loading() && !error() && !items().length">{{ i18n.t('news.empty') }}</p>
   <section class="news-grid" *ngIf="items().length" data-motion-stagger>
-    <a class="news-card" *ngFor="let item of items()" [routerLink]="['/vesti', item.slug]" data-motion-item data-motion-card>
+    <a class="news-card" *ngFor="let item of items()" [routerLink]="[locale.equivalentPath('/vesti', locale.current()), item.slug]" data-motion-item data-motion-card>
       <figure *ngIf="image(item); else imagePlaceholder"><img [src]="image(item)" [alt]="item.title" loading="lazy" /></figure>
       <ng-template #imagePlaceholder><div class="image-placeholder" aria-hidden="true"><span>Madlenianum</span></div></ng-template>
-      <div class="news-copy"><p class="meta"><span>{{ display.newsCategory(item.category) }}</span><time *ngIf="item.publishedAt" [attr.datetime]="item.publishedAt">{{ display.dayMonth(item.publishedAt) }}</time></p><h3>{{ item.title }}</h3><p>{{ item.excerpt || item.subtitle }}</p><span class="read-more">Pročitajte vest <b aria-hidden="true">→</b></span></div>
+      <div class="news-copy"><p class="meta"><span>{{ display.newsCategory(item.category) }}</span><time *ngIf="item.publishedAt" [attr.datetime]="item.publishedAt">{{ display.dayMonth(item.publishedAt) }}</time></p><h3>{{ item.title }}</h3><p>{{ item.excerpt || item.subtitle }}</p><span class="read-more">{{ i18n.t('news.readArticle') }} <b aria-hidden="true">→</b></span></div>
     </a>
   </section>
 </main>

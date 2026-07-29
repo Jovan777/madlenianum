@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
 import { MediaUrlService } from './media-url.service';
+import { PublicLocaleService } from './public-locale.service';
 import {
   CreateGuestOrderPayload,
   CreateGuestOrderResponse,
@@ -42,19 +43,22 @@ export class PublicApiService {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly mediaUrls: MediaUrlService
+    private readonly mediaUrls: MediaUrlService,
+    readonly publicLocale: PublicLocaleService
   ) {}
 
   getHome() {
-    return this.http.get<PublicHomeResponse>(`${this.apiUrl}/public/home`);
+    return this.http.get<PublicHomeResponse>(`${this.apiUrl}/public/home`, { params: this.params() });
   }
 
   getSiteSettings() {
-    return this.http.get<{ success: boolean; item: PublicSiteSettings }>(`${this.apiUrl}/public/site-settings`);
+    return this.http.get<{ success: boolean; item: PublicSiteSettings }>(`${this.apiUrl}/public/site-settings`, {
+      params: this.params(),
+    });
   }
 
   getRepertoire(filters: { month?: number; year?: number; view?: 'current' | 'announced' | 'archive' } = {}) {
-    let params = new HttpParams();
+    let params = this.params();
 
     if (filters.month) params = params.set('month', String(filters.month));
     if (filters.year) params = params.set('year', String(filters.year));
@@ -64,31 +68,33 @@ export class PublicApiService {
   }
 
   getProductions() {
-    return this.http.get<PublicListResponse<PublicProduction>>(`${this.apiUrl}/public/productions`);
+    return this.http.get<PublicListResponse<PublicProduction>>(`${this.apiUrl}/public/productions`, { params: this.params() });
   }
 
   getProduction(slug: string) {
-    return this.http.get<any>(`${this.apiUrl}/public/productions/${slug}`);
+    return this.http.get<any>(`${this.apiUrl}/public/productions/${encodeURIComponent(slug)}`, { params: this.params() });
   }
 
   getNews() {
-    return this.http.get<PublicListResponse<PublicNews>>(`${this.apiUrl}/public/news`);
+    return this.http.get<PublicListResponse<PublicNews>>(`${this.apiUrl}/public/news`, { params: this.params() });
   }
 
   getNewsItem(slug: string) {
-    return this.http.get<{ success: boolean; item: PublicNews }>(`${this.apiUrl}/public/news/${encodeURIComponent(slug)}`);
+    return this.http.get<{ success: boolean; item: PublicNews }>(`${this.apiUrl}/public/news/${encodeURIComponent(slug)}`, {
+      params: this.params(),
+    });
   }
 
   getArtists() {
-    return this.http.get<any>(`${this.apiUrl}/public/artists`);
+    return this.http.get<any>(`${this.apiUrl}/public/artists`, { params: this.params() });
   }
 
   getArtist(slug: string) {
-    return this.http.get<any>(`${this.apiUrl}/public/artists/${slug}`);
+    return this.http.get<any>(`${this.apiUrl}/public/artists/${encodeURIComponent(slug)}`, { params: this.params() });
   }
 
   getPage(slug: string) {
-    return this.http.get<any>(`${this.apiUrl}/public/pages/${slug}`);
+    return this.http.get<any>(`${this.apiUrl}/public/pages/${encodeURIComponent(slug)}`, { params: this.params() });
   }
 
   getCostumes(filters: Record<string, string | number | undefined> = {}) {
@@ -98,7 +104,9 @@ export class PublicApiService {
   }
 
   getCostume(slug: string) {
-    return this.http.get<Phase6AItemResponse<CostumeItem>>(`${this.apiUrl}/public/fundus/costumes/${encodeURIComponent(slug)}`);
+    return this.http.get<Phase6AItemResponse<CostumeItem>>(`${this.apiUrl}/public/fundus/costumes/${encodeURIComponent(slug)}`, {
+      params: this.params(),
+    });
   }
 
   getPropsScenography(filters: Record<string, string | number | undefined> = {}) {
@@ -109,7 +117,8 @@ export class PublicApiService {
 
   getPropScenography(slug: string) {
     return this.http.get<Phase6AItemResponse<PropScenographyItem>>(
-      `${this.apiUrl}/public/fundus/props-scenography/${encodeURIComponent(slug)}`
+      `${this.apiUrl}/public/fundus/props-scenography/${encodeURIComponent(slug)}`,
+      { params: this.params() }
     );
   }
 
@@ -120,13 +129,15 @@ export class PublicApiService {
   }
 
   getRentalSpace(slug: string) {
-    return this.http.get<Phase6AItemResponse<RentalSpace>>(`${this.apiUrl}/public/rental-spaces/${encodeURIComponent(slug)}`);
+    return this.http.get<Phase6AItemResponse<RentalSpace>>(`${this.apiUrl}/public/rental-spaces/${encodeURIComponent(slug)}`, {
+      params: this.params(),
+    });
   }
 
   createRentalInquiry(payload: RentalInquiryPayload) {
     return this.http.post<Phase6AItemResponse<RentalInquiry> & { emailStatus?: string; idempotent?: boolean }>(
       `${this.apiUrl}/public/rental-inquiries`,
-      payload,
+      { ...payload, locale: this.publicLocale.current() },
       { headers: { 'Idempotency-Key': payload.idempotencyKey } }
     );
   }
@@ -134,13 +145,13 @@ export class PublicApiService {
   createEventPlanningInquiry(payload: EventPlanningInquiryPayload) {
     return this.http.post<Phase6AItemResponse<EventPlanningInquiry> & { emailStatus?: string; idempotent?: boolean }>(
       `${this.apiUrl}/public/event-planning-inquiries`,
-      payload,
+      { ...payload, locale: this.publicLocale.current() },
       { headers: { 'Idempotency-Key': payload.idempotencyKey } }
     );
   }
 
   getEventSeats(eventId: string) {
-    return this.http.get<EventSeatsResponse>(`${this.apiUrl}/public/events/${eventId}/seats`);
+    return this.http.get<EventSeatsResponse>(`${this.apiUrl}/public/events/${eventId}/seats`, { params: this.params() });
   }
 
   lockSeats(eventId: string, seatIds: string[], checkoutKey: string) {
@@ -148,11 +159,12 @@ export class PublicApiService {
       sessionId: this.getSessionId(),
       seatIds,
       checkoutKey,
+      locale: this.publicLocale.current(),
     });
   }
 
   restoreSeatLocks(eventId: string) {
-    const params = new HttpParams().set('sessionId', this.getSessionId());
+    const params = this.params().set('sessionId', this.getSessionId());
     return this.http.get<RestoredSeatLockResponse>(
       `${this.apiUrl}/public/events/${eventId}/seats/locks/current`,
       { params }
@@ -164,6 +176,7 @@ export class PublicApiService {
       sessionId: this.getSessionId(),
       seatIds,
       checkoutKey,
+      locale: this.publicLocale.current(),
     });
   }
 
@@ -171,11 +184,12 @@ export class PublicApiService {
     return this.http.post<CreateGuestOrderResponse>(`${this.apiUrl}/public/orders`, {
       ...payload,
       sessionId: this.getSessionId(),
+      locale: this.publicLocale.current(),
     });
   }
 
   getPublicOrder(identifier: string, token = '') {
-    let params = new HttpParams().set('sessionId', this.getSessionId());
+    let params = this.params().set('sessionId', this.getSessionId());
     if (token) params = params.set('token', token);
     return this.http.get<{ success: boolean; order: PublicOrder }>(
       `${this.apiUrl}/public/orders/${encodeURIComponent(identifier)}`,
@@ -186,19 +200,23 @@ export class PublicApiService {
   lookupPublicOrder(reference: string, email: string) {
     return this.http.post<{ success: boolean; order: PublicOrder }>(
       `${this.apiUrl}/public/orders/lookup`,
-      { reference, email }
+      { reference, email, locale: this.publicLocale.current() }
     );
   }
 
   subscribeNewsletter(email: string) {
     return this.http.post<any>(`${this.apiUrl}/public/newsletter/subscribe`, {
       email,
-      language: 'sr',
+      language: this.publicLocale.current(),
+      locale: this.publicLocale.current(),
     });
   }
 
   sendContactMessage(payload: Record<string, string>) {
-    return this.http.post<any>(`${this.apiUrl}/public/contact`, payload);
+    return this.http.post<any>(`${this.apiUrl}/public/contact`, {
+      ...payload,
+      locale: this.publicLocale.current(),
+    });
   }
 
   getSessionId(): string {
@@ -302,18 +320,26 @@ export class PublicApiService {
   }
 
   typeLabel(type: string | undefined | null): string {
-    const labels: Record<string, string> = {
-      opera: 'Opera',
-      opereta: 'Opereta',
-      balet: 'Balet',
-      drama: 'Drama',
-      mjuzikl: 'Mjuzikl',
-      koncert: 'Koncert',
-      gostujuca_predstava: 'Gostujuca predstava',
-      ostalo: 'Scena',
+    const labels: Record<string, Record<string, string>> = {
+      sr: {
+        opera: 'Opera', opereta: 'Opereta', balet: 'Balet', drama: 'Drama', mjuzikl: 'Mjuzikl',
+        koncert: 'Koncert', gostujuca_predstava: 'Gostujuća predstava', ostalo: 'Scena',
+      },
+      en: {
+        opera: 'Opera', opereta: 'Operetta', balet: 'Ballet', drama: 'Drama', mjuzikl: 'Musical',
+        koncert: 'Concert', gostujuca_predstava: 'Guest production', ostalo: 'Stage',
+      },
     };
 
-    return labels[type || ''] || 'Scena';
+    return labels[this.publicLocale.current()][type || ''] || (this.publicLocale.isEnglish() ? 'Stage' : 'Scena');
+  }
+
+  isEnglish(): boolean {
+    return this.publicLocale.isEnglish();
+  }
+
+  publicPath(srPath: string): string {
+    return this.publicLocale.equivalentPath(srPath, this.publicLocale.current());
   }
 
   private responseRoots(response: any): any[] {
@@ -326,8 +352,8 @@ export class PublicApiService {
     return roots;
   }
 
-  private params(values: Record<string, string | number | undefined>): HttpParams {
-    let params = new HttpParams();
+  private params(values: Record<string, string | number | undefined> = {}): HttpParams {
+    let params = new HttpParams().set('lang', this.publicLocale.current());
     Object.entries(values).forEach(([key, value]) => {
       if (value !== undefined && value !== '') params = params.set(key, String(value));
     });

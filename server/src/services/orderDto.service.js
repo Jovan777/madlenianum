@@ -5,6 +5,11 @@ const {
   PAYMENT_STATUS_LABELS,
 } = require("../constants/order.constants");
 const { getOrderExpiry } = require("./orderLifecycle.service");
+const { localizedValue, normalizeLocale } = require("./locale.service");
+
+const EN_ORDER_TYPE_LABELS = { reservation: "Reservation", purchase: "Purchase" };
+const EN_ORDER_STATUS_LABELS = { pending: "Processing", reserved: "Reserved", pending_payment: "Payment pending", paid: "Paid", expired: "Expired", cancelled: "Cancelled", refunded: "Refunded" };
+const EN_PAYMENT_STATUS_LABELS = { unpaid: "Unpaid", pending: "Payment pending", paid: "Paid", failed: "Failed", cancelled: "Cancelled", refunded: "Refunded" };
 
 const idOf = (value) => String(value?._id || value?.id || value || "");
 const titleOf = (production) => production?.title || "";
@@ -28,26 +33,28 @@ const itemDto = (item) => ({
 const eventDto = (order) => {
   const event = order.event || {};
   const snapshot = order.eventSnapshot || {};
+  const locale = normalizeLocale(order.locale);
   return {
     id: idOf(event),
     productionId: idOf(event.production || snapshot.productionId),
-    productionTitle: titleOf(event.production) || snapshot.productionTitle || "",
+    productionTitle: localizedValue(event.production, "title", locale) || snapshot.productionTitle || titleOf(event.production),
     startsAt: event.startsAt || snapshot.eventStartsAt || null,
     endsAt: event.endsAt || snapshot.eventEndsAt || null,
     venueId: idOf(event.venue || snapshot.venueId),
-    venueName: venueNameOf(event.venue) || snapshot.venueName || "",
+    venueName: localizedValue(event.venue, "name", locale) || snapshot.venueName || venueNameOf(event.venue),
     venueStage: snapshot.venueStage || "",
   };
 };
 
 const publicOrderDto = (order) => ({
+  locale: normalizeLocale(order.locale),
   reference: order.orderCode,
   orderType: order.orderType,
-  orderTypeLabel: ORDER_TYPE_LABELS[order.orderType] || order.orderType,
+  orderTypeLabel: normalizeLocale(order.locale) === "en" ? EN_ORDER_TYPE_LABELS[order.orderType] || order.orderType : ORDER_TYPE_LABELS[order.orderType] || order.orderType,
   status: order.status,
-  statusLabel: ORDER_STATUS_LABELS[order.status] || order.status,
+  statusLabel: normalizeLocale(order.locale) === "en" ? EN_ORDER_STATUS_LABELS[order.status] || order.status : ORDER_STATUS_LABELS[order.status] || order.status,
   paymentStatus: order.paymentStatus,
-  paymentStatusLabel: PAYMENT_STATUS_LABELS[order.paymentStatus] || order.paymentStatus,
+  paymentStatusLabel: normalizeLocale(order.locale) === "en" ? EN_PAYMENT_STATUS_LABELS[order.paymentStatus] || order.paymentStatus : PAYMENT_STATUS_LABELS[order.paymentStatus] || order.paymentStatus,
   event: eventDto(order),
   customer: {
     firstName: order.customerSnapshot?.firstName || "",

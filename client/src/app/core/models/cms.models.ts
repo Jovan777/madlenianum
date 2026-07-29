@@ -24,6 +24,13 @@ export interface GalleryItemInput {
   credit: string;
   altText: string;
   displayOrder: number;
+  translations?: {
+    en?: {
+      caption?: string;
+      credit?: string;
+      altText?: string;
+    };
+  };
 }
 
 export interface CmsListResponse<T> {

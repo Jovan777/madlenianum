@@ -8,18 +8,29 @@
   </header>
 
   <section class="panel upload-panel">
-    <div><p class="eyebrow">Upload</p><h2>Add media</h2></div>
+    <div>
+      <p class="eyebrow">Upload</p>
+      <h2>Add media</h2>
+    </div>
     <app-media-upload (uploaded)="uploaded($event)" />
   </section>
 
   <section class="panel library-panel">
     <div class="section-heading">
-      <div><p class="eyebrow">Browse</p><h2>Existing media</h2></div>
+      <div>
+        <p class="eyebrow">Browse</p>
+        <h2>Existing media</h2>
+      </div>
       <strong>{{ total() }} items</strong>
     </div>
 
     <form class="toolbar" (submit)="search($event)">
-      <input type="search" [value]="searchText" placeholder="Search title or filename" (input)="updateSearch($event)" />
+      <input
+        type="search"
+        [value]="searchText"
+        placeholder="Search title or filename"
+        (input)="updateSearch($event)"
+      />
       <select [value]="fileType()" (change)="changeFileType($event)">
         <option value="all">All media</option>
         <option value="image">Images</option>
@@ -30,7 +41,9 @@
 
     <p class="state error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
     <p class="state" *ngIf="isLoading()">Loading media...</p>
-    <p class="state" *ngIf="!isLoading() && !items().length">No media matches the current search.</p>
+    <p class="state" *ngIf="!isLoading() && !items().length">
+      No media matches the current search.
+    </p>
 
     <app-media-grid
       *ngIf="!isLoading() && items().length"
@@ -51,23 +64,75 @@
 <app-media-preview *ngIf="previewItem() as item" [item]="item" (closed)="previewItem.set(null)" />
 
 <div class="modal-backdrop" *ngIf="editItem() as item" (click)="editItem.set(null)">
-  <section class="metadata-dialog" role="dialog" aria-modal="true" aria-label="Edit media metadata" (click)="$event.stopPropagation()">
-    <header><div><small>Edit metadata</small><h2>{{ item.title || item.originalName }}</h2></div><button type="button" (click)="editItem.set(null)">&times;</button></header>
+  <section
+    class="metadata-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Edit media metadata"
+    (click)="$event.stopPropagation()"
+  >
+    <header>
+      <div>
+        <small>Edit metadata</small>
+        <h2>{{ item.title || item.originalName }}</h2>
+      </div>
+      <button type="button" (click)="editItem.set(null)">&times;</button>
+    </header>
     <form [formGroup]="metadataForm" (ngSubmit)="saveMetadata()">
-      <label>Title<input type="text" formControlName="title" /></label>
-      <label>Alternative text<input type="text" formControlName="altText" /></label>
-      <label>Caption<textarea rows="4" formControlName="caption"></textarea></label>
-      <label>Photographer / author credit<input type="text" formControlName="credit" /></label>
-      <footer><button class="secondary" type="button" (click)="editItem.set(null)">Cancel</button><button class="primary" type="submit" [disabled]="isSaving()">{{ isSaving() ? 'Saving...' : 'Save metadata' }}</button></footer>
+      <app-admin-language-tabs
+        [active]="activeLanguage()"
+        [englishComplete]="englishComplete()"
+        (languageChange)="activeLanguage.set($event)"
+      />
+      <ng-container *ngIf="activeLanguage() === 'sr'">
+        <label>Naslov<input type="text" formControlName="title" /></label>
+        <label>Alternativni tekst<input type="text" formControlName="altText" /></label>
+        <label>Opis fotografije<textarea rows="4" formControlName="caption"></textarea></label>
+        <label>Fotograf / autor<input type="text" formControlName="credit" /></label>
+      </ng-container>
+      <div formGroupName="translations" *ngIf="activeLanguage() === 'en'">
+        <div formGroupName="en">
+          <label>Title<input type="text" formControlName="title" /></label>
+          <label>Alternative text<input type="text" formControlName="alt" /></label>
+          <label>Caption<textarea rows="4" formControlName="caption"></textarea></label>
+          <label>Photographer / author credit<input type="text" formControlName="credit" /></label>
+        </div>
+      </div>
+      <footer>
+        <button class="secondary" type="button" (click)="editItem.set(null)">Cancel</button
+        ><button class="primary" type="submit" [disabled]="isSaving()">
+          {{ isSaving() ? 'Saving...' : 'Save metadata' }}
+        </button>
+      </footer>
     </form>
   </section>
 </div>
 
 <div class="modal-backdrop" *ngIf="deleteConflict() as conflict" (click)="deleteConflict.set(null)">
-  <section class="conflict-dialog" role="alertdialog" aria-modal="true" aria-label="Media is in use" (click)="$event.stopPropagation()">
-    <header><div><small>Deletion blocked</small><h2>Media is currently in use</h2></div><button type="button" (click)="deleteConflict.set(null)">&times;</button></header>
-    <p><strong>{{ conflict.item.title || conflict.item.originalName }}</strong> cannot be deleted until these references are removed:</p>
-    <ul><li *ngFor="let usage of conflict.usage"><strong>{{ usage.resourceType }}:</strong> {{ usage.resourceTitle }} <span>({{ usage.field }})</span></li></ul>
+  <section
+    class="conflict-dialog"
+    role="alertdialog"
+    aria-modal="true"
+    aria-label="Media is in use"
+    (click)="$event.stopPropagation()"
+  >
+    <header>
+      <div>
+        <small>Deletion blocked</small>
+        <h2>Media is currently in use</h2>
+      </div>
+      <button type="button" (click)="deleteConflict.set(null)">&times;</button>
+    </header>
+    <p>
+      <strong>{{ conflict.item.title || conflict.item.originalName }}</strong> cannot be deleted
+      until these references are removed:
+    </p>
+    <ul>
+      <li *ngFor="let usage of conflict.usage">
+        <strong>{{ usage.resourceType }}:</strong> {{ usage.resourceTitle }}
+        <span>({{ usage.field }})</span>
+      </li>
+    </ul>
     <button class="primary" type="button" (click)="deleteConflict.set(null)">Understood</button>
   </section>
 </div>

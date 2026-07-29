@@ -9,9 +9,12 @@ import {
   PublicRepertoireResponse,
 } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
 import { PublicRepertoireAnnouncementComponent } from '../../components/public-repertoire-announcement/public-repertoire-announcement.component';
 import { PublicRepertoireArchiveCardComponent } from '../../components/public-repertoire-archive-card/public-repertoire-archive-card.component';
 import { PublicRepertoireEventCardComponent } from '../../components/public-repertoire-event-card/public-repertoire-event-card.component';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 import {
   PublicDisplayService,
   REPERTOIRE_FILTERS,
@@ -52,6 +55,7 @@ const REPERTOIRE_VIEWS: Array<{ value: RepertoireView; label: string }> = [
     PublicRepertoireAnnouncementComponent,
     PublicRepertoireArchiveCardComponent,
     PublicRepertoireEventCardComponent,
+    PublicTranslatePipe,
   ],
   templateUrl: './public-repertoire.component.html',
   styleUrl: './public-repertoire.component.scss',
@@ -61,6 +65,8 @@ export class PublicRepertoireComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  private readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   readonly publicApi = inject(PublicApiService);
   readonly display = inject(PublicDisplayService);
@@ -163,10 +169,12 @@ export class PublicRepertoireComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.title.setTitle('Repertoar | Madlenianum');
+    this.title.setTitle(`${this.i18n.t('repertoire.title')} | Madlenianum`);
     this.meta.updateTag({
       name: 'description',
-      content: 'Aktuelni program, najave i arhiva Opere i teatra Madlenianum.',
+      content: this.locale.isEnglish()
+        ? 'Current programme, announcements and archive of Opera & Theatre Madlenianum.'
+        : 'Aktuelni program, najave i arhiva Opere i teatra Madlenianum.',
     });
 
     this.route.queryParamMap.subscribe((params) => {
@@ -231,7 +239,7 @@ export class PublicRepertoireComponent implements OnInit {
       error: (error) => {
         this.events.set([]);
         this.announcements.set([]);
-        this.errorMessage.set(error?.error?.message || 'Repertoar trenutno nije dostupan.');
+        this.errorMessage.set(error?.error?.message || this.i18n.t('repertoire.error'));
         this.isLoading.set(false);
       },
       complete: () => this.isLoading.set(false),
@@ -268,7 +276,7 @@ export class PublicRepertoireComponent implements OnInit {
 
   private monthLabel(value: string): string {
     const date = new Date(value);
-    const month = new Intl.DateTimeFormat('sr-Latn-RS', {
+    const month = new Intl.DateTimeFormat(this.locale.isEnglish() ? 'en-GB' : 'sr-Latn-RS', {
       month: 'short',
       timeZone: this.display.timeZone,
     }).format(date).replace('.', '');
@@ -295,7 +303,21 @@ export class PublicRepertoireComponent implements OnInit {
   }
 
   private uniqueStrings(values: string[]): string[] {
-    return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, 'sr-Latn-RS'));
+    return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, this.locale.isEnglish() ? 'en' : 'sr-Latn-RS'));
+  }
+
+  viewLabel(view: RepertoireView): string {
+    return this.i18n.t(view === 'current' ? 'repertoire.current' : view === 'announced' ? 'repertoire.announced' : 'repertoire.archive');
+  }
+
+  genreLabel(value: RepertoireGroup): string {
+    const keys = {
+      all: 'repertoire.filters.all',
+      dramski: 'repertoire.filters.drama',
+      muzicki: 'repertoire.filters.music',
+      gostovanja: 'repertoire.filters.guest',
+    } as const;
+    return this.i18n.t(keys[value]);
   }
 
   private resetSecondaryFilters(): void {

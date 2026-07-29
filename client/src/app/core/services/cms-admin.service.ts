@@ -34,8 +34,10 @@ export class CmsAdminService {
     return this.http.patch<CmsItemResponse<T>>(`${this.apiUrl}/${resource}/${id}/archive`, {});
   }
 
-  preview<T>(resource: string, id: string) {
-    return this.http.get<CmsItemResponse<T>>(`${this.apiUrl}/${resource}/${id}/preview`);
+  preview<T>(resource: string, id: string, language: 'sr' | 'en' = 'sr') {
+    return this.http.get<CmsItemResponse<T>>(`${this.apiUrl}/${resource}/${id}/preview`, {
+      params: new HttpParams().set('lang', language),
+    });
   }
 
   getStructuredPage<T>(pageType: 'about' | 'contact') {
@@ -43,11 +45,19 @@ export class CmsAdminService {
   }
 
   updateStructuredPage<T>(pageType: 'about' | 'contact', payload: unknown) {
-    return this.http.put<CmsItemResponse<T>>(`${this.apiUrl}/pages/structured/${pageType}`, payload);
+    return this.http.put<CmsItemResponse<T>>(
+      `${this.apiUrl}/pages/structured/${pageType}`,
+      payload,
+    );
   }
 
-  previewStructuredPage<T>(pageType: 'about' | 'contact') {
-    return this.http.get<CmsItemResponse<T>>(`${this.apiUrl}/pages/structured/${pageType}/preview`);
+  previewStructuredPage<T>(pageType: 'about' | 'contact', language: 'sr' | 'en' = 'sr') {
+    return this.http.get<CmsItemResponse<T>>(
+      `${this.apiUrl}/pages/structured/${pageType}/preview`,
+      {
+        params: new HttpParams().set('lang', language),
+      },
+    );
   }
 
   getSingleton<T>(resource: 'homepage-config' | 'site-settings') {
@@ -58,8 +68,10 @@ export class CmsAdminService {
     return this.http.put<CmsItemResponse<T>>(`${this.apiUrl}/${resource}`, payload);
   }
 
-  previewHomepage<T>() {
-    return this.http.get<T>(`${this.apiUrl}/homepage-config/preview`);
+  previewHomepage<T>(language: 'sr' | 'en' = 'sr') {
+    return this.http.get<T>(`${this.apiUrl}/homepage-config/preview`, {
+      params: new HttpParams().set('lang', language),
+    });
   }
 
   formOptions(kind: 'production' | 'artist' | 'news' | 'homepage' | 'promo-slide') {

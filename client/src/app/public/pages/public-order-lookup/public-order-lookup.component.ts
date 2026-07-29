@@ -1,23 +1,29 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { finalize } from 'rxjs';
+import { combineLatest, finalize, Subscription } from 'rxjs';
 
 import { PublicOrder, PublicOrderItem } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 @Component({
   selector: 'app-public-order-lookup',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PublicTranslatePipe],
   templateUrl: './public-order-lookup.component.html',
   styleUrl: './public-order-lookup.component.scss',
 })
-export class PublicOrderLookupComponent implements OnInit {
+export class PublicOrderLookupComponent implements OnInit, OnDestroy {
   private readonly publicApi = inject(PublicApiService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private routeSubscription?: Subscription;
 
   readonly order = signal<PublicOrder | null>(null);
   readonly isLoading = signal(false);
@@ -29,17 +35,26 @@ export class PublicOrderLookupComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const reference = this.route.snapshot.paramMap.get('identifier') || '';
-    const token = this.route.snapshot.queryParamMap.get('token') || '';
-    if (!reference) return;
-    this.lookupForm.controls.reference.setValue(reference);
-    this.loadSecure(reference, token);
+    this.routeSubscription = combineLatest([
+      this.route.paramMap,
+      this.route.queryParamMap,
+    ]).subscribe(([params, queryParams]) => {
+      const reference = params.get('identifier') || '';
+      const token = queryParams.get('token') || '';
+      if (!reference) return;
+      this.lookupForm.controls.reference.setValue(reference);
+      this.loadSecure(reference, token);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.routeSubscription?.unsubscribe();
   }
 
   lookup(): void {
     if (this.lookupForm.invalid) {
       this.lookupForm.markAllAsTouched();
-      this.errorMessage.set('Unesite broj potvrde i email korišćen pri rezervaciji.');
+      this.errorMessage.set(this.i18n.t('order.enterDetails'));
       return;
     }
     this.startLoading();
@@ -49,22 +64,22 @@ export class PublicOrderLookupComponent implements OnInit {
       .subscribe({
         next: (response) => this.order.set(response.order),
         error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Porudžbina nije pronađena.');
+          this.errorMessage.set(error?.error?.message || this.i18n.t('order.notFound'));
         },
       });
   }
 
   statusExplanation(order: PublicOrder): string {
     if (order.status === 'reserved') {
-      return 'Sedišta su rezervisana do navedenog roka.';
+      return this.i18n.t('ticketing.reservedUntil');
     }
     if (order.status === 'pending_payment') {
-      return 'Kupovina je pokrenuta, ali plaćanje još nije potvrđeno.';
+      return this.i18n.t('ticketing.purchasePending');
     }
-    if (order.status === 'paid') return 'Plaćanje je evidentirano i sedišta su potvrđena.';
-    if (order.status === 'expired') return 'Rok je istekao i sedišta su oslobođena.';
-    if (order.status === 'cancelled') return 'Porudžbina ili rezervacija je otkazana.';
-    return 'Zahtev je evidentiran u sistemu.';
+    if (order.status === 'paid') return this.i18n.t('order.paid');
+    if (order.status === 'expired') return this.i18n.t('order.expired');
+    if (order.status === 'cancelled') return this.i18n.t('order.cancelled');
+    return this.i18n.t('order.recorded');
   }
 
   tickets(order: PublicOrder): PublicOrderItem[] {
@@ -72,8 +87,8 @@ export class PublicOrderLookupComponent implements OnInit {
   }
 
   formatEventDate(value: string | null | undefined): string {
-    if (!value) return 'Datum nije dostupan';
-    return new Intl.DateTimeFormat('sr-Latn-RS', {
+    if (!value) return this.i18n.t('order.dateUnavailable');
+    return new Intl.DateTimeFormat(this.locale.isEnglish() ? 'en-GB' : 'sr-Latn-RS', {
       weekday: 'long',
       day: '2-digit',
       month: 'long',
@@ -90,7 +105,7 @@ export class PublicOrderLookupComponent implements OnInit {
       .subscribe({
         next: (response) => this.order.set(response.order),
         error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Link nije važeći. Unesite email za proveru.');
+          this.errorMessage.set(error?.error?.message || this.i18n.t('order.invalidLink'));
         },
       });
   }

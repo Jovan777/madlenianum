@@ -6,6 +6,7 @@ const PromoSlide = require("../models/PromoSlide");
 const { publicPublishedFilter } = require("./cms.service");
 const { eventDto, homepageConfigDto, newsDto, productionDto, promoSlideDto } = require("./cmsDto.service");
 const { populateNews, populateProduction } = require("./cmsPopulate.service");
+const { localeAvailabilityFilter, normalizeLocale } = require("./locale.service");
 
 const homepageProductionPopulate = [
   { path: "poster" },
@@ -40,13 +41,15 @@ const isPublishedAt = (item, now) => (
   && (!item.publishedAt || new Date(item.publishedAt) <= now)
 );
 
-const getResolvedHomepage = async () => {
+const getResolvedHomepage = async (locale = "sr") => {
+  const requestedLocale = normalizeLocale(locale);
   const now = new Date();
   const config = await populateHomepageConfig(HomepageConfig.findOne({ key: "default" }));
   const effective = config || new HomepageConfig({ key: "default" });
 
   const slideFilter = {
     ...publicPublishedFilter(now),
+    ...localeAvailabilityFilter(requestedLocale, ["title"]),
     $and: [
       { $or: [{ activeFrom: null }, { activeFrom: { $exists: false } }, { activeFrom: { $lte: now } }] },
       { $or: [{ activeUntil: null }, { activeUntil: { $exists: false } }, { activeUntil: { $gte: now } }] },
@@ -63,7 +66,7 @@ const getResolvedHomepage = async () => {
         .sort("-createdAt")
         .limit(effective.hero.limit || 5)
         .populate("image")
-        .populate({ path: "relatedProduction", populate: homepageProductionPopulate })
+        .populate({ path: "relatedProduction", match: localeAvailabilityFilter(requestedLocale), populate: homepageProductionPopulate })
         .populate({ path: "relatedEvent", populate: [{ path: "venue" }, { path: "production", populate: { path: "poster" } }] });
 
   const eventFilter = { status: "scheduled", startsAt: { $gte: effective.upcomingEvents.dateFrom || now } };
@@ -77,34 +80,35 @@ const getResolvedHomepage = async () => {
     : await Event.find(eventFilter)
         .sort("startsAt")
         .limit(effective.upcomingEvents.limit || 8)
-        .populate({ path: "production", match: publicPublishedFilter(now), populate: { path: "poster" } })
+        .populate({ path: "production", match: { ...publicPublishedFilter(now), ...localeAvailabilityFilter(requestedLocale) }, populate: { path: "poster" } })
         .populate("venue");
 
-  const repertoireFilter = { ...publicPublishedFilter(now), isOnRepertoire: { $ne: false } };
+  const repertoireFilter = { ...publicPublishedFilter(now), ...localeAvailabilityFilter(requestedLocale), isOnRepertoire: { $ne: false } };
   if (effective.repertoireProductions.allowedTypes?.length) repertoireFilter.type = { $in: effective.repertoireProductions.allowedTypes };
   const repertoireProductions = effective.repertoireProductions.mode === "manual" && effective.repertoireProductions.selectedProductions?.length
     ? effective.repertoireProductions.selectedProductions.filter((item) => isPublishedAt(item, now)).slice(0, effective.repertoireProductions.limit || 8)
     : await populateProduction(Production.find(repertoireFilter).sort("title").limit(effective.repertoireProductions.limit || 8));
 
-  const productionFilter = { ...publicPublishedFilter(now), isFeatured: true };
+  const productionFilter = { ...publicPublishedFilter(now), ...localeAvailabilityFilter(requestedLocale), isFeatured: true };
   if (effective.featuredProductions.allowedTypes?.length) productionFilter.type = { $in: effective.featuredProductions.allowedTypes };
   const productions = effective.featuredProductions.mode === "manual" && effective.featuredProductions.selectedProductions?.length
     ? effective.featuredProductions.selectedProductions.filter((item) => isPublishedAt(item, now)).slice(0, effective.featuredProductions.limit || 6)
     : await populateProduction(Production.find(productionFilter).sort("-isFeatured title").limit(effective.featuredProductions.limit || 6));
 
-  const newsFilter = { ...publicPublishedFilter(now), isFeatured: true };
+  const newsFilter = { ...publicPublishedFilter(now), ...localeAvailabilityFilter(requestedLocale, ["title", "slug", "excerpt"]), isFeatured: true };
   if (effective.featuredNews.category) newsFilter.category = effective.featuredNews.category;
   const news = effective.featuredNews.mode === "manual" && effective.featuredNews.selectedNews?.length
     ? effective.featuredNews.selectedNews.filter((item) => isPublishedAt(item, now)).slice(0, effective.featuredNews.limit || 6)
     : await populateNews(News.find(newsFilter).sort("-publishedAt").limit(effective.featuredNews.limit || 6));
 
   return {
-    config: homepageConfigDto(effective),
-    slides: effective.hero.enabled === false ? [] : slides.map(promoSlideDto),
-    upcomingEvents: effective.upcomingEvents.enabled === false ? [] : events.filter((event) => event.production).map(eventDto),
-    repertoireProductions: effective.repertoireProductions.enabled === false ? [] : repertoireProductions.map(productionDto),
-    featuredProductions: effective.featuredProductions.enabled === false ? [] : productions.map(productionDto),
-    featuredNews: effective.featuredNews.enabled === false ? [] : news.map(newsDto),
+    locale: requestedLocale,
+    config: homepageConfigDto(effective, requestedLocale),
+    slides: effective.hero.enabled === false ? [] : slides.map((item) => promoSlideDto(item, requestedLocale)),
+    upcomingEvents: effective.upcomingEvents.enabled === false ? [] : events.filter((event) => event.production).map((item) => eventDto(item, requestedLocale)),
+    repertoireProductions: effective.repertoireProductions.enabled === false ? [] : repertoireProductions.map((item) => productionDto(item, requestedLocale)),
+    featuredProductions: effective.featuredProductions.enabled === false ? [] : productions.map((item) => productionDto(item, requestedLocale)),
+    featuredNews: effective.featuredNews.enabled === false ? [] : news.map((item) => newsDto(item, requestedLocale)),
   };
 };
 

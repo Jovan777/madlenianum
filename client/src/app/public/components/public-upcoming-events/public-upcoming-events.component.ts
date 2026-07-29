@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 
 import { PublicEvent, PublicProduction } from '../../../core/models/public.models';
 import { MediaUrlService } from '../../../core/services/media-url.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 import { PublicDisplayService } from '../../shared/public-display.service';
 
 interface EventDateGroup {
@@ -21,10 +23,12 @@ interface EventDateGroup {
 })
 export class PublicUpcomingEventsComponent {
   readonly events = input<PublicEvent[]>([]);
-  readonly heading = input('Predstojeći događaji');
+  readonly heading = input('');
   readonly selectedDate = signal('');
   readonly media = inject(MediaUrlService);
   readonly display = inject(PublicDisplayService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   readonly groups = computed<EventDateGroup[]>(() => {
     const sorted = [...this.events()].sort((a, b) => String(a.startsAt).localeCompare(String(b.startsAt)));

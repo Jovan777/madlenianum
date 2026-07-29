@@ -1,5 +1,5 @@
 <article class="event-card">
-  <a class="poster" [routerLink]="['/predstave', slug()]" [attr.aria-label]="'Detalji predstave ' + title()">
+  <a class="poster" [routerLink]="locale.productionPath(slug())" [attr.aria-label]="i18n.t('repertoire.details') + ': ' + title()">
     <img [src]="image()" [alt]="title()" loading="lazy" />
   </a>
 
@@ -9,10 +9,10 @@
     <div class="meta">
       <span>{{ display.productionType(production()?.type) }}</span>
       <span>{{ venue() }}</span>
-      <em *ngIf="event().isPremiere">Premijera</em>
+      <em *ngIf="event().isPremiere">{{ 'production.premiere' | publicTranslate }}</em>
     </div>
 
-    <h3><a [routerLink]="['/predstave', slug()]">{{ title() }}</a></h3>
+    <h3><a [routerLink]="locale.productionPath(slug())">{{ title() }}</a></h3>
     <div class="credits" *ngIf="credits().length">
       <span *ngFor="let credit of credits()">
         {{ credit.label }}: <strong>{{ credit.name }}</strong>
@@ -21,17 +21,17 @@
   </div>
 
   <div class="actions">
-    <a class="details" [routerLink]="['/predstave', slug()]">
+    <a class="details" [routerLink]="locale.productionPath(slug())">
       <span aria-hidden="true">&#9432;</span>
-      Saznaj više
+      {{ 'common.learnMore' | publicTranslate }}
     </a>
 
     <a
       class="buy"
       *ngIf="sale().canPurchase; else saleStatus"
-      [routerLink]="['/kupovina', eventId()]"
-      [attr.aria-label]="'Kupi karte za ' + title()"
-      title="Kupi karte"
+      [routerLink]="locale.ticketPath(eventId())"
+      [attr.aria-label]="i18n.t('production.buyTickets') + ': ' + title()"
+      [title]="'production.buyTickets' | publicTranslate"
     >
       <span class="ticket-icon" aria-hidden="true"></span>
     </a>

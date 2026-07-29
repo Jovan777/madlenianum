@@ -10,10 +10,12 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
+  inject,
   signal,
 } from '@angular/core';
 
 import { PublicSeat } from '../../../core/models/public.models';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 
 interface MapBounds {
   minX: number;
@@ -36,6 +38,7 @@ interface PublicMapGroup {
   styleUrl: './public-seat-map.component.scss',
 })
 export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestroy {
+  readonly i18n = inject(PublicI18nService);
   @Input() seats: PublicSeat[] = [];
   @Input() selectedSeatIds: string[] = [];
   @Input() lockedSeatIds: string[] = [];
@@ -52,13 +55,13 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
   readonly fitScale = signal(1);
 
   readonly legend = [
-    { status: 'available', label: 'Slobodno' },
-    { status: 'selected', label: 'Izabrano' },
-    { status: 'locked', label: 'Zaključano' },
-    { status: 'reserved', label: 'Rezervisano' },
-    { status: 'sold', label: 'Prodato' },
-    { status: 'box_office_only', label: 'Samo blagajna' },
-    { status: 'unavailable', label: 'Nedostupno' },
+    { status: 'available', label: this.i18n.t('ticketing.available') },
+    { status: 'selected', label: this.i18n.t('ticketing.selected') },
+    { status: 'locked', label: this.i18n.t('ticketing.locked') },
+    { status: 'reserved', label: this.i18n.t('ticketing.reserved') },
+    { status: 'sold', label: this.i18n.t('ticketing.sold') },
+    { status: 'box_office_only', label: this.i18n.t('ticketing.boxOfficeOnly') },
+    { status: 'unavailable', label: this.i18n.t('ticketing.unavailable') },
   ];
 
   private resizeObserver?: ResizeObserver;

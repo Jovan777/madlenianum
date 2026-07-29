@@ -1,7 +1,7 @@
 <section class="news-section" *ngIf="items().length" data-motion="up">
   <div class="section-top">
-    <h2>{{ heading() || 'Iza kulisa' }}</h2>
-    <div class="filters" role="tablist" aria-label="Filtriraj objave">
+    <h2>{{ heading() || i18n.t('home.behindScenes') }}</h2>
+    <div class="filters" role="tablist" [attr.aria-label]="i18n.t('news.title')">
       <button
         *ngFor="let filter of filters"
         type="button"
@@ -9,7 +9,7 @@
         [class.active]="filter.value === activeFilter()"
         [attr.aria-selected]="filter.value === activeFilter()"
         (click)="activeFilter.set(filter.value)"
-      >{{ filter.label }}</button>
+      >{{ filterLabel(filter.value) }}</button>
     </div>
   </div>
 
@@ -21,11 +21,11 @@
       </div>
       <h3>{{ item.title }}</h3>
       <p>{{ item.excerpt || item.subtitle }}</p>
-      <a *ngIf="item.relatedProduction?.slug" [routerLink]="['/predstave', item.relatedProduction?.slug]">Povezana predstava</a>
+      <a *ngIf="item.relatedProduction?.slug" [routerLink]="[locale.equivalentPath('/predstave', locale.current()), item.relatedProduction?.slug]">{{ i18n.t('news.relatedProduction') }}</a>
     </article>
   </div>
 
   <ng-template #emptyNews>
-    <p class="news-empty">U ovoj kategoriji trenutno nema objava.</p>
+    <p class="news-empty">{{ i18n.t('home.noNews') }}</p>
   </ng-template>
 </section>

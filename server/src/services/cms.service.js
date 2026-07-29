@@ -61,9 +61,20 @@ const publicPublishedFilter = (now = new Date()) => ({
   ],
 });
 
+// Mongo filters such as localized slug and publication state can both contain
+// top-level operators (most notably $or). Object-spreading those filters loses
+// one of the operators, so compose independent constraints explicitly.
+const combineFilters = (...filters) => {
+  const constraints = filters.filter((filter) => filter && Object.keys(filter).length);
+  if (!constraints.length) return {};
+  if (constraints.length === 1) return constraints[0];
+  return { $and: constraints };
+};
+
 module.exports = {
   applyAudit,
   applyPublishing,
+  combineFilters,
   createHttpError,
   escapeRegex,
   normalizeSlug,

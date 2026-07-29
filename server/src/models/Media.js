@@ -48,6 +48,14 @@ const mediaSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    translations: {
+      en: {
+        title: { type: String, default: "", trim: true },
+        alt: { type: String, default: "" },
+        caption: { type: String, default: "" },
+        credit: { type: String, default: "" },
+      },
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "AdminUser",

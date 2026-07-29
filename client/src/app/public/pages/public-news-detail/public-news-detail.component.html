@@ -1,10 +1,10 @@
-<p class="state" *ngIf="loading()">Učitavanje vesti...</p>
-<p class="state state--error" *ngIf="error()">{{ error() }} <a routerLink="/vesti">Nazad na vesti</a></p>
+<p class="state" *ngIf="loading()">{{ 'news.loading' | publicTranslate }}</p>
+<p class="state state--error" *ngIf="error()">{{ error() }} <a [routerLink]="locale.newsPath()">{{ 'news.back' | publicTranslate }}</a></p>
 
 <article *ngIf="item() as news" class="news-detail">
   <header class="article-hero" data-motion="fade">
     <img [src]="heroImage(news)" [alt]="news.image ? news.title : ''" />
-    <div><a routerLink="/vesti"><span aria-hidden="true">←</span> Sve vesti</a><p>{{ display.newsCategory(news.category) }}</p><h1>{{ news.title }}</h1><time *ngIf="news.publishedAt" [attr.datetime]="news.publishedAt">{{ display.dayMonth(news.publishedAt) }}</time></div>
+    <div><a [routerLink]="locale.newsPath()"><span aria-hidden="true">←</span> {{ 'news.back' | publicTranslate }}</a><p>{{ display.newsCategory(news.category) }}</p><h1>{{ news.title }}</h1><time *ngIf="news.publishedAt" [attr.datetime]="news.publishedAt">{{ display.dayMonth(news.publishedAt) }}</time></div>
   </header>
 
   <div class="article-layout">
@@ -14,15 +14,15 @@
       <div class="rich-text" [innerHTML]="news.body"></div>
 
       <section class="article-gallery" *ngIf="news.galleryItems?.length" data-motion="up">
-        <h2>Galerija</h2>
+        <h2>{{ 'common.gallery' | publicTranslate }}</h2>
         <div data-motion-stagger><button *ngFor="let galleryItem of news.galleryItems; let i = index" type="button" (click)="openGallery(i)" data-motion-item data-motion-card><img [src]="image(galleryItem.media)" [alt]="galleryItem.altText || news.title" loading="lazy" /></button></div>
       </section>
     </main>
 
     <aside *ngIf="news.relatedProduction || news.attachment || news.externalLinks?.length" data-motion="right">
-      <section *ngIf="news.relatedProduction as production"><p>Povezana predstava</p><h2>{{ production.title }}</h2><a [routerLink]="['/predstave', production.slug]">Pogledajte predstavu →</a></section>
-      <section *ngIf="news.attachment"><p>Dokument</p><a [href]="image(news.attachment)" target="_blank" rel="noreferrer">Otvorite prilog ↗</a></section>
-      <section *ngIf="news.externalLinks?.length"><p>Dodatni linkovi</p><a *ngFor="let link of news.externalLinks" [href]="link.url" target="_blank" rel="noreferrer">{{ link.label || link.url }} ↗</a></section>
+      <section *ngIf="news.relatedProduction as production"><p>{{ 'news.relatedProduction' | publicTranslate }}</p><h2>{{ production.title }}</h2><a [routerLink]="locale.productionPath(production.slug)">{{ 'news.viewProduction' | publicTranslate }} →</a></section>
+      <section *ngIf="news.attachment"><p>{{ 'news.document' | publicTranslate }}</p><a [href]="image(news.attachment)" target="_blank" rel="noreferrer">{{ 'news.openAttachment' | publicTranslate }} ↗</a></section>
+      <section *ngIf="news.externalLinks?.length"><p>{{ 'news.additionalLinks' | publicTranslate }}</p><a *ngFor="let link of news.externalLinks" [href]="link.url" target="_blank" rel="noreferrer">{{ link.label || link.url }} ↗</a></section>
     </aside>
   </div>
 </article>

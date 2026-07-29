@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const contactMessageSchema = new mongoose.Schema(
   {
+    locale: { type: String, enum: ["sr", "en"], default: "sr" },
     fullName: {
       type: String,
       required: [true, "Ime i prezime je obavezno."],

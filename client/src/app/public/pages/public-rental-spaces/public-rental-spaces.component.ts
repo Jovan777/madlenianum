@@ -6,6 +6,8 @@ import { finalize, forkJoin } from 'rxjs';
 import { RentalSpace } from '../../../core/models/phase6a.models';
 import { PublicSiteSettings } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 import { PublicEventPlanningFormComponent } from '../../components/public-event-planning-form/public-event-planning-form.component';
 import { rentalSpaceImage } from '../../shared/rental-space-presentation';
 
@@ -18,6 +20,8 @@ import { rentalSpaceImage } from '../../shared/rental-space-presentation';
 })
 export class PublicRentalSpacesComponent implements OnInit {
   private readonly api = inject(PublicApiService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   readonly spaces = signal<RentalSpace[]>([]);
   readonly settings = signal<PublicSiteSettings | null>(null);
@@ -38,7 +42,7 @@ export class PublicRentalSpacesComponent implements OnInit {
         },
         error: (error) => {
           this.error.set(
-            error?.error?.message || 'Prostori za zakup trenutno nisu dostupni.'
+            error?.error?.message || this.i18n.t('rental.error')
           );
         },
       });
@@ -52,10 +56,10 @@ export class PublicRentalSpacesComponent implements OnInit {
     const values: string[] = [];
 
     if (space.seatedCapacity) {
-      values.push(`${space.seatedCapacity} sedećih`);
+      values.push(`${space.seatedCapacity} ${this.i18n.t('rental.seatedShort')}`);
     }
     if (space.standingCapacity) {
-      values.push(`${space.standingCapacity} gostiju`);
+      values.push(`${space.standingCapacity} ${this.i18n.t('rental.guestsShort')}`);
     }
     if (space.areaSqm) {
       values.push(`${space.areaSqm} m²`);

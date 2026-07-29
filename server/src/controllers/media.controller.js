@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const Media = require("../models/Media");
 const mediaStorage = require("../services/localMediaStorage.service");
 const { findMediaUsage } = require("../services/mediaUsage.service");
+const { withMergedTranslations } = require("../services/localizedContent.service");
 
 const getFileType = (mimeType) => (mimeType.startsWith("image/") ? "image" : "document");
 
@@ -169,6 +170,20 @@ const updateMedia = asyncHandler(async (req, res) => {
 
   if (Object.prototype.hasOwnProperty.call(req.body, "credit")) {
     media.credit = String(req.body.credit || "").trim();
+  }
+
+  if (Object.prototype.hasOwnProperty.call(req.body, "translations")) {
+    const merged = withMergedTranslations(media, {
+      translations: {
+        en: {
+          title: String(req.body.translations?.en?.title || "").trim(),
+          alt: String(req.body.translations?.en?.alt || "").trim(),
+          caption: String(req.body.translations?.en?.caption || "").trim(),
+          credit: String(req.body.translations?.en?.credit || "").trim(),
+        },
+      },
+    });
+    media.translations = merged.translations;
   }
 
   await media.save();

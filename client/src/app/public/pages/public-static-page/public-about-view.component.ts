@@ -1,8 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 interface AboutTimelineItem {
   period: string;
@@ -13,11 +16,13 @@ interface AboutTimelineItem {
 @Component({
   selector: 'app-public-about-view',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PublicTranslatePipe],
   templateUrl: './public-about-view.component.html',
   styleUrl: './public-about-view.component.scss',
 })
 export class PublicAboutViewComponent {
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
   @Input({ required: true }) page: any;
 
   readonly featureImageIndex = signal(0);
@@ -32,28 +37,28 @@ export class PublicAboutViewComponent {
   readonly fallbackTimeline: AboutTimelineItem[] = [
     {
       period: '1998',
-      title: 'Rađanje vizije i prva Kamerna opera',
-      description: 'Madlenianum počinje svoj život kao Kamerna opera pod pokroviteljstvom gospođe Madlene Zepter. Prva izvedena predstava označila je osnivanje prve privatne opere i teatra u ovom delu Evrope.',
+      title: this.i18n.t('about.timeline.1998.title'),
+      description: this.i18n.t('about.timeline.1998.text'),
     },
     {
       period: '2005',
-      title: 'Novo ruho i velika rekonstrukcija',
-      description: 'Zgrada nekadašnjeg Narodnog pozorišta u Zemunu prolazi kroz monumentalnu rekonstrukciju. Teatar dobija današnji izgled, raskošan foaje i tehnološki opremljen prostor.',
+      title: this.i18n.t('about.timeline.2005.title'),
+      description: this.i18n.t('about.timeline.2005.text'),
     },
     {
       period: '2007',
-      title: 'Revolucija mjuzikla na domaćoj sceni',
-      description: 'Madlenianum pravi hrabar produkcijski iskorak i postavlja velike naslove koji uvode nove standarde muzičkog teatra na Balkanu.',
+      title: this.i18n.t('about.timeline.2007.title'),
+      description: this.i18n.t('about.timeline.2007.text'),
     },
     {
       period: '2019',
-      title: 'Tehnološki vrhunac i „Fantom iz opere“',
-      description: 'Audio i vizuelni sistemi Velike sale podignuti su na nivo vodećih evropskih teatara, potvrđujući status Madlenianuma kao tehnički najnaprednije scene u zemlji.',
+      title: this.i18n.t('about.timeline.2019.title'),
+      description: this.i18n.t('about.timeline.2019.text'),
     },
     {
       period: '2026',
-      title: 'Sinergija tradicije i inovacije',
-      description: 'Madlenianum danas spaja operu, balet, dramu i savremeno scensko stvaralaštvo, ostajući otvoren za nove umetnike, publiku i međunarodne projekte.',
+      title: this.i18n.t('about.timeline.2026.title'),
+      description: this.i18n.t('about.timeline.2026.text'),
     },
   ];
 
@@ -71,13 +76,13 @@ export class PublicAboutViewComponent {
 
   introHeading(): string {
     const heading = this.section('text-image')?.heading;
-    return heading && heading !== 'Kuca umetnosti' ? heading : 'Kuća umetnosti u srcu Zemuna';
+    return heading && heading !== 'Kuca umetnosti' ? heading : this.i18n.t('about.introTitle');
   }
 
   introBody(): string {
     const body = this.section('text-image')?.body;
     if (body && !body.includes('okuplja umetnike i publiku')) return body;
-    return '<p>Opera i teatar Madlenianum predstavlja jedinstveno mesto susreta klasične tradicije i savremenog scenskog izraza. Od osnivanja, kuća neguje operu, balet, dramu, mjuzikl i koncertni program.</p><p>Smešten u istorijskom jezgru Zemuna, Madlenianum publici pruža vrhunski umetnički doživljaj, a stvaraocima prostor u kojem ideje dobijaju pun scenski život.</p>';
+    return this.i18n.t('about.introBody');
   }
 
   timeline(): AboutTimelineItem[] {
@@ -90,7 +95,7 @@ export class PublicAboutViewComponent {
     const resolved = Array.isArray(items)
       ? items.map((item: any) => ({
           src: this.publicApi.mediaUrl(item?.media),
-          alt: item?.altText || item?.media?.altText || 'Madlenianum scena',
+          alt: item?.altText || item?.media?.altText || this.i18n.t('about.stageTitle'),
           credit: item?.credit || item?.media?.credit || '',
         })).filter((item: any) => item.src)
       : [];

@@ -10,6 +10,7 @@ export class CreativeTeamEditorComponent {
   @Input({ required: true }) array!: FormArray;
   @Input() artists: CmsOption[] = [];
   @Input() roles: Array<{ value: string; label: string }> = [];
+  @Input() language: 'sr' | 'en' = 'sr';
   constructor(private readonly fb: FormBuilder) {}
   groups(): FormGroup[] { return this.array.controls as FormGroup[]; }
   add(value: Record<string, unknown> = {}): void {
@@ -19,6 +20,7 @@ export class CreativeTeamEditorComponent {
       artist: [String(value['artist'] || '')],
       name: [String(value['name'] || '')],
       note: [String(value['note'] || '')],
+      translations: this.fb.group({ en: this.fb.group({ label: [''], name: [''], note: [''] }) }),
       displayOrder: [this.array.length],
     }));
     this.array.markAsDirty();

@@ -6,7 +6,7 @@
   <div class="event-copy">
     <div class="meta-line">
       <span>{{ productionType() }}</span>
-      <span *ngIf="event.isPremiere || event.badge" class="premiere">{{ event.badge || 'Premijera' }}</span>
+      <span *ngIf="event.isPremiere || event.badge" class="premiere">{{ event.badge || ('production.premiere' | publicTranslate) }}</span>
     </div>
     <h1>{{ productionTitle() }}</h1>
     <p>{{ eventDate() }} <i aria-hidden="true"></i> {{ venueName() }}</p>
@@ -14,6 +14,6 @@
 
   <div class="event-actions">
     <span class="status" *ngIf="statusLabel()">{{ statusLabel() }}</span>
-    <a routerLink="/repertoar">Nazad na program</a>
+    <a [routerLink]="locale.equivalentPath('/repertoar', locale.current())">{{ 'repertoire.backToProgram' | publicTranslate }}</a>
   </div>
 </article>

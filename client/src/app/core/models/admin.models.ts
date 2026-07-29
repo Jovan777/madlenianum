@@ -192,6 +192,12 @@ export interface AdminEvent {
   endsAt?: string | null;
   isPremiere: boolean;
   badge?: string;
+  translations?: {
+    en?: {
+      badge?: string;
+      ticketingNote?: string;
+    };
+  };
   status: string;
   saleStatus: string;
   seatMap?: AdminReference | null;

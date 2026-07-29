@@ -11,7 +11,9 @@ const {
 
 const translationSchema = new mongoose.Schema(
   {
+    slug: { type: String, lowercase: true, trim: true },
     displayName: String,
+    professions: [String],
     biography: String,
     seoTitle: String,
     seoDescription: String,
@@ -44,6 +46,10 @@ const artistSchema = new mongoose.Schema(
 artistSchema.pre("validate", function () {
   if (!this.slug && this.displayName) this.slug = slugify(this.displayName);
   if (this.isModified("slug") && this.slug) this.slug = slugify(this.slug);
+  if (this.translations?.en) {
+    this.translations.en.slug = this.translations.en.slug ? slugify(this.translations.en.slug) : undefined;
+    this.translations.en.biography = sanitizeRichText(this.translations.en.biography);
+  }
   this.biography = sanitizeRichText(this.biography);
 
   const galleryIds = (this.galleryItems || []).map((item) => String(item.media));
@@ -54,5 +60,6 @@ artistSchema.pre("validate", function () {
 
 artistSchema.index({ status: 1, displayName: 1 });
 artistSchema.index({ professions: 1, status: 1 });
+artistSchema.index({ "translations.en.slug": 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("Artist", artistSchema, "artists");

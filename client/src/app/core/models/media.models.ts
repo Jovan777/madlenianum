@@ -21,6 +21,14 @@ export interface MediaItem {
   altText?: string;
   caption?: string;
   credit?: string;
+  translations?: {
+    en?: {
+      title?: string;
+      alt?: string;
+      caption?: string;
+      credit?: string;
+    };
+  };
   createdBy?: MediaAdminReference | string;
   createdAt?: string;
   updatedAt?: string;
@@ -65,6 +73,14 @@ export interface MediaMetadataPayload {
   altText: string;
   caption: string;
   credit: string;
+  translations?: {
+    en?: {
+      title?: string;
+      alt?: string;
+      caption?: string;
+      credit?: string;
+    };
+  };
 }
 
 export interface MediaUsage {

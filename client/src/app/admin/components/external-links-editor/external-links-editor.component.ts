@@ -14,6 +14,7 @@ export class ExternalLinksEditorComponent {
   @Input() title = 'Spoljasnji linkovi';
   @Input() showType = false;
   @Input() linkTypes: Array<{ value: string; label: string }> = [];
+  @Input() language: 'sr' | 'en' = 'sr';
 
   constructor(private readonly fb: FormBuilder) {}
 
@@ -23,6 +24,7 @@ export class ExternalLinksEditorComponent {
       label: [String(value['label'] || ''), Validators.required],
       url: [String(value['url'] || ''), [Validators.required, Validators.pattern(/^https?:\/\//i)]],
       type: [String(value['type'] || 'other')],
+      translations: this.fb.group({ en: this.fb.group({ label: [''] }) }),
       displayOrder: [this.array.length],
     }));
     this.array.markAsDirty();

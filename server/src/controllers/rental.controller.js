@@ -5,6 +5,7 @@ const EventPlanningInquiry = require("../models/EventPlanningInquiry");
 const {
   applyAudit,
   applyPublishing,
+  combineFilters,
   createHttpError,
   escapeRegex,
   paginationFrom,
@@ -29,6 +30,8 @@ const {
   rentalSpaceDto,
 } = require("../services/phase6aDto.service");
 const { sendInquiryNotification } = require("../services/inquiryEmail.service");
+const { localeAvailabilityFilter, localizedSearchFields, localizedSlugQuery, localizedValue } = require("../services/locale.service");
+const { assignLocalizedPayload } = require("../services/localizedContent.service");
 
 const contentSortFor = (value) => {
   const map = {
@@ -50,33 +53,37 @@ const inquirySortFor = (value) => {
   return map[value] || "-createdAt";
 };
 
-const publicRentalSpaceFilter = (query) => {
-  const filter = publicPublishedFilter();
+const publicRentalSpaceFilter = (query, locale) => {
+  const filter = { ...publicPublishedFilter(), ...localeAvailabilityFilter(locale) };
   if (query.isFeatured !== undefined) filter.isFeatured = query.isFeatured === "true";
   if (query.minSeatedCapacity) filter.seatedCapacity = { $gte: Number(query.minSeatedCapacity) || 0 };
   if (query.minStandingCapacity) filter.standingCapacity = { $gte: Number(query.minStandingCapacity) || 0 };
   if (query.eventType) filter.suitableEventTypes = query.eventType;
   if (query.q) {
     const search = new RegExp(escapeRegex(query.q), "i");
-    filter.$and = [{ $or: [{ title: search }, { shortDescription: search }, { description: search }] }];
+    filter.$and = [{ $or: localizedSearchFields(["title", "shortDescription", "description"], locale).map((field) => ({ [field]: search })) }];
   }
   return filter;
 };
 
 const listPublicRentalSpaces = asyncHandler(async (req, res) => {
   const { page, limit, skip } = paginationFrom(req.query, { limit: 12 });
-  const filter = publicRentalSpaceFilter(req.query);
+  const filter = publicRentalSpaceFilter(req.query, req.locale);
   const [items, total] = await Promise.all([
     populateRentalSpace(RentalSpace.find(filter).sort(contentSortFor(req.query.sort)).skip(skip).limit(limit)),
     RentalSpace.countDocuments(filter),
   ]);
-  sendList(res, { items: items.map((item) => rentalSpaceDto(item)), total, page, limit });
+  sendList(res, { items: items.map((item) => rentalSpaceDto(item, { locale: req.locale })), total, page, limit });
 });
 
 const getPublicRentalSpace = asyncHandler(async (req, res) => {
-  const item = await populateRentalSpace(RentalSpace.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
-  if (!item) throw createHttpError(404, "Prostor nije pronadjen.");
-  res.json({ success: true, item: rentalSpaceDto(item) });
+  const item = await populateRentalSpace(RentalSpace.findOne(combineFilters(
+    localizedSlugQuery(req.params.slug, req.locale),
+    publicPublishedFilter(),
+    localeAvailabilityFilter(req.locale)
+  )));
+  if (!item) throw createHttpError(404, req.locale === "en" ? "Rental space not found." : "Prostor nije pronadjen.");
+  res.json({ success: true, locale: req.locale, item: rentalSpaceDto(item, { locale: req.locale }) });
 });
 
 const listRentalSpaces = asyncHandler(async (req, res) => {
@@ -118,7 +125,7 @@ const updateRentalSpace = asyncHandler(async (req, res) => {
   const item = await RentalSpace.findById(req.params.id);
   if (!item) throw createHttpError(404, "Prostor nije pronadjen.");
   const previousStatus = item.status;
-  Object.assign(item, req.body);
+  assignLocalizedPayload(item, req.body);
   applyAudit(item, req.admin);
   applyPublishing(item, previousStatus);
   await item.save();
@@ -172,11 +179,12 @@ const createRentalInquiry = asyncHandler(async (req, res) => {
   if (!rentalSpace) throw createHttpError(404, "Prostor nije pronadjen ili nije javno dostupan.");
 
   const payload = {
+    locale: req.locale,
     rentalSpace: rentalSpace._id,
     rentalSpaceSnapshot: {
       rentalSpaceId: rentalSpace._id,
-      title: rentalSpace.title,
-      slug: rentalSpace.slug,
+      title: localizedValue(rentalSpace, "title", req.locale),
+      slug: localizedValue(rentalSpace, "slug", req.locale),
       seatedCapacity: rentalSpace.seatedCapacity,
       standingCapacity: rentalSpace.standingCapacity,
     },
@@ -208,7 +216,7 @@ const createRentalInquiry = asyncHandler(async (req, res) => {
   const populated = await populateRentalInquiry(RentalInquiry.findById(inquiry._id));
   res.status(201).json({
     success: true,
-    message: "Upit je sacuvan. Madlenianum tim ce vas kontaktirati.",
+    message: req.locale === "en" ? "Your inquiry has been saved. The Madlenianum team will contact you." : "Upit je sacuvan. Madlenianum tim ce vas kontaktirati.",
     item: rentalInquiryDto(populated),
     emailStatus: populated.emailDelivery?.status,
   });
@@ -225,6 +233,7 @@ const createEventPlanningInquiry = asyncHandler(async (req, res) => {
   }
 
   const payload = {
+    locale: req.locale,
     firstName: req.body.firstName,
     lastName: req.body.lastName,
     companyName: req.body.companyName || "",
@@ -234,8 +243,8 @@ const createEventPlanningInquiry = asyncHandler(async (req, res) => {
     approximateGuestCount: req.body.approximateGuestCount,
     preferredRentalSpace: preferredRentalSpace?._id,
     preferredRentalSpaceSnapshot: preferredRentalSpace ? {
-      title: preferredRentalSpace.title,
-      slug: preferredRentalSpace.slug,
+      title: localizedValue(preferredRentalSpace, "title", req.locale),
+      slug: localizedValue(preferredRentalSpace, "slug", req.locale),
     } : undefined,
     eventType: req.body.eventType || "",
     note: req.body.note || "",
@@ -259,7 +268,7 @@ const createEventPlanningInquiry = asyncHandler(async (req, res) => {
   const populated = await populateEventPlanningInquiry(EventPlanningInquiry.findById(inquiry._id));
   res.status(201).json({
     success: true,
-    message: "Upit je sacuvan. Madlenianum tim ce vas kontaktirati.",
+    message: req.locale === "en" ? "Your inquiry has been saved. The Madlenianum team will contact you." : "Upit je sacuvan. Madlenianum tim ce vas kontaktirati.",
     item: eventPlanningInquiryDto(populated),
     emailStatus: populated.emailDelivery?.status,
   });

@@ -8,6 +8,7 @@ import { contentStatusLabel, productionTypeLabel } from '../../../core/models/cm
 import { MediaSelectionResult, MediaSelectionValue } from '../../../core/models/media.models';
 import { CmsAdminService } from '../../../core/services/cms-admin.service';
 import { AdminNotificationService } from '../../../core/services/admin-notification.service';
+import { AdminContentLanguage, AdminLanguageTabsComponent } from '../../components/admin-language-tabs.component';
 import { CastEditorComponent } from '../../components/cast-editor/cast-editor.component';
 import { CreativeTeamEditorComponent } from '../../components/creative-team-editor/creative-team-editor.component';
 import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
@@ -22,7 +23,7 @@ import { VideoLinksEditorComponent } from '../../components/video-links-editor/v
 @Component({
   selector: 'app-admin-production-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent, RichTextEditorComponent, TagEditorComponent, StructuredGalleryEditorComponent, SeoFieldsComponent, CreativeTeamEditorComponent, CastEditorComponent, VideoLinksEditorComponent, ReviewLinksEditorComponent, RecommendedProductionsPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AdminLanguageTabsComponent, MediaPickerComponent, RichTextEditorComponent, TagEditorComponent, StructuredGalleryEditorComponent, SeoFieldsComponent, CreativeTeamEditorComponent, CastEditorComponent, VideoLinksEditorComponent, ReviewLinksEditorComponent, RecommendedProductionsPickerComponent],
   templateUrl: './admin-production-form.component.html',
   styleUrl: './admin-production-form.component.scss',
 })
@@ -46,6 +47,7 @@ export class AdminProductionFormComponent implements OnInit {
   readonly creativeRoles = signal<Array<{ value: string; label: string }>>([]);
   readonly videoProviders = signal<Array<{ value: string; label: string }>>([]);
   readonly venueOptions = signal<Array<{ id: string; label: string }>>([]);
+  readonly activeLanguage = signal<AdminContentLanguage>('sr');
   private originalSlug = '';
   private originalStatus = 'draft';
 
@@ -56,6 +58,14 @@ export class AdminProductionFormComponent implements OnInit {
     creativeTeam: this.fb.array<FormGroup>([]), cast: this.fb.array<FormGroup>([]), videos: this.fb.array<FormGroup>([]), reviews: this.fb.array<FormGroup>([]), recommendedProductions: this.fb.control<string[]>([]),
     announcement: this.fb.group({ isAnnounced: [false], month: [null as number | null], year: [new Date().getFullYear()], text: [''], image: [''], startsAt: [''], endsAt: [''] }),
     seo: this.fb.group({ title: [''], description: [''], keywords: this.fb.control<string[]>([]), canonicalUrl: [''], noIndex: [false] }),
+    translations: this.fb.group({
+      en: this.fb.group({
+        title: [''], slug: [''], authorComposer: [''], originalTitle: [''], subtitle: [''],
+        season: [''], performanceLanguage: [''], subtitles: [''], tags: this.fb.control<string[]>([]),
+        shortDescription: [''], description: [''], synopsis: [''], announcementText: [''],
+        seoTitle: [''], seoDescription: [''],
+      }),
+    }),
   });
 
   ngOnInit(): void {
@@ -72,6 +82,11 @@ export class AdminProductionFormComponent implements OnInit {
   get reviews(): FormArray { return this.form.controls.reviews; }
   get announcement(): FormGroup { return this.form.controls.announcement; }
   get seo(): FormGroup { return this.form.controls.seo; }
+  get english(): FormGroup { return this.form.controls.translations.controls.en; }
+  englishComplete(): boolean {
+    const value = this.form.controls.translations.controls.en.getRawValue();
+    return Boolean(value.title?.trim() && value.slug?.trim());
+  }
 
   hasUnsavedChanges(): boolean { return this.form.dirty && !this.isSaving(); }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent): void { if (this.hasUnsavedChanges()) event.preventDefault(); }
@@ -104,11 +119,18 @@ export class AdminProductionFormComponent implements OnInit {
   patchProduction(item: Record<string, unknown>): void {
     this.originalSlug = String(item['slug'] || ''); this.originalStatus = String(item['status'] || 'draft');
     const announcement = this.object(item['announcement']); const seo = this.object(item['seo']);
+    const translations = this.object(item['translations']); const english = this.object(translations['en']);
     this.form.patchValue({
       title:String(item['title']||''),slug:this.originalSlug,type:String(item['type']||'drama'),authorComposer:String(item['authorComposer']||''),originalTitle:String(item['originalTitle']||''),subtitle:String(item['subtitle']||''),season:String(item['season']||''),premiereDate:this.dateInput(item['premiereDate']),venue:this.idOf(item['venue']),durationMinutes:this.numberOrNull(item['durationMinutes']),performanceLanguage:String(item['performanceLanguage']||'sr'),subtitles:String(item['subtitles']||''),
       tags:this.stringArray(item['tags']),shortDescription:String(item['shortDescription']||''),description:String(item['description']||''),synopsis:String(item['synopsis']||''),poster:this.idOf(item['poster']),galleryItems:this.galleryValue(item),status:this.originalStatus,publishedAt:this.dateTimeInput(item['publishedAt']),isPremiere:Boolean(item['isPremiere']),isOnRepertoire:item['isOnRepertoire']!==false,isFeatured:Boolean(item['isFeatured']),recommendedProductions:this.idArray(item['recommendedProductions']),
       announcement:{isAnnounced:Boolean(announcement['isAnnounced']),month:this.numberOrNull(announcement['month']),year:this.numberOrNull(announcement['year'])||new Date().getFullYear(),text:String(announcement['text']||''),image:this.idOf(announcement['image']),startsAt:this.dateTimeInput(announcement['startsAt']),endsAt:this.dateTimeInput(announcement['endsAt'])},
       seo:{title:String(seo['title']||''),description:String(seo['description']||''),keywords:this.stringArray(seo['keywords']),canonicalUrl:String(seo['canonicalUrl']||''),noIndex:Boolean(seo['noIndex'])},
+      translations:{en:{
+        title:String(english['title']||''),slug:String(english['slug']||''),authorComposer:String(english['authorComposer']||''),originalTitle:String(english['originalTitle']||''),subtitle:String(english['subtitle']||''),
+        season:String(english['season']||''),performanceLanguage:String(english['performanceLanguage']||''),subtitles:String(english['subtitles']||''),tags:this.stringArray(english['tags']),
+        shortDescription:String(english['shortDescription']||''),description:String(english['description']||''),synopsis:String(english['synopsis']||''),announcementText:String(english['announcementText']||''),
+        seoTitle:String(english['seoTitle']||''),seoDescription:String(english['seoDescription']||''),
+      }},
     });
     this.posterSelection.set(item['poster'] ? [item['poster'] as MediaSelectionValue] : []);
     this.announcementSelection.set(announcement['image'] ? [announcement['image'] as MediaSelectionValue] : []);
@@ -133,7 +155,7 @@ export class AdminProductionFormComponent implements OnInit {
     });
   }
 
-  preview(): void { const id=this.itemId(); if(!id){this.notifications.info('Prvo sacuvajte nacrt, zatim otvorite pregled.');return;} window.open(`/admin/productions/${id}/preview`,'_blank','noopener'); }
+  preview(): void { const id=this.itemId(); if(!id){this.notifications.info('Prvo sacuvajte nacrt, zatim otvorite pregled.');return;} window.open(`/admin/productions/${id}/preview?lang=${this.activeLanguage()}`,'_blank','noopener'); }
   updatePoster(selection: MediaSelectionResult): void { this.posterSelection.set(selection.items.length?selection.items:selection.ids);this.form.controls.poster.setValue(selection.ids[0]||'');this.form.controls.poster.markAsDirty(); }
   updateAnnouncementImage(selection: MediaSelectionResult): void { this.announcementSelection.set(selection.items.length?selection.items:selection.ids);this.announcement.get('image')?.setValue(selection.ids[0]||'');this.announcement.markAsDirty(); }
   statusLabel(value:string|undefined|null):string{return contentStatusLabel(value||undefined);}
@@ -145,15 +167,16 @@ export class AdminProductionFormComponent implements OnInit {
       announcement:{...raw.announcement,image:raw.announcement?.image||null,startsAt:this.iso(raw.announcement?.startsAt),endsAt:this.iso(raw.announcement?.endsAt)}};
   }
 
-  private creditGroup(value:Record<string,unknown>,index:number){return this.fb.group({roleKey:[String(value['roleKey']||'other')],label:[String(value['label']||value['role']||''),Validators.required],artist:[this.idOf(value['artist'])],name:[String(value['name']||'')],note:[String(value['note']||'')],displayOrder:[index]});}
-  private castGroup(value:Record<string,unknown>,index:number){return this.fb.group({artist:[this.idOf(value['artist'])],name:[String(value['name']||'')],role:[String(value['role']||value['character']||'')],note:[String(value['note']||'')],displayOrder:[index]});}
-  private videoGroup(value:Record<string,unknown>,index:number){return this.fb.group({provider:[String(value['provider']||'youtube')],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],title:[String(value['title']||'')],thumbnail:[this.idOf(value['thumbnail'])],isTrailer:[Boolean(value['isTrailer'])],displayOrder:[index]});}
-  private reviewGroup(value:Record<string,unknown>,index:number){return this.fb.group({title:[String(value['title']||'')],publication:[String(value['publication']||'')],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],publishedAt:[this.dateInput(value['publishedAt'])],note:[String(value['note']||'')],displayOrder:[index]});}
+  private creditGroup(value:Record<string,unknown>,index:number){const en=this.englishOf(value);return this.fb.group({roleKey:[String(value['roleKey']||'other')],label:[String(value['label']||value['role']||''),Validators.required],artist:[this.idOf(value['artist'])],name:[String(value['name']||'')],note:[String(value['note']||'')],translations:this.fb.group({en:this.fb.group({label:[String(en['label']||'')],name:[String(en['name']||'')],note:[String(en['note']||'')]})}),displayOrder:[index]});}
+  private castGroup(value:Record<string,unknown>,index:number){const en=this.englishOf(value);return this.fb.group({artist:[this.idOf(value['artist'])],name:[String(value['name']||'')],role:[String(value['role']||value['character']||'')],note:[String(value['note']||'')],translations:this.fb.group({en:this.fb.group({name:[String(en['name']||'')],role:[String(en['role']||'')],note:[String(en['note']||'')]})}),displayOrder:[index]});}
+  private videoGroup(value:Record<string,unknown>,index:number){const en=this.englishOf(value);return this.fb.group({provider:[String(value['provider']||'youtube')],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],title:[String(value['title']||'')],translations:this.fb.group({en:this.fb.group({title:[String(en['title']||'')]})}),thumbnail:[this.idOf(value['thumbnail'])],isTrailer:[Boolean(value['isTrailer'])],displayOrder:[index]});}
+  private reviewGroup(value:Record<string,unknown>,index:number){const en=this.englishOf(value);return this.fb.group({title:[String(value['title']||'')],publication:[String(value['publication']||'')],url:[String(value['url']||''),[Validators.required,Validators.pattern(/^https?:\/\//i)]],publishedAt:[this.dateInput(value['publishedAt'])],note:[String(value['note']||'')],translations:this.fb.group({en:this.fb.group({title:[String(en['title']||'')],publication:[String(en['publication']||'')],note:[String(en['note']||'')]})}),displayOrder:[index]});}
   private replaceArray(array:FormArray,values:Record<string,unknown>[],factory:(value:Record<string,unknown>,index:number)=>FormGroup):void{array.clear();values.forEach((value,index)=>array.push(factory(value,index)));}
   private normalizeCast(values:Record<string,unknown>[]):Record<string,unknown>[] { return values.flatMap((item)=>{if(item['artist']||item['name'])return[item];const artists=this.array(item['artists']);const names=this.array(item['names']);const count=Math.max(artists.length,names.length,1);return Array.from({length:count},(_,index)=>({artist:artists[index],name:String(names[index]||''),role:item['character']||'',note:item['note']||''}));}); }
-  private creativeTeamPayload(value:unknown):Record<string,unknown>[] { return this.rowObjects(value).map((item,index)=>{const artist=this.optionalId(item['artist']);const payload:Record<string,unknown>={roleKey:this.trimText(item['roleKey'])||'other',label:this.trimText(item['label']||item['role']),name:this.trimText(item['name']),note:this.trimText(item['note']),displayOrder:index};if(artist)payload['artist']=artist;return payload;}).filter((item)=>Boolean(item['label']&&(item['artist']||item['name']))); }
-  private castPayload(value:unknown):Record<string,unknown>[] { return this.rowObjects(value).map((item,index)=>{const artist=this.optionalId(item['artist']);const payload:Record<string,unknown>={name:this.trimText(item['name']),role:this.trimText(item['role']||item['character']),note:this.trimText(item['note']),displayOrder:index};if(artist)payload['artist']=artist;return payload;}).filter((item)=>Boolean(item['artist']||item['name'])); }
-  private galleryValue(item:Record<string,unknown>):GalleryItemInput[]{const structured=this.array(item['galleryItems']);if(structured.length)return structured.map((entry,index)=>({media:entry['media'] as unknown as MediaSelectionValue,caption:String(entry['caption']||''),credit:String(entry['credit']||''),altText:String(entry['altText']||''),displayOrder:Number(entry['displayOrder']??index)}));return this.array(item['gallery']).map((media,index)=>({media:media as unknown as MediaSelectionValue,caption:'',credit:'',altText:'',displayOrder:index}));}
+  private creativeTeamPayload(value:unknown):Record<string,unknown>[] { return this.rowObjects(value).map((item,index)=>{const artist=this.optionalId(item['artist']);const payload:Record<string,unknown>={roleKey:this.trimText(item['roleKey'])||'other',label:this.trimText(item['label']||item['role']),name:this.trimText(item['name']),note:this.trimText(item['note']),translations:item['translations'],displayOrder:index};if(artist)payload['artist']=artist;return payload;}).filter((item)=>Boolean(item['label']&&(item['artist']||item['name']))); }
+  private castPayload(value:unknown):Record<string,unknown>[] { return this.rowObjects(value).map((item,index)=>{const artist=this.optionalId(item['artist']);const payload:Record<string,unknown>={name:this.trimText(item['name']),role:this.trimText(item['role']||item['character']),note:this.trimText(item['note']),translations:item['translations'],displayOrder:index};if(artist)payload['artist']=artist;return payload;}).filter((item)=>Boolean(item['artist']||item['name'])); }
+  private galleryValue(item:Record<string,unknown>):GalleryItemInput[]{const structured=this.array(item['galleryItems']);if(structured.length)return structured.map((entry,index)=>({media:entry['media'] as unknown as MediaSelectionValue,caption:String(entry['caption']||''),credit:String(entry['credit']||''),altText:String(entry['altText']||''),translations:this.object(entry['translations']) as GalleryItemInput['translations'],displayOrder:Number(entry['displayOrder']??index)}));return this.array(item['gallery']).map((media,index)=>({media:media as unknown as MediaSelectionValue,caption:'',credit:'',altText:'',displayOrder:index}));}
+  private englishOf(value:Record<string,unknown>):Record<string,unknown>{return this.object(this.object(value['translations'])['en']);}
   private rowObjects(value:unknown):Record<string,unknown>[]{return Array.isArray(value)?value.map((item)=>this.object(item)):[];}
   private toOptions(value:unknown,key:string,meta?:(item:Record<string,unknown>)=>string):CmsOption[]{return this.array(value).map((item)=>({id:this.idOf(item),label:String(item[key]||''),meta:meta?.(item)||'',status:String(item['status']||'')})).filter((item)=>item.id&&item.label);}
   private optionPairs(value:unknown):Array<{value:string;label:string}>{return this.array(value).map((item)=>({value:String(item['value']||''),label:String(item['label']||item['value']||'')}));}

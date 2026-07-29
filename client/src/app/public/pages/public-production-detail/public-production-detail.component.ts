@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Meta, Title } from '@angular/platform-browser';
+import { EMPTY, catchError, distinctUntilChanged, finalize, map, switchMap, tap } from 'rxjs';
 
 import {
   PublicCastMember,
@@ -13,13 +15,16 @@ import {
   PublicVideo,
 } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
 import { PublicVideoModalComponent } from '../../components/public-video-modal/public-video-modal.component';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 import { PublicDisplayService } from '../../shared/public-display.service';
 
 @Component({
   selector: 'app-public-production-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, PublicVideoModalComponent],
+  imports: [CommonModule, RouterLink, PublicVideoModalComponent, PublicTranslatePipe],
   templateUrl: './public-production-detail.component.html',
   styleUrl: './public-production-detail.component.scss',
 })
@@ -29,6 +34,9 @@ export class PublicProductionDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly locale = inject(PublicLocaleService);
+  private readonly i18n = inject(PublicI18nService);
 
   readonly isLoading = signal(true);
   readonly errorMessage = signal('');
@@ -37,24 +45,37 @@ export class PublicProductionDetailComponent implements OnInit {
   readonly selectedVideo = signal<PublicVideo | null>(null);
 
   ngOnInit(): void {
-    const slug = this.route.snapshot.paramMap.get('slug') || '';
-
-    this.publicApi.getProduction(slug).subscribe({
-      next: (response) => {
+    this.route.paramMap.pipe(
+      map((params) => params.get('slug') || ''),
+      distinctUntilChanged(),
+      tap(() => {
+        this.isLoading.set(true);
+        this.errorMessage.set('');
+        this.production.set(null);
+        this.events.set([]);
+        this.selectedVideo.set(null);
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }),
+      switchMap((slug) => this.publicApi.getProduction(slug).pipe(
+        catchError((error) => {
+          this.errorMessage.set(error?.error?.message || this.i18n.t('production.unavailable'));
+          return EMPTY;
+        }),
+        finalize(() => this.isLoading.set(false))
+      )),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((response) => {
         const item = this.publicApi.extractItem<PublicProduction>(response, ['production', 'item']);
         const upcomingEvents = this.publicApi.extractItems<PublicEvent>(response, ['upcomingEvents', 'events']);
         this.production.set(item);
         this.events.set(upcomingEvents);
         if (item) {
+          this.locale.registerPageLinks({
+            sr: `/predstave/${item.slugs?.sr || item.slug}`,
+            en: item.slugs?.en ? `/en/productions/${item.slugs.en}` : '/en/productions',
+          });
           this.applySeo(item);
         }
-      },
-      error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'Predstava trenutno nije dostupna.');
-      },
-      complete: () => {
-        this.isLoading.set(false);
-      },
     });
   }
 
@@ -79,7 +100,7 @@ export class PublicProductionDetailComponent implements OnInit {
   }
 
   synopsisHtml(production: PublicProduction): string {
-    const body = production.description || production.synopsis || production.shortDescription || 'Sadržaj će biti dodat kroz admin panel.';
+    const body = production.description || production.synopsis || production.shortDescription || this.i18n.t('production.contentSoon');
     if (/<[a-z][\s\S]*>/i.test(body)) {
       return body;
     }
@@ -99,7 +120,7 @@ export class PublicProductionDetailComponent implements OnInit {
   }
 
   saleLabel(event: PublicEvent | null | undefined): string {
-    return event ? this.display.eventSale(event).label : 'Termini uskoro';
+    return event ? this.display.eventSale(event).label : this.i18n.t('production.datesSoon');
   }
 
   eventId(event: PublicEvent | null | undefined): string {
@@ -125,17 +146,17 @@ export class PublicProductionDetailComponent implements OnInit {
   detailFacts(production: PublicProduction): Array<{ label: string; value: string; icon: string }> {
     return [
       {
-        label: 'Tekst',
+        label: this.i18n.t('production.textCredit'),
         value: this.creditValue(production, ['writer']) || production.authorComposer || '',
         icon: 'text',
       },
       {
-        label: 'Režija',
+        label: this.i18n.t('production.directorCredit'),
         value: this.creditValue(production, ['director']) || '',
         icon: 'director',
       },
       {
-        label: 'Trajanje',
+        label: this.i18n.t('production.durationCredit'),
         value: this.durationLabel(production.durationMinutes),
         icon: 'time',
       },

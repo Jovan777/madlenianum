@@ -1,5 +1,6 @@
-const { mediaDto, productionSummaryDto, seoDto, venueDto } = require("./cmsDto.service");
+const { mediaDto, productionSummaryDto, publicTranslations, seoDto, venueDto } = require("./cmsDto.service");
 const { INQUIRY_STATUS_LABELS } = require("../constants/phase6a.constants");
+const { localizedArray, localizedSeo, localizedValue, normalizeLocale, translationMeta } = require("./locale.service");
 
 const idOf = (value) => {
   if (!value) return null;
@@ -11,16 +12,16 @@ const plain = (value) => {
   return typeof value.toObject === "function" ? value.toObject({ virtuals: true }) : value;
 };
 
-const galleryDto = (item = {}) => {
+const galleryDto = (item = {}, locale = "sr") => {
   const structured = Array.isArray(item.galleryItems) ? item.galleryItems : [];
   if (structured.length) {
     return structured
       .map((entry, index) => ({
         id: idOf(entry),
-        media: mediaDto(entry.media),
-        caption: entry.caption || "",
-        credit: entry.credit || "",
-        altText: entry.altText || "",
+        media: mediaDto(entry.media, locale),
+        caption: normalizeLocale(locale) === "en" ? entry.translations?.en?.caption || entry.caption || "" : entry.caption || "",
+        credit: normalizeLocale(locale) === "en" ? entry.translations?.en?.credit || entry.credit || "" : entry.credit || "",
+        altText: normalizeLocale(locale) === "en" ? entry.translations?.en?.altText || entry.altText || "" : entry.altText || "",
         displayOrder: entry.displayOrder ?? index,
       }))
       .filter((entry) => entry.media)
@@ -28,7 +29,7 @@ const galleryDto = (item = {}) => {
   }
   return (item.gallery || []).map((media, index) => ({
     id: `legacy-${idOf(media)}`,
-    media: mediaDto(media),
+    media: mediaDto(media, locale),
     caption: media?.caption || "",
     credit: media?.credit || "",
     altText: media?.altText || media?.alt || "",
@@ -36,31 +37,34 @@ const galleryDto = (item = {}) => {
   }));
 };
 
-const costumeDto = (value, { admin = false } = {}) => {
+const costumeDto = (value, { admin = false, locale = "sr" } = {}) => {
   const item = plain(value);
   if (!item) return null;
-  const galleryItems = galleryDto(item);
+  const galleryItems = galleryDto(item, locale);
   return {
     id: idOf(item),
-    title: item.title,
-    slug: item.slug,
-    shortDescription: item.shortDescription || "",
-    description: item.description || "",
-    mainImage: mediaDto(item.mainImage),
+    title: localizedValue(item, "title", locale),
+    slug: localizedValue(item, "slug", locale),
+    shortDescription: localizedValue(item, "shortDescription", locale),
+    description: localizedValue(item, "description", locale),
+    mainImage: mediaDto(item.mainImage, locale),
     gallery: galleryItems.map((entry) => entry.media),
     galleryItems,
     gender: item.gender,
-    epoch: item.epoch || "",
-    size: item.size || "",
-    color: item.color || "",
-    material: item.material || "",
+    epoch: localizedValue(item, "epoch", locale),
+    size: localizedValue(item, "size", locale),
+    color: localizedValue(item, "color", locale),
+    material: localizedValue(item, "material", locale),
     inventoryNumber: item.inventoryNumber || "",
     condition: item.condition,
-    availabilityNote: item.availabilityNote || "",
-    relatedProduction: productionSummaryDto(item.relatedProduction),
+    availabilityNote: localizedValue(item, "availabilityNote", locale),
+    relatedProduction: productionSummaryDto(item.relatedProduction, locale),
     isFeatured: Boolean(item.isFeatured),
     displayOrder: item.displayOrder || 0,
-    seo: seoDto(item.seo),
+    seo: { ...seoDto(item.seo, locale), ...localizedSeo(item, locale) },
+    translations: publicTranslations(item.translations),
+    ...translationMeta(item, ["title", "slug"]),
+    locale: normalizeLocale(locale),
     ...(admin ? {
       status: item.status,
       publishedAt: item.publishedAt,
@@ -70,36 +74,39 @@ const costumeDto = (value, { admin = false } = {}) => {
   };
 };
 
-const propScenographyDto = (value, { admin = false } = {}) => {
+const propScenographyDto = (value, { admin = false, locale = "sr" } = {}) => {
   const item = plain(value);
   if (!item) return null;
-  const galleryItems = galleryDto(item);
+  const galleryItems = galleryDto(item, locale);
   return {
     id: idOf(item),
-    title: item.title,
-    slug: item.slug,
+    title: localizedValue(item, "title", locale),
+    slug: localizedValue(item, "slug", locale),
     itemType: item.itemType,
-    description: item.description || "",
-    mainImage: mediaDto(item.mainImage),
+    description: localizedValue(item, "description", locale),
+    mainImage: mediaDto(item.mainImage, locale),
     gallery: galleryItems.map((entry) => entry.media),
     galleryItems,
-    category: item.category || "",
-    epochOrStyle: item.epochOrStyle || "",
+    category: localizedValue(item, "category", locale),
+    epochOrStyle: localizedValue(item, "epochOrStyle", locale),
     dimensions: {
       widthCm: item.dimensions?.widthCm,
       heightCm: item.dimensions?.heightCm,
       depthCm: item.dimensions?.depthCm,
-      note: item.dimensions?.note || "",
+      note: normalizeLocale(locale) === "en" ? item.translations?.en?.dimensionsNote || item.dimensions?.note || "" : item.dimensions?.note || "",
     },
-    material: item.material || "",
+    material: localizedValue(item, "material", locale),
     weight: item.weight,
     inventoryNumber: item.inventoryNumber || "",
     condition: item.condition,
-    availabilityNote: item.availabilityNote || "",
-    relatedProduction: productionSummaryDto(item.relatedProduction),
+    availabilityNote: localizedValue(item, "availabilityNote", locale),
+    relatedProduction: productionSummaryDto(item.relatedProduction, locale),
     isFeatured: Boolean(item.isFeatured),
     displayOrder: item.displayOrder || 0,
-    seo: seoDto(item.seo),
+    seo: { ...seoDto(item.seo, locale), ...localizedSeo(item, locale) },
+    translations: publicTranslations(item.translations),
+    ...translationMeta(item, ["title", "slug"]),
+    locale: normalizeLocale(locale),
     ...(admin ? {
       status: item.status,
       publishedAt: item.publishedAt,
@@ -109,36 +116,39 @@ const propScenographyDto = (value, { admin = false } = {}) => {
   };
 };
 
-const rentalSpaceDto = (value, { admin = false } = {}) => {
+const rentalSpaceDto = (value, { admin = false, locale = "sr" } = {}) => {
   const item = plain(value);
   if (!item) return null;
-  const galleryItems = galleryDto(item);
+  const galleryItems = galleryDto(item, locale);
   return {
     id: idOf(item),
-    title: item.title,
-    slug: item.slug,
-    shortDescription: item.shortDescription || "",
-    description: item.description || "",
-    heroImage: mediaDto(item.heroImage),
+    title: localizedValue(item, "title", locale),
+    slug: localizedValue(item, "slug", locale),
+    shortDescription: localizedValue(item, "shortDescription", locale),
+    description: localizedValue(item, "description", locale),
+    heroImage: mediaDto(item.heroImage, locale),
     gallery: galleryItems.map((entry) => entry.media),
     galleryItems,
     seatedCapacity: item.seatedCapacity || 0,
     standingCapacity: item.standingCapacity || 0,
     areaSqm: item.areaSqm || 0,
-    amenities: item.amenities || [],
-    technicalEquipment: item.technicalEquipment || [],
-    suitableEventTypes: item.suitableEventTypes || [],
-    accessibilityInfo: item.accessibilityInfo || "",
-    dressingRooms: item.dressingRooms || "",
-    cateringInfo: item.cateringInfo || "",
-    barInfo: item.barInfo || "",
-    internetInfo: item.internetInfo || "",
-    avInfo: item.avInfo || "",
-    floorPlanPdf: mediaDto(item.floorPlanPdf),
-    linkedVenue: venueDto(item.linkedVenue),
+    amenities: localizedArray(item, "amenities", locale),
+    technicalEquipment: localizedArray(item, "technicalEquipment", locale),
+    suitableEventTypes: localizedArray(item, "suitableEventTypes", locale),
+    accessibilityInfo: localizedValue(item, "accessibilityInfo", locale),
+    dressingRooms: localizedValue(item, "dressingRooms", locale),
+    cateringInfo: localizedValue(item, "cateringInfo", locale),
+    barInfo: localizedValue(item, "barInfo", locale),
+    internetInfo: localizedValue(item, "internetInfo", locale),
+    avInfo: localizedValue(item, "avInfo", locale),
+    floorPlanPdf: mediaDto(item.floorPlanPdf, locale),
+    linkedVenue: venueDto(item.linkedVenue, locale),
     isFeatured: Boolean(item.isFeatured),
     displayOrder: item.displayOrder || 0,
-    seo: seoDto(item.seo),
+    seo: { ...seoDto(item.seo, locale), ...localizedSeo(item, locale) },
+    translations: publicTranslations(item.translations),
+    ...translationMeta(item, ["title", "slug"]),
+    locale: normalizeLocale(locale),
     ...(admin ? {
       status: item.status,
       publishedAt: item.publishedAt,
@@ -163,6 +173,7 @@ const inquiryBaseDto = (item, { admin = false } = {}) => ({
   statusLabel: INQUIRY_STATUS_LABELS[item.status] || item.status,
   createdAt: item.createdAt,
   updatedAt: item.updatedAt,
+  locale: item.locale || "sr",
   ...(admin ? {
     internalNotes: item.internalNotes || "",
     emailDelivery: item.emailDelivery || {},

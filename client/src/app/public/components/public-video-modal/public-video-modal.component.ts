@@ -14,6 +14,7 @@ import {
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { PublicVideo } from '../../../core/models/public.models';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 
 @Component({
   selector: 'app-public-video-modal',
@@ -27,6 +28,7 @@ export class PublicVideoModalComponent implements AfterViewInit, OnDestroy {
   readonly closed = output<void>();
   readonly closeButton = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
   private readonly sanitizer = inject(DomSanitizer);
+  readonly i18n = inject(PublicI18nService);
   private readonly document = inject(DOCUMENT);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly previousFocus = this.document.activeElement as HTMLElement | null;

@@ -12,6 +12,19 @@ const {
   seoSchema,
 } = require("./schemas/cms.schemas");
 
+const translationSchema = new mongoose.Schema({
+  slug: { type: String, lowercase: true, trim: true },
+  title: String,
+  description: String,
+  category: String,
+  epochOrStyle: String,
+  dimensionsNote: String,
+  material: String,
+  availabilityNote: String,
+  seoTitle: String,
+  seoDescription: String,
+}, { _id: false });
+
 const dimensionsSchema = new mongoose.Schema(
   {
     widthCm: { type: Number, min: 0 },
@@ -50,6 +63,7 @@ const propScenographyItemSchema = new mongoose.Schema(
     publishedAt: Date,
     isFeatured: { type: Boolean, default: false },
     displayOrder: { type: Number, min: 0, default: 0 },
+    translations: { sr: translationSchema, en: translationSchema },
     seo: { type: seoSchema, default: () => ({}) },
     ...auditFields,
   },
@@ -59,6 +73,10 @@ const propScenographyItemSchema = new mongoose.Schema(
 propScenographyItemSchema.pre("validate", function () {
   if (!this.slug && this.title) this.slug = slugify(this.title);
   if (this.isModified("slug") && this.slug) this.slug = slugify(this.slug);
+  if (this.translations?.en) {
+    this.translations.en.slug = this.translations.en.slug ? slugify(this.translations.en.slug) : undefined;
+    this.translations.en.description = sanitizeRichText(this.translations.en.description);
+  }
   if (this.inventoryNumber) {
     this.inventoryNumber = String(this.inventoryNumber).trim().toUpperCase();
   }
@@ -73,5 +91,6 @@ propScenographyItemSchema.pre("validate", function () {
 propScenographyItemSchema.index({ status: 1, itemType: 1, publishedAt: -1 });
 propScenographyItemSchema.index({ status: 1, category: 1, epochOrStyle: 1 });
 propScenographyItemSchema.index({ status: 1, isFeatured: -1, displayOrder: 1, title: 1 });
+propScenographyItemSchema.index({ "translations.en.slug": 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("PropScenographyItem", propScenographyItemSchema, "propscenographyitems");

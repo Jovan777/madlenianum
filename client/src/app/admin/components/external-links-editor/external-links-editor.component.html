@@ -1,13 +1,14 @@
 <div class="editor-head"><div><h3>{{ title }}</h3><p>Dodajte samo proverene HTTP/HTTPS linkove.</p></div><button type="button" (click)="add()">Dodaj link</button></div>
 <p class="empty" *ngIf="!array.length">Nema dodatih linkova.</p>
 <div class="link-row" *ngFor="let group of groups(); let index = index" [formGroup]="group">
-  <label>Naziv<input formControlName="label" /></label>
-  <label>URL<input type="url" formControlName="url" placeholder="https://..." /></label>
-  <label *ngIf="showType">Tip<select formControlName="type"><option *ngFor="let option of linkTypes" [value]="option.value">{{ option.label }}</option></select></label>
+  <label *ngIf="language === 'sr'">Naziv<input formControlName="label" /></label>
+  <ng-container formGroupName="translations" *ngIf="language === 'en'"><label formGroupName="en">English label<input formControlName="label" /></label></ng-container>
+  <label *ngIf="language === 'sr'">URL<input type="url" formControlName="url" placeholder="https://..." /></label>
+  <label *ngIf="showType && language === 'sr'">Tip<select formControlName="type"><option *ngFor="let option of linkTypes" [value]="option.value">{{ option.label }}</option></select></label>
   <div class="row-actions">
     <button type="button" (click)="move(index, -1)" [disabled]="index === 0">Gore</button>
     <button type="button" (click)="move(index, 1)" [disabled]="index === array.length - 1">Dole</button>
     <button type="button" class="danger" (click)="remove(index)">Ukloni</button>
   </div>
-  <small class="error" *ngIf="group.get('url')?.touched && group.get('url')?.invalid">Unesite punu HTTP/HTTPS adresu.</small>
+  <small class="error" *ngIf="language === 'sr' && group.get('url')?.touched && group.get('url')?.invalid">Unesite punu HTTP/HTTPS adresu.</small>
 </div>

@@ -4,12 +4,15 @@ import { RouterLink } from '@angular/router';
 
 import { PublicEvent, PublicProductionCredit } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
 import { PublicDisplayService } from '../../shared/public-display.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 @Component({
   selector: 'app-public-repertoire-event-card',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PublicTranslatePipe],
   templateUrl: './public-repertoire-event-card.component.html',
   styleUrl: './public-repertoire-event-card.component.scss',
 })
@@ -19,6 +22,8 @@ export class PublicRepertoireEventCardComponent {
 
   readonly api = inject(PublicApiService);
   readonly display = inject(PublicDisplayService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   readonly production = computed(() => this.api.productionFromEvent(this.event()));
   readonly sale = computed(() => this.display.eventSale(this.event()));
@@ -32,7 +37,7 @@ export class PublicRepertoireEventCardComponent {
   }
 
   title(): string {
-    return this.production()?.title || 'Program Madlenianuma';
+    return this.production()?.title || this.i18n.t('production.defaultTitle');
   }
 
   slug(): string {
@@ -56,8 +61,8 @@ export class PublicRepertoireEventCardComponent {
       .filter((credit) => credit.name)
       .slice(0, 2);
 
-    if (!visible.some((credit) => credit.label === 'Tekst') && production?.authorComposer) {
-      visible.unshift({ label: 'Tekst', name: production.authorComposer });
+    if (!visible.some((credit) => credit.label === this.i18n.t('repertoire.writer')) && production?.authorComposer) {
+      visible.unshift({ label: this.i18n.t('repertoire.writer'), name: production.authorComposer });
     }
 
     return visible.slice(0, 2);
@@ -68,6 +73,6 @@ export class PublicRepertoireEventCardComponent {
   }
 
   private creditLabel(credit: PublicProductionCredit): string {
-    return credit.roleKey === 'director' ? 'Režija' : 'Tekst';
+    return this.i18n.t(credit.roleKey === 'director' ? 'repertoire.director' : 'repertoire.writer');
   }
 }

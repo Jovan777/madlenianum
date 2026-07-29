@@ -191,6 +191,7 @@ const duplicateEvent = asyncHandler(async (req, res) => {
     endsAt,
     isPremiere: source.isPremiere,
     badge: source.badge,
+    translations: source.translations,
     status: "draft",
     saleStatus: "not_started",
     seatMap: source.seatMap,

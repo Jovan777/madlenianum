@@ -2,12 +2,19 @@
 <p class="empty" *ngIf="!array.length">Kreativni tim jos nije dodat.</p>
 <div class="credit-row" *ngFor="let group of groups(); let index = index" [formGroup]="group">
   <header><strong>Kredit {{ index + 1 }}</strong><div><button type="button" (click)="move(index,-1)" [disabled]="index===0">Gore</button><button type="button" (click)="move(index,1)" [disabled]="index===array.length-1">Dole</button><button type="button" class="danger" (click)="remove(index)">Ukloni</button></div></header>
-  <div class="grid">
+  <div class="grid" *ngIf="language === 'sr'">
     <label>Vrsta uloge<select formControlName="roleKey"><option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option></select></label>
     <label>Javni naziv uloge<input formControlName="label" placeholder="Reditelj, dirigent..." /></label>
     <app-search-picker label="Umetnik" [options]="artists" formControlName="artist" />
     <label>Ime bez profila<input formControlName="name" placeholder="Koristi se ako umetnik nije izabran" /></label>
     <label class="wide">Napomena<input formControlName="note" /></label>
+  </div>
+  <div class="grid" formGroupName="translations" *ngIf="language === 'en'">
+    <ng-container formGroupName="en">
+      <label>Public role label<input formControlName="label" placeholder="Director, conductor..." /></label>
+      <label>Name without profile<input formControlName="name" /></label>
+      <label class="wide">Note<input formControlName="note" /></label>
+    </ng-container>
   </div>
   <small class="error" *ngIf="missingPerson(group)">Izaberite umetnika ili unesite ime.</small>
 </div>

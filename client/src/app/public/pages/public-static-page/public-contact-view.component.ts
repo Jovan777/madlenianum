@@ -4,11 +4,13 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 @Component({
   selector: 'app-public-contact-view',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PublicTranslatePipe],
   templateUrl: './public-contact-view.component.html',
   styleUrl: './public-contact-view.component.scss',
 })
@@ -18,6 +20,7 @@ export class PublicContactViewComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
   private readonly sanitizer = inject(DomSanitizer);
   readonly publicApi = inject(PublicApiService);
+  readonly i18n = inject(PublicI18nService);
 
   readonly sending = signal(false);
   readonly sent = signal(false);
@@ -61,7 +64,7 @@ export class PublicContactViewComponent implements OnChanges {
   }
 
   officeHours(): string {
-    return this.page?.contact?.officeHours || 'Radnim danima 09:00-17:00';
+    return this.page?.contact?.officeHours || this.i18n.t('contact.defaultHours');
   }
 
   additionalItems(): any[] {
@@ -96,7 +99,7 @@ export class PublicContactViewComponent implements OnChanges {
       },
       error: () => {
         this.sending.set(false);
-        this.error.set('Poruka trenutno nije poslata. Molimo pokušajte ponovo.');
+        this.error.set(this.i18n.t('forms.contactError'));
       },
     });
   }

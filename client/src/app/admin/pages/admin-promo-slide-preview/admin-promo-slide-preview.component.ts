@@ -8,6 +8,6 @@ import { MediaUrlService } from '../../../core/services/media-url.service';
 export class AdminPromoSlidePreviewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute); private readonly cms = inject(CmsAdminService); readonly media = inject(MediaUrlService);
   readonly item = signal<Record<string, unknown> | null>(null); readonly loading = signal(true); readonly error = signal('');
-  ngOnInit(): void { this.cms.preview<Record<string, unknown>>('promo-slides', this.route.snapshot.paramMap.get('id') || '').subscribe({ next: (response) => this.item.set(response.item), error: (error) => this.error.set(error?.error?.message || 'Pregled nije dostupan.'), complete: () => this.loading.set(false) }); }
+  ngOnInit(): void { const lang = this.route.snapshot.queryParamMap.get('lang') === 'en' ? 'en' : 'sr'; this.cms.preview<Record<string, unknown>>('promo-slides', this.route.snapshot.paramMap.get('id') || '', lang).subscribe({ next: (response) => this.item.set(response.item), error: (error) => this.error.set(error?.error?.message || 'Pregled nije dostupan.'), complete: () => this.loading.set(false) }); }
   image(value: unknown): string { return this.media.resolve(value); }
 }

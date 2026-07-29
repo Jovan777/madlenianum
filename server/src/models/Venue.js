@@ -3,8 +3,10 @@ const slugify = require("../utils/slugify");
 
 const translationSchema = new mongoose.Schema(
   {
+    slug: String,
     name: String,
     description: String,
+    sections: [mongoose.Schema.Types.Mixed],
   },
   { _id: false }
 );
@@ -88,6 +90,9 @@ venueSchema.pre("validate", function () {
   if (!this.slug && this.name) {
     this.slug = slugify(this.name);
   }
+  if (this.translations?.en?.slug) this.translations.en.slug = slugify(this.translations.en.slug);
 });
+
+venueSchema.index({ "translations.en.slug": 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("Venue", venueSchema, "venues");

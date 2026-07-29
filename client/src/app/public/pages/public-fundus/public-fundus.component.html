@@ -1,22 +1,22 @@
 <section class="fundus-hero" aria-labelledby="fundus-title" data-motion="fade">
   <img class="fundus-hero__image" [src]="heroImage()" alt="" aria-hidden="true" />
   <div class="fundus-hero__inner">
-    <h1 id="fundus-title">Fundusi</h1>
-    <div class="fundus-tabs" role="tablist" aria-label="Vrsta fundusa">
+    <h1 id="fundus-title">{{ i18n.t('fundus.title') }}</h1>
+    <div class="fundus-tabs" role="tablist" [attr.aria-label]="i18n.t('fundus.title')">
       <button
         type="button"
         role="tab"
         [attr.aria-selected]="activeTab() === 'costumes'"
         [class.active]="activeTab() === 'costumes'"
         (click)="setTab('costumes')"
-      >Kostimi</button>
+      >{{ i18n.t('fundus.costumes') }}</button>
       <button
         type="button"
         role="tab"
         [attr.aria-selected]="activeTab() === 'props'"
         [class.active]="activeTab() === 'props'"
         (click)="setTab('props')"
-      >Rekviziti i scenografija</button>
+      >{{ i18n.t('fundus.props') }}</button>
     </div>
   </div>
 </section>
@@ -25,57 +25,57 @@
   <div class="fundus-content__inner">
     <form class="fundus-filters" [formGroup]="filters" (ngSubmit)="apply()" data-motion="up">
       <label class="search-field">
-        <span class="sr-only">Pretraga</span>
-        <input formControlName="q" placeholder="Pretraga" autocomplete="off" />
-        <button type="submit" aria-label="Pretraži fundus"><span aria-hidden="true"></span></button>
+        <span class="sr-only">{{ i18n.t('fundus.search') }}</span>
+        <input formControlName="q" [placeholder]="i18n.t('fundus.search')" autocomplete="off" />
+        <button type="submit" [attr.aria-label]="i18n.t('fundus.search')"><span aria-hidden="true"></span></button>
       </label>
 
       <span class="filter-spacer" aria-hidden="true"></span>
 
       <ng-container *ngIf="activeTab() === 'costumes'; else propFilters">
         <label class="select-field">
-          <span class="sr-only">Pol</span>
-          <select formControlName="gender" aria-label="Pol" (change)="apply()">
-            <option *ngFor="let option of genders" [value]="option.value">{{ option.value ? option.label : 'Pol' }}</option>
+          <span class="sr-only">{{ i18n.t('fundus.gender') }}</span>
+          <select formControlName="gender" [attr.aria-label]="i18n.t('fundus.gender')" (change)="apply()">
+            <option *ngFor="let option of genders" [value]="option.value">{{ genderLabel(option.value) }}</option>
           </select>
         </label>
         <label class="select-field">
-          <span class="sr-only">Epoha</span>
-          <select formControlName="epoch" aria-label="Epoha" (change)="apply()">
-            <option value="">Epoha</option>
-            <option *ngFor="let epoch of costumeEpochs" [value]="epoch.value">{{ epoch.label }}</option>
+          <span class="sr-only">{{ i18n.t('fundus.epoch') }}</span>
+          <select formControlName="epoch" [attr.aria-label]="i18n.t('fundus.epoch')" (change)="apply()">
+            <option value="">{{ i18n.t('fundus.epoch') }}</option>
+            <option *ngFor="let epoch of costumeEpochs" [value]="epoch.value">{{ epochLabel(epoch.value) }}</option>
           </select>
         </label>
       </ng-container>
 
       <ng-template #propFilters>
         <label class="select-field">
-          <span class="sr-only">Vrsta</span>
-          <select formControlName="itemType" aria-label="Vrsta predmeta" (change)="apply()">
-            <option value="">Vrsta</option>
-            <option value="prop">Rekviziti</option>
-            <option value="scenography">Scenografija</option>
+          <span class="sr-only">{{ i18n.t('fundus.itemType') }}</span>
+          <select formControlName="itemType" [attr.aria-label]="i18n.t('fundus.itemType')" (change)="apply()">
+            <option value="">{{ i18n.t('fundus.itemType') }}</option>
+            <option value="prop">{{ i18n.t('fundus.propsShort') }}</option>
+            <option value="scenography">{{ i18n.t('fundus.scenography') }}</option>
           </select>
         </label>
         <label class="select-field">
-          <span class="sr-only">Epoha ili stil</span>
-          <select formControlName="epochOrStyle" aria-label="Epoha ili stil" (change)="apply()">
-            <option value="">Epoha / stil</option>
-            <option *ngFor="let epoch of propEpochs" [value]="epoch.value">{{ epoch.label }}</option>
+          <span class="sr-only">{{ i18n.t('fundus.epochStyle') }}</span>
+          <select formControlName="epochOrStyle" [attr.aria-label]="i18n.t('fundus.epochStyle')" (change)="apply()">
+            <option value="">{{ i18n.t('fundus.epochStyle') }}</option>
+            <option *ngFor="let epoch of propEpochs" [value]="epoch.value">{{ epochLabel(epoch.value) }}</option>
           </select>
         </label>
       </ng-template>
     </form>
 
-    <button class="reset-filters" type="button" *ngIf="hasActiveFilters()" (click)="reset()">Poništi filtere</button>
+    <button class="reset-filters" type="button" *ngIf="hasActiveFilters()" (click)="reset()">{{ i18n.t('fundus.clearFilters') }}</button>
 
     <section class="catalog" [attr.aria-busy]="loading()">
-      <p class="state" *ngIf="loading()">Učitavanje fundusa...</p>
+      <p class="state" *ngIf="loading()">{{ i18n.t('common.loading') }}</p>
       <div class="state state--error" *ngIf="error()">
         <p>{{ error() }}</p>
-        <button type="button" (click)="apply()">Pokušaj ponovo</button>
+        <button type="button" (click)="apply()">{{ i18n.t('common.retry') }}</button>
       </div>
-      <p class="state" *ngIf="!loading() && !error() && total() === 0">Nema objavljenih predmeta za izabrane filtere.</p>
+      <p class="state" *ngIf="!loading() && !error() && total() === 0">{{ i18n.t('fundus.empty') }}</p>
 
       <div class="fundus-grid" *ngIf="!loading() && !error() && total() > 0" data-motion-stagger>
         <a
@@ -92,9 +92,9 @@
         </a>
       </div>
 
-      <nav class="pagination" *ngIf="totalPages() > 1" aria-label="Stranice fundusa" data-motion="fade">
-        <button type="button" aria-label="Prva stranica" [disabled]="page() === 1" (click)="changePage(1)">|‹</button>
-        <button type="button" aria-label="Prethodna stranica" [disabled]="page() === 1" (click)="changePage(page() - 1)">‹</button>
+      <nav class="pagination" *ngIf="totalPages() > 1" [attr.aria-label]="i18n.t('fundus.pagination')" data-motion="fade">
+        <button type="button" [attr.aria-label]="i18n.t('fundus.firstPage')" [disabled]="page() === 1" (click)="changePage(1)">|‹</button>
+        <button type="button" [attr.aria-label]="i18n.t('common.previous')" [disabled]="page() === 1" (click)="changePage(page() - 1)">‹</button>
         <button
           type="button"
           *ngFor="let pageNumber of pageNumbers()"
@@ -102,8 +102,8 @@
           [attr.aria-current]="pageNumber === page() ? 'page' : null"
           (click)="changePage(pageNumber)"
         >{{ pageNumber }}</button>
-        <button type="button" aria-label="Sledeća stranica" [disabled]="page() === totalPages()" (click)="changePage(page() + 1)">›</button>
-        <button type="button" aria-label="Poslednja stranica" [disabled]="page() === totalPages()" (click)="changePage(totalPages())">›|</button>
+        <button type="button" [attr.aria-label]="i18n.t('common.next')" [disabled]="page() === totalPages()" (click)="changePage(page() + 1)">›</button>
+        <button type="button" [attr.aria-label]="i18n.t('fundus.lastPage')" [disabled]="page() === totalPages()" (click)="changePage(totalPages())">›|</button>
       </nav>
     </section>
   </div>

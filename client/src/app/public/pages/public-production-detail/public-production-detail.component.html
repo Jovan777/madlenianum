@@ -1,4 +1,4 @@
-<div class="loading-state" *ngIf="isLoading()">Učitavanje predstave...</div>
+<div class="loading-state" *ngIf="isLoading()">{{ 'production.loading' | publicTranslate }}</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <ng-container *ngIf="!isLoading() && production() as item">
@@ -13,18 +13,18 @@
       <div class="hero-actions">
         <button class="action action-outline" type="button" *ngIf="trailer(item) as video" (click)="openTrailer(video)">
           <span class="icon icon-play" aria-hidden="true"></span>
-          Pogledaj trejler
+          {{ 'production.watchTrailer' | publicTranslate }}
         </button>
 
         <a
           class="action action-light"
           *ngIf="ticketEvent() as event"
           [class.is-disabled]="!canPurchase(event)"
-          [routerLink]="canPurchase(event) ? ['/kupovina', eventId(event)] : null"
+          [routerLink]="canPurchase(event) ? locale.ticketPath(eventId(event)) : null"
           [attr.aria-disabled]="!canPurchase(event)"
         >
           <span class="icon icon-bag" aria-hidden="true"></span>
-          {{ canPurchase(event) ? 'Kupi karte' : saleLabel(event) }}
+          {{ canPurchase(event) ? ('production.buyTickets' | publicTranslate) : saleLabel(event) }}
         </a>
       </div>
     </div>
@@ -33,12 +33,12 @@
   <main class="production-page">
     <section class="synopsis-section" data-motion="up">
       <article class="synopsis-copy" data-motion="left">
-        <h2>Sinopis</h2>
+        <h2>{{ 'production.synopsis' | publicTranslate }}</h2>
         <div class="rule"></div>
         <div class="rich-copy" [innerHTML]="synopsisHtml(item)"></div>
       </article>
 
-      <aside class="production-card" aria-label="Informacije o predstavi" data-motion="right" data-motion-card>
+      <aside class="production-card" [attr.aria-label]="'production.information' | publicTranslate" data-motion="right" data-motion-card>
         <p class="production-meta">{{ heroMeta(item) }}</p>
         <h2>{{ item.title }}</h2>
 
@@ -59,18 +59,18 @@
         <div class="card-actions">
           <button class="action action-outline" type="button" *ngIf="trailer(item) as video" (click)="openTrailer(video)">
             <span class="icon icon-play" aria-hidden="true"></span>
-            Pogledaj trejler
+            {{ 'production.watchTrailer' | publicTranslate }}
           </button>
 
           <a
             class="action action-light"
             *ngIf="ticketEvent() as event"
             [class.is-disabled]="!canPurchase(event)"
-            [routerLink]="canPurchase(event) ? ['/kupovina', eventId(event)] : null"
+            [routerLink]="canPurchase(event) ? locale.ticketPath(eventId(event)) : null"
             [attr.aria-disabled]="!canPurchase(event)"
           >
             <span class="icon icon-bag" aria-hidden="true"></span>
-            {{ canPurchase(event) ? 'Kupi karte' : saleLabel(event) }}
+            {{ canPurchase(event) ? ('production.buyTickets' | publicTranslate) : saleLabel(event) }}
           </a>
         </div>
       </aside>
@@ -78,11 +78,11 @@
 
     <section class="performances-section" *ngIf="events().length">
       <header class="section-header">
-        <h2>Sledeća izvođenja</h2>
+        <h2>{{ 'production.nextPerformances' | publicTranslate }}</h2>
         <div class="rule"></div>
       </header>
 
-      <div class="performance-track" aria-label="Sledeća izvođenja">
+      <div class="performance-track" [attr.aria-label]="'production.nextPerformances' | publicTranslate">
         <article class="performance-card" *ngFor="let event of events()" data-motion="up" data-motion-card>
           <div class="performance-date">
             <strong>{{ eventDayMonth(event) }}</strong>
@@ -93,7 +93,7 @@
             <p>
               <span>{{ typeLabel(item) }}</span>
               <span>{{ venueName(event) }}</span>
-              <span class="premiere" *ngIf="isPremiere(event)">Premijera</span>
+              <span class="premiere" *ngIf="isPremiere(event)">{{ 'production.premiere' | publicTranslate }}</span>
             </p>
             <h3>{{ item.title }}</h3>
           </div>
@@ -101,10 +101,10 @@
           <a
             class="buy-pill"
             *ngIf="canPurchase(event); else saleStatus"
-            [routerLink]="['/kupovina', eventId(event)]"
+            [routerLink]="locale.ticketPath(eventId(event))"
           >
             <span class="icon icon-bag" aria-hidden="true"></span>
-            Kupi karte
+            {{ 'production.buyTickets' | publicTranslate }}
           </a>
 
           <ng-template #saleStatus>
@@ -116,7 +116,7 @@
 
     <section class="photo-section" *ngIf="galleryItems(item).length" data-motion="up">
       <header class="section-header section-header-invert">
-        <h2>Fotografije</h2>
+        <h2>{{ 'production.photos' | publicTranslate }}</h2>
         <div class="rule"></div>
       </header>
 
@@ -126,18 +126,18 @@
         </figure>
       </div>
 
-      <p class="photo-credit" *ngIf="galleryCredit(item)">Foto: {{ galleryCredit(item) }}</p>
+      <p class="photo-credit" *ngIf="galleryCredit(item)">{{ 'production.photoCredit' | publicTranslate }}: {{ galleryCredit(item) }}</p>
     </section>
 
     <section class="cast-section" *ngIf="castCards(item).length" data-motion="up">
       <header class="section-header">
-        <h2>Glumci</h2>
+        <h2>{{ 'production.cast' | publicTranslate }}</h2>
         <div class="rule"></div>
       </header>
 
       <div class="cast-grid" data-motion-stagger>
         <article class="cast-card" *ngFor="let member of castCards(item); let index = index" data-motion-item data-motion-card>
-          <a class="cast-photo" *ngIf="artistSlug(member); else castPhotoOnly" [routerLink]="['/umetnici', artistSlug(member)]">
+          <a class="cast-photo" *ngIf="artistSlug(member); else castPhotoOnly" [routerLink]="locale.artistPath(artistSlug(member))">
             <img [src]="castImage(member, index)" [alt]="castName(member)" loading="lazy" />
           </a>
 
@@ -149,7 +149,7 @@
           </ng-template>
 
           <h3>
-            <a *ngIf="artistSlug(member); else plainName" [routerLink]="['/umetnici', artistSlug(member)]">{{ castName(member) }}</a>
+            <a *ngIf="artistSlug(member); else plainName" [routerLink]="locale.artistPath(artistSlug(member))">{{ castName(member) }}</a>
             <ng-template #plainName>{{ castName(member) }}</ng-template>
           </h3>
           <p>{{ castRole(member) }}</p>

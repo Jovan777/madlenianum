@@ -1,35 +1,32 @@
 <section class="rental-hero" aria-labelledby="rental-page-title" data-motion="fade">
   <div class="rental-hero__content">
-    <h1 id="rental-page-title">Vaš događaj u srcu kulture i glamura</h1>
-    <p>
-      Madlenianum nudi ekskluzivne prostore za kongrese, konferencije, koktele,
-      modne revije i korporativne proslave. Spoj vrhunske tehnologije i tradicije.
-    </p>
+    <h1 id="rental-page-title">{{ i18n.t('rental.heroTitle') }}</h1>
+    <p>{{ i18n.t('rental.heroText') }}</p>
     <div class="rental-hero__actions">
       <a class="hero-button hero-button--outline" href="#prostori">
         <span class="info-icon" aria-hidden="true">i</span>
-        Saznaj više
+        {{ i18n.t('common.learnMore') }}
       </a>
       <button class="hero-button hero-button--light" type="button" (click)="scrollToPlanning()">
         <span class="message-icon" aria-hidden="true"></span>
-        Pošaljite upit za zakup
+        {{ i18n.t('rental.sendInquiry') }}
       </button>
     </div>
   </div>
 </section>
 
-<p class="loading-state" *ngIf="loading()">Učitavanje prostora...</p>
+<p class="loading-state" *ngIf="loading()">{{ i18n.t('common.loading') }}</p>
 <p class="error-state" *ngIf="error()">{{ error() }}</p>
 
 <main *ngIf="!loading() && !error()">
   <section class="spaces" id="prostori" aria-labelledby="spaces-title" data-motion="up">
-    <h2 id="spaces-title">Dostupne sale</h2>
+    <h2 id="spaces-title">{{ i18n.t('rental.availableSpaces') }}</h2>
 
-    <p class="empty" *ngIf="!spaces().length">Trenutno nema objavljenih prostora.</p>
+    <p class="empty" *ngIf="!spaces().length">{{ i18n.t('rental.empty') }}</p>
 
     <div class="space-grid" data-motion-stagger>
       <article class="space-card" *ngFor="let space of spaces()" data-motion-item data-motion-card>
-        <a class="space-card__image" [routerLink]="['/zakup-prostora', space.slug]">
+        <a class="space-card__image" [routerLink]="[locale.equivalentPath('/zakup-prostora', locale.current()), space.slug]">
           <img
             [src]="image(space)"
             [alt]="space.heroImage?.altText || space.title"
@@ -45,13 +42,13 @@
         <p>{{ space.shortDescription }}</p>
 
         <div class="space-card__actions">
-          <a class="card-button card-button--outline" [routerLink]="['/zakup-prostora', space.slug]">
+          <a class="card-button card-button--outline" [routerLink]="[locale.equivalentPath('/zakup-prostora', locale.current()), space.slug]">
             <span class="info-icon" aria-hidden="true">i</span>
-            Saznaj više
+            {{ i18n.t('common.learnMore') }}
           </a>
           <button class="card-button card-button--red" type="button" (click)="scrollToPlanning(space)">
             <span class="message-icon" aria-hidden="true"></span>
-            Pošalji upit
+            {{ i18n.t('rental.inquiry') }}
           </button>
         </div>
       </article>

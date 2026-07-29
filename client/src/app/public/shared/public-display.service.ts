@@ -5,6 +5,7 @@ import {
   PublicProduction,
   PublicSaleAvailability,
 } from '../../core/models/public.models';
+import { PublicLocaleService } from '../../core/services/public-locale.service';
 
 export type RepertoireGroup = 'all' | 'dramski' | 'muzicki' | 'gostovanja';
 export type NewsGroup = 'all' | 'press' | 'najave' | 'obavestenja';
@@ -23,7 +24,7 @@ export const NEWS_FILTERS: Array<{ value: NewsGroup; label: string }> = [
   { value: 'obavestenja', label: 'Obaveštenja' },
 ];
 
-const PRODUCTION_TYPES: Record<string, string> = {
+const PRODUCTION_TYPES_SR: Record<string, string> = {
   opera: 'Opera',
   opereta: 'Opereta',
   balet: 'Balet',
@@ -34,7 +35,12 @@ const PRODUCTION_TYPES: Record<string, string> = {
   ostalo: 'Program',
 };
 
-const NEWS_LABELS: Record<string, string> = {
+const PRODUCTION_TYPES_EN: Record<string, string> = {
+  opera: 'Opera', opereta: 'Operetta', balet: 'Ballet', drama: 'Drama', mjuzikl: 'Musical',
+  koncert: 'Concert', gostujuca_predstava: 'Guest production', ostalo: 'Programme',
+};
+
+const NEWS_LABELS_SR: Record<string, string> = {
   vest: 'Vest',
   kritika: 'Kritika',
   press: 'Press',
@@ -46,12 +52,20 @@ const NEWS_LABELS: Record<string, string> = {
   ostalo: 'Aktuelno',
 };
 
+const NEWS_LABELS_EN: Record<string, string> = {
+  vest: 'News', kritika: 'Review', press: 'Press', akcija: 'Promotion', premijera: 'Premiere',
+  najava: 'Announcement', obavestenje: 'Notice', promocija: 'Promotion', ostalo: 'Latest',
+};
+
 @Injectable({ providedIn: 'root' })
 export class PublicDisplayService {
   readonly timeZone = 'Europe/Belgrade';
 
+  constructor(private readonly locale: PublicLocaleService) {}
+
   productionType(value: string | undefined): string {
-    return PRODUCTION_TYPES[value || ''] || 'Program';
+    const labels = this.locale.isEnglish() ? PRODUCTION_TYPES_EN : PRODUCTION_TYPES_SR;
+    return labels[value || ''] || (this.locale.isEnglish() ? 'Programme' : 'Program');
   }
 
   productionGroup(production: PublicProduction): RepertoireGroup {
@@ -62,7 +76,8 @@ export class PublicDisplayService {
   }
 
   newsCategory(value: string | undefined): string {
-    return NEWS_LABELS[value || ''] || 'Aktuelno';
+    const labels = this.locale.isEnglish() ? NEWS_LABELS_EN : NEWS_LABELS_SR;
+    return labels[value || ''] || (this.locale.isEnglish() ? 'Latest' : 'Aktuelno');
   }
 
   newsGroup(value: string | undefined): NewsGroup {
@@ -79,21 +94,22 @@ export class PublicDisplayService {
     const startsAt = event.startsAt ? new Date(event.startsAt).getTime() : 0;
     const saleStartsAt = event.saleStartsAt ? new Date(event.saleStartsAt).getTime() : 0;
     const saleEndsAt = event.saleEndsAt ? new Date(event.saleEndsAt).getTime() : 0;
-    if (event.status === 'cancelled') return { state: 'cancelled', canPurchase: false, label: 'Otkazano' };
-    if (event.status === 'postponed') return { state: 'postponed', canPurchase: false, label: 'Odloženo' };
-    if (['completed', 'finished', 'archived'].includes(event.status || '') || (startsAt > 0 && startsAt <= now)) return { state: 'finished', canPurchase: false, label: 'Događaj je završen' };
-    if (event.saleStatus === 'sold_out') return { state: 'sold_out', canPurchase: false, label: 'Rasprodato' };
-    if (['closed', 'sales_closed'].includes(event.saleStatus || '') || (saleEndsAt > 0 && saleEndsAt <= now)) return { state: 'closed', canPurchase: false, label: 'Prodaja završena' };
-    if (event.saleStatus === 'free') return { state: 'free', canPurchase: false, label: 'Slobodan ulaz' };
-    if (['not_started', 'not_on_sale'].includes(event.saleStatus || '') || (saleStartsAt > now)) return { state: 'upcoming', canPurchase: false, label: 'Prodaja uskoro' };
+    const label = (sr: string, en: string) => this.locale.isEnglish() ? en : sr;
+    if (event.status === 'cancelled') return { state: 'cancelled', canPurchase: false, label: label('Otkazano', 'Cancelled') };
+    if (event.status === 'postponed') return { state: 'postponed', canPurchase: false, label: label('Odloženo', 'Postponed') };
+    if (['completed', 'finished', 'archived'].includes(event.status || '') || (startsAt > 0 && startsAt <= now)) return { state: 'finished', canPurchase: false, label: label('Događaj je završen', 'Event has ended') };
+    if (event.saleStatus === 'sold_out') return { state: 'sold_out', canPurchase: false, label: label('Rasprodato', 'Sold out') };
+    if (['closed', 'sales_closed'].includes(event.saleStatus || '') || (saleEndsAt > 0 && saleEndsAt <= now)) return { state: 'closed', canPurchase: false, label: label('Prodaja završena', 'Sales closed') };
+    if (event.saleStatus === 'free') return { state: 'free', canPurchase: false, label: label('Slobodan ulaz', 'Free admission') };
+    if (['not_started', 'not_on_sale'].includes(event.saleStatus || '') || (saleStartsAt > now)) return { state: 'upcoming', canPurchase: false, label: label('Prodaja uskoro', 'On sale soon') };
     const canPurchase = event.saleStatus === 'on_sale'
       && event.ticketing?.enabled === true
       && event.ticketing?.provider === 'internal'
       && Boolean(event.seatMap)
       && Boolean(event.pricePlan);
     return canPurchase
-      ? { state: 'on_sale', canPurchase: true, label: 'Kupi karte' }
-      : { state: 'unavailable', canPurchase: false, label: 'Prodaja nije dostupna' };
+      ? { state: 'on_sale', canPurchase: true, label: label('Kupi karte', 'Buy tickets') }
+      : { state: 'unavailable', canPurchase: false, label: label('Prodaja nije dostupna', 'Sales unavailable') };
   }
 
   dateKey(value: string | undefined): string {
@@ -102,8 +118,8 @@ export class PublicDisplayService {
   }
 
   dayMonth(value: string | undefined): string {
-    if (!value) return 'Uskoro';
-    return new Intl.DateTimeFormat('sr-Latn-RS', {
+    if (!value) return this.locale.isEnglish() ? 'Coming soon' : 'Uskoro';
+    return new Intl.DateTimeFormat(this.dateLocale(), {
       day: 'numeric',
       month: 'short',
       timeZone: this.timeZone,
@@ -112,7 +128,7 @@ export class PublicDisplayService {
 
   fullDate(value: string | undefined): string {
     if (!value) return '';
-    return new Intl.DateTimeFormat('sr-Latn-RS', {
+    return new Intl.DateTimeFormat(this.dateLocale(), {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -122,7 +138,7 @@ export class PublicDisplayService {
 
   time(value: string | undefined): string {
     if (!value) return '';
-    return new Intl.DateTimeFormat('sr-Latn-RS', {
+    return new Intl.DateTimeFormat(this.dateLocale(), {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
@@ -137,5 +153,9 @@ export class PublicDisplayService {
       day: '2-digit',
       timeZone: this.timeZone,
     }).formatToParts(new Date(value));
+  }
+
+  private dateLocale(): string {
+    return this.locale.isEnglish() ? 'en-GB' : 'sr-Latn-RS';
   }
 }

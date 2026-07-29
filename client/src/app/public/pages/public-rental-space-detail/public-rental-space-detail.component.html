@@ -1,2 +1,43 @@
-<p class="loading-state" *ngIf="loading()">Učitavanje prostora...</p><p class="error-state" *ngIf="error()">{{error()}} <a routerLink="/zakup-prostora">Nazad na prostore</a></p>
-<article *ngIf="space() as item" class="space-detail"><section class="hero" [style.background-image]="'linear-gradient(90deg,rgba(8,8,8,.88),rgba(8,8,8,.08)),url('+image(item.heroImage)+')'"><div><a routerLink="/zakup-prostora">← Dostupne sale</a><h1>{{item.title}}</h1><p>{{item.shortDescription}}</p><a class="cta" href="#upit">Pošalji upit</a></div></section><section class="content"><div class="description"><h2>O prostoru</h2><div [innerHTML]="item.description"></div></div><dl><div *ngIf="item.seatedCapacity"><dt>Sedeći kapacitet</dt><dd>{{item.seatedCapacity}}</dd></div><div *ngIf="item.standingCapacity"><dt>Stojeći kapacitet</dt><dd>{{item.standingCapacity}}</dd></div><div *ngIf="item.areaSqm"><dt>Površina</dt><dd>{{item.areaSqm}} m²</dd></div><div *ngIf="item.dressingRooms"><dt>Garderobe</dt><dd>{{item.dressingRooms}}</dd></div></dl><div class="columns"><section *ngIf="item.amenities.length"><h3>Pogodnosti</h3><ul><li *ngFor="let value of item.amenities">{{value}}</li></ul></section><section *ngIf="item.technicalEquipment.length"><h3>Tehnička oprema</h3><ul><li *ngFor="let value of item.technicalEquipment">{{value}}</li></ul></section><section *ngIf="item.suitableEventTypes.length"><h3>Pogodno za</h3><ul><li *ngFor="let value of item.suitableEventTypes">{{value}}</li></ul></section></div><div class="details"><p *ngIf="item.accessibilityInfo"><strong>Pristupačnost:</strong> {{item.accessibilityInfo}}</p><p *ngIf="item.cateringInfo"><strong>Catering:</strong> {{item.cateringInfo}}</p><p *ngIf="item.barInfo"><strong>Bar:</strong> {{item.barInfo}}</p><p *ngIf="item.internetInfo"><strong>Internet:</strong> {{item.internetInfo}}</p><p *ngIf="item.avInfo"><strong>AV podrška:</strong> {{item.avInfo}}</p><a *ngIf="floorPlan(item)" [href]="floorPlan(item)" target="_blank" rel="noopener">Otvori plan prostora (PDF)</a></div></section><section class="gallery" *ngIf="item.galleryItems.length"><h2>Galerija</h2><div><button *ngFor="let galleryItem of item.galleryItems;let i=index" type="button" (click)="openGallery(i)"><img [src]="image(galleryItem.media)" [alt]="galleryItem.altText||item.title" loading="lazy" /></button></div></section><div id="upit"><app-public-rental-inquiry-form [space]="item"/></div></article><app-public-gallery-lightbox *ngIf="lightbox() as images" [items]="images" (closed)="lightbox.set(null)"/>
+<p class="loading-state" *ngIf="loading()">{{ 'rental.loading' | publicTranslate }}</p>
+<p class="error-state" *ngIf="error()">
+  {{ error() }} <a [routerLink]="locale.rentalSpacePath()">{{ 'rental.back' | publicTranslate }}</a>
+</p>
+
+<article *ngIf="space() as item" class="space-detail">
+  <section class="hero" [style.background-image]="'linear-gradient(90deg,rgba(8,8,8,.88),rgba(8,8,8,.08)),url('+image(item.heroImage)+')'">
+    <div>
+      <a [routerLink]="locale.rentalSpacePath()">← {{ 'rental.availableSpaces' | publicTranslate }}</a>
+      <h1>{{ item.title }}</h1>
+      <p>{{ item.shortDescription }}</p>
+      <a class="cta" href="#upit">{{ 'rental.inquiry' | publicTranslate }}</a>
+    </div>
+  </section>
+  <section class="content">
+    <div class="description"><h2>{{ 'rental.about' | publicTranslate }}</h2><div [innerHTML]="item.description"></div></div>
+    <dl>
+      <div *ngIf="item.seatedCapacity"><dt>{{ 'rental.seatedCapacity' | publicTranslate }}</dt><dd>{{ item.seatedCapacity }}</dd></div>
+      <div *ngIf="item.standingCapacity"><dt>{{ 'rental.standingCapacity' | publicTranslate }}</dt><dd>{{ item.standingCapacity }}</dd></div>
+      <div *ngIf="item.areaSqm"><dt>{{ 'rental.area' | publicTranslate }}</dt><dd>{{ item.areaSqm }} m²</dd></div>
+      <div *ngIf="item.dressingRooms"><dt>{{ 'rental.dressingRooms' | publicTranslate }}</dt><dd>{{ item.dressingRooms }}</dd></div>
+    </dl>
+    <div class="columns">
+      <section *ngIf="item.amenities.length"><h3>{{ 'rental.amenities' | publicTranslate }}</h3><ul><li *ngFor="let value of item.amenities">{{ value }}</li></ul></section>
+      <section *ngIf="item.technicalEquipment.length"><h3>{{ 'rental.technicalEquipment' | publicTranslate }}</h3><ul><li *ngFor="let value of item.technicalEquipment">{{ value }}</li></ul></section>
+      <section *ngIf="item.suitableEventTypes.length"><h3>{{ 'rental.suitableFor' | publicTranslate }}</h3><ul><li *ngFor="let value of item.suitableEventTypes">{{ value }}</li></ul></section>
+    </div>
+    <div class="details">
+      <p *ngIf="item.accessibilityInfo"><strong>{{ 'rental.accessibility' | publicTranslate }}:</strong> {{ item.accessibilityInfo }}</p>
+      <p *ngIf="item.cateringInfo"><strong>{{ 'rental.catering' | publicTranslate }}:</strong> {{ item.cateringInfo }}</p>
+      <p *ngIf="item.barInfo"><strong>{{ 'rental.bar' | publicTranslate }}:</strong> {{ item.barInfo }}</p>
+      <p *ngIf="item.internetInfo"><strong>{{ 'rental.internet' | publicTranslate }}:</strong> {{ item.internetInfo }}</p>
+      <p *ngIf="item.avInfo"><strong>{{ 'rental.avSupport' | publicTranslate }}:</strong> {{ item.avInfo }}</p>
+      <a *ngIf="floorPlan(item)" [href]="floorPlan(item)" target="_blank" rel="noopener">{{ 'rental.openFloorPlan' | publicTranslate }}</a>
+    </div>
+  </section>
+  <section class="gallery" *ngIf="item.galleryItems.length">
+    <h2>{{ 'common.gallery' | publicTranslate }}</h2>
+    <div><button *ngFor="let galleryItem of item.galleryItems; let i = index" type="button" (click)="openGallery(i)"><img [src]="image(galleryItem.media)" [alt]="galleryItem.altText || item.title" loading="lazy" /></button></div>
+  </section>
+  <div id="upit"><app-public-rental-inquiry-form [space]="item" /></div>
+</article>
+<app-public-gallery-lightbox *ngIf="lightbox() as images" [items]="images" (closed)="lightbox.set(null)" />

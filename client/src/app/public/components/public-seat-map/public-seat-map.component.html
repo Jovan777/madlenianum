@@ -12,14 +12,14 @@
 
 </div>
 
-<div class="legend" aria-label="Legenda sedišta">
+<div class="legend" [attr.aria-label]="i18n.t('ticketing.legend')">
   <span *ngFor="let item of legend" [class]="'legend-' + item.status">
     <i aria-hidden="true"></i>{{ item.label }}
   </span>
 </div>
 
 <div class="map-viewport" #viewport>
-  <div class="empty-map" *ngIf="visibleSeats().length === 0">Za ovaj deo sale nema sedišta.</div>
+  <div class="empty-map" *ngIf="visibleSeats().length === 0">{{ i18n.t('ticketing.emptySection') }}</div>
 
   <div
     class="scaled-canvas"

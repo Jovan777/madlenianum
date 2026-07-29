@@ -3,6 +3,7 @@ const Event = require("../models/Event");
 const Production = require("../models/Production");
 const { productionDto } = require("../services/cmsDto.service");
 const { populateProduction } = require("../services/cmsPopulate.service");
+const { assignLocalizedPayload } = require("../services/localizedContent.service");
 const {
   applyAudit,
   applyPublishing,
@@ -114,7 +115,7 @@ const getProductionById = asyncHandler(async (req, res) => {
 const previewProduction = asyncHandler(async (req, res) => {
   const production = await populateProduction(Production.findById(req.params.id));
   if (!production) throw createHttpError(404, "Predstava nije pronadjena.");
-  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: productionDto(production) });
+  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: productionDto(production, req.query.lang) });
 });
 
 const createProduction = asyncHandler(async (req, res) => {
@@ -131,7 +132,7 @@ const updateProduction = asyncHandler(async (req, res) => {
   if (!production) throw createHttpError(404, "Predstava nije pronadjena.");
 
   const previousStatus = production.status;
-  Object.assign(production, normalizePeoplePayload(req.body));
+  assignLocalizedPayload(production, normalizePeoplePayload(req.body));
   applyAudit(production, req.admin);
   applyPublishing(production, previousStatus);
   await production.save();

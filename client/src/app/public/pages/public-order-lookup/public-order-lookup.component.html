@@ -1,18 +1,18 @@
 <section class="order-page">
   <header data-motion="up">
-    <p class="eyebrow">Ulaznice</p>
-    <h1>Pregled potvrde</h1>
-    <p>Otvorite bezbedan link iz emaila ili unesite broj potvrde i email adresu.</p>
+    <p class="eyebrow">{{ 'order.eyebrow' | publicTranslate }}</p>
+    <h1>{{ 'order.heading' | publicTranslate }}</h1>
+    <p>{{ 'order.intro' | publicTranslate }}</p>
   </header>
 
   <form class="lookup" [formGroup]="lookupForm" (ngSubmit)="lookup()" data-motion="up">
-    <input aria-label="Broj potvrde" placeholder="MDL-..." formControlName="reference">
-    <input aria-label="Email" type="email" placeholder="Email adresa" formControlName="email">
-    <button class="btn btn-primary" type="submit" [disabled]="isLoading()">Pronađi</button>
+    <input [attr.aria-label]="'order.reference' | publicTranslate" placeholder="MDL-..." formControlName="reference">
+    <input [attr.aria-label]="'order.email' | publicTranslate" type="email" [placeholder]="'order.email' | publicTranslate" formControlName="email">
+    <button class="btn btn-primary" type="submit" [disabled]="isLoading()">{{ 'order.find' | publicTranslate }}</button>
   </form>
 
   <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
-  <p class="loading" *ngIf="isLoading()">Traženje potvrde...</p>
+  <p class="loading" *ngIf="isLoading()">{{ 'order.loading' | publicTranslate }}</p>
 
   <article class="order-card" *ngIf="order() as item" data-motion="scale">
     <div class="order-head">
@@ -24,21 +24,21 @@
     <p class="confirmation-note">{{ statusExplanation(item) }}</p>
 
     <div class="event-summary">
-      <p>{{ item.event.productionTitle || 'Događaj' }}</p>
+      <p>{{ item.event.productionTitle || ('order.event' | publicTranslate) }}</p>
       <span>{{ formatEventDate(item.event.startsAt) }}</span>
       <small>{{ item.event.venueName || 'Madlenianum' }}</small>
     </div>
 
     <div class="order-meta">
-      <div><span>Gost</span><strong>{{ item.customer.firstName }} {{ item.customer.lastName }}</strong></div>
-      <div><span>Email</span><strong>{{ item.customer.email }}</strong></div>
-      <div *ngIf="item.expiresAt"><span>Rok</span><strong>{{ item.expiresAt | date:'dd.MM.yyyy. HH:mm' }}</strong></div>
+      <div><span>{{ 'order.guest' | publicTranslate }}</span><strong>{{ item.customer.firstName }} {{ item.customer.lastName }}</strong></div>
+      <div><span>{{ 'order.email' | publicTranslate }}</span><strong>{{ item.customer.email }}</strong></div>
+      <div *ngIf="item.expiresAt"><span>{{ 'order.expires' | publicTranslate }}</span><strong>{{ formatEventDate(item.expiresAt) }}</strong></div>
     </div>
 
     <div class="ticket-list" *ngIf="tickets(item).length">
       <div *ngFor="let ticket of tickets(item)">
         <strong>{{ ticket.seatLabel }}</strong>
-        <span>{{ ticket.priceCategoryName || ticket.priceCategoryCode || 'Karta' }} · red {{ ticket.row || '-' }} · broj {{ ticket.number || '-' }}</span>
+        <span>{{ ticket.priceCategoryName || ticket.priceCategoryCode || ('order.ticket' | publicTranslate) }} · {{ 'order.row' | publicTranslate }} {{ ticket.row || '-' }} · {{ 'order.number' | publicTranslate }} {{ ticket.number || '-' }}</span>
         <small>{{ ticket.finalPrice | number }} {{ ticket.currency || item.currency || 'RSD' }}</small>
       </div>
     </div>

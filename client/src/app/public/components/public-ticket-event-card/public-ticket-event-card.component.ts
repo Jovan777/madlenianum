@@ -4,21 +4,26 @@ import { RouterLink } from '@angular/router';
 
 import { PublicEvent } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 @Component({
   selector: 'app-public-ticket-event-card',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PublicTranslatePipe],
   templateUrl: './public-ticket-event-card.component.html',
   styleUrl: './public-ticket-event-card.component.scss',
 })
 export class PublicTicketEventCardComponent {
   readonly publicApi = inject(PublicApiService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   @Input({ required: true }) event!: PublicEvent;
 
   productionTitle(): string {
-    return this.publicApi.productionFromEvent(this.event)?.title || 'Događaj';
+    return this.publicApi.productionFromEvent(this.event)?.title || this.i18n.t('ticketing.event');
   }
 
   productionType(): string {
@@ -31,9 +36,9 @@ export class PublicTicketEventCardComponent {
   }
 
   eventDate(): string {
-    if (!this.event.startsAt) return 'Termin će biti objavljen';
+    if (!this.event.startsAt) return this.i18n.t('event.dateSoon');
 
-    return new Intl.DateTimeFormat('sr-Latn-RS', {
+    return new Intl.DateTimeFormat(this.locale.isEnglish() ? 'en-GB' : 'sr-Latn-RS', {
       timeZone: 'Europe/Belgrade',
       weekday: 'long',
       day: '2-digit',
@@ -50,11 +55,11 @@ export class PublicTicketEventCardComponent {
 
   statusLabel(): string {
     const labels: Record<string, string> = {
-      draft: 'Nacrt',
-      scheduled: 'Zakazano',
-      completed: 'Završeno',
-      cancelled: 'Otkazano',
-      postponed: 'Odloženo',
+      draft: this.i18n.t('event.status.draft'),
+      scheduled: this.i18n.t('event.status.scheduled'),
+      completed: this.i18n.t('event.status.completed'),
+      cancelled: this.i18n.t('event.status.cancelled'),
+      postponed: this.i18n.t('event.status.postponed'),
     };
     return labels[this.event.status || ''] || '';
   }

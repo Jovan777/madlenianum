@@ -13,13 +13,13 @@
     </p>
 
     <div class="actions">
-      <a [routerLink]="['/predstave', production().slug]">
+      <a [routerLink]="locale.productionPath(production().slug)">
         <span aria-hidden="true">&#9432;</span>
-        Saznaj više
+        {{ 'common.learnMore' | publicTranslate }}
       </a>
       <button *ngIf="trailer() as video" type="button" (click)="activeVideo.set(video)">
         <span aria-hidden="true">&#9655;</span>
-        Pogledaj trejler
+        {{ 'common.watchTrailer' | publicTranslate }}
       </button>
     </div>
   </div>

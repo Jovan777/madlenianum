@@ -30,6 +30,7 @@ const statusHistorySchema = new mongoose.Schema(
 
 const eventPlanningInquirySchema = new mongoose.Schema(
   {
+    locale: { type: String, enum: ["sr", "en"], default: "sr" },
     referenceNumber: { type: String, unique: true, trim: true },
     firstName: { type: String, required: [true, "Ime je obavezno."], trim: true },
     lastName: { type: String, required: [true, "Prezime je obavezno."], trim: true },

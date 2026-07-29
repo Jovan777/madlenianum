@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 
 import { PublicProduction, PublicVideo } from '../../../core/models/public.models';
 import { MediaUrlService } from '../../../core/services/media-url.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 import { PublicVideoModalComponent } from '../public-video-modal/public-video-modal.component';
 
 @Component({
@@ -18,6 +20,8 @@ export class PublicFeaturedSectionComponent {
   readonly heading = input('Ne propustite');
   readonly activeVideo = signal<PublicVideo | null>(null);
   private readonly media = inject(MediaUrlService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   image(production: PublicProduction): string {
     const galleryImage = production.galleryItems?.[0]?.media || production.gallery?.[0];

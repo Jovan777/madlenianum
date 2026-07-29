@@ -102,6 +102,27 @@ const sectionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const homepageTranslationSchema = new mongoose.Schema({
+  upcomingEventsHeading: { type: String, trim: true, default: "" },
+  repertoireProductionsHeading: { type: String, trim: true, default: "" },
+  featuredProductionsHeading: { type: String, trim: true, default: "" },
+  featuredNewsHeading: { type: String, trim: true, default: "" },
+  institutionalTeaser: {
+    heading: { type: String, trim: true, default: "" },
+    text: { type: String, default: "" },
+    ctaLabel: { type: String, trim: true, default: "" },
+  },
+  ctaCardsHeading: { type: String, trim: true, default: "" },
+  ctaCards: [{
+    sourceId: { type: mongoose.Schema.Types.ObjectId },
+    title: { type: String, trim: true, default: "" },
+    text: { type: String, trim: true, default: "" },
+    linkLabel: { type: String, trim: true, default: "" },
+  }],
+  seoTitle: { type: String, trim: true, default: "" },
+  seoDescription: { type: String, trim: true, default: "" },
+}, { _id: false });
+
 const homepageConfigSchema = new mongoose.Schema(
   {
     key: { type: String, enum: ["default"], unique: true, default: "default", immutable: true },
@@ -115,6 +136,7 @@ const homepageConfigSchema = new mongoose.Schema(
     ctaCards: [ctaCardSchema],
     sections: [sectionSchema],
     seo: { type: seoSchema, default: () => ({}) },
+    translations: { sr: homepageTranslationSchema, en: homepageTranslationSchema },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "AdminUser" },
   },
   { timestamps: true }
@@ -123,6 +145,9 @@ const homepageConfigSchema = new mongoose.Schema(
 homepageConfigSchema.pre("validate", function () {
   this.key = "default";
   this.institutionalTeaser.text = sanitizeRichText(this.institutionalTeaser.text);
+  if (this.translations?.en?.institutionalTeaser) {
+    this.translations.en.institutionalTeaser.text = sanitizeRichText(this.translations.en.institutionalTeaser.text);
+  }
 
   const urls = [this.institutionalTeaser.ctaUrl, ...(this.ctaCards || []).map((card) => card.url)];
   if (urls.some((url) => url && !url.startsWith("/") && !isHttpUrl(url))) {

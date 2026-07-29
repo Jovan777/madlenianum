@@ -1,5 +1,5 @@
 <section class="cta-section" *ngIf="visibleCards().length" data-motion="up">
-  <h2>{{ heading() || 'Partnerstvo' }}</h2>
+  <h2>{{ heading() || i18n.t('home.partnership') }}</h2>
   <div class="cta-grid" data-motion-stagger>
     <article *ngFor="let card of visibleCards()" data-motion-item data-motion-card>
       <img *ngIf="media.resolve(card.image)" [src]="media.resolve(card.image)" [alt]="card.title" loading="lazy" />
@@ -7,8 +7,8 @@
       <div class="copy">
         <h3>{{ card.title }}</h3>
         <p>{{ card.text }}</p>
-        <a *ngIf="isExternal(card.url); else internalLink" [href]="card.url" target="_blank" rel="noopener noreferrer">ⓘ {{ card.linkLabel || 'Saznaj više' }}</a>
-        <ng-template #internalLink><a [routerLink]="card.url">ⓘ {{ card.linkLabel || 'Saznaj više' }}</a></ng-template>
+        <a *ngIf="isExternal(card.url); else internalLink" [href]="card.url" target="_blank" rel="noopener noreferrer">ⓘ {{ card.linkLabel || i18n.t('common.learnMore') }}</a>
+        <ng-template #internalLink><a [routerLink]="internalPath(card.url)">ⓘ {{ card.linkLabel || i18n.t('common.learnMore') }}</a></ng-template>
       </div>
     </article>
   </div>

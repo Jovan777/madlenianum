@@ -3,11 +3,12 @@ import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, inject, 
 
 import { PublicGalleryItem, PublicMedia } from '../../../core/models/public.models';
 import { MediaUrlService } from '../../../core/services/media-url.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 @Component({
   selector: 'app-public-gallery-lightbox',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PublicTranslatePipe],
   templateUrl: './public-gallery-lightbox.component.html',
   styleUrl: './public-gallery-lightbox.component.scss',
 })

@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const News = require("../models/News");
 const { newsDto } = require("../services/cmsDto.service");
 const { populateNews } = require("../services/cmsPopulate.service");
+const { assignLocalizedPayload } = require("../services/localizedContent.service");
 const {
   applyAudit,
   applyPublishing,
@@ -49,7 +50,7 @@ const getNewsById = asyncHandler(async (req, res) => {
 const previewNews = asyncHandler(async (req, res) => {
   const news = await populateNews(News.findById(req.params.id));
   if (!news) throw createHttpError(404, "Vest nije pronadjena.");
-  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: newsDto(news) });
+  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: newsDto(news, req.query.lang) });
 });
 
 const createNews = asyncHandler(async (req, res) => {
@@ -65,7 +66,7 @@ const updateNews = asyncHandler(async (req, res) => {
   const news = await News.findById(req.params.id);
   if (!news) throw createHttpError(404, "Vest nije pronadjena.");
   const previousStatus = news.status;
-  Object.assign(news, req.body);
+  assignLocalizedPayload(news, req.body);
   applyAudit(news, req.admin);
   applyPublishing(news, previousStatus);
   await news.save();

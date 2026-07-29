@@ -1,11 +1,11 @@
 <section class="upcoming-section" data-motion="up">
   <header class="section-header">
-    <h2>{{ heading() || 'Predstojeći događaji' }}</h2>
-    <a routerLink="/repertoar">Pogledaj ceo repertoar</a>
+    <h2>{{ heading() || i18n.t('home.upcoming') }}</h2>
+    <a [routerLink]="locale.equivalentPath('/repertoar', locale.current())">{{ i18n.t('repertoire.allEvents') }}</a>
   </header>
 
   <ng-container *ngIf="groups().length; else emptyEvents">
-    <div class="date-tabs" role="tablist" aria-label="Datumi predstojećih događaja">
+    <div class="date-tabs" role="tablist" [attr.aria-label]="i18n.t('upcoming.dates')">
       <button
         *ngFor="let group of groups()"
         type="button"
@@ -21,7 +21,7 @@
     <div class="event-list" role="tabpanel" data-motion-stagger>
       <article class="event-card" *ngFor="let event of selectedGroup()?.events" data-motion-item data-motion-card>
         <div class="poster-wrap">
-          <img *ngIf="image(event)" [src]="image(event)" [alt]="production(event)?.title || 'Predstava'" loading="lazy" />
+          <img *ngIf="image(event)" [src]="image(event)" [alt]="production(event)?.title || i18n.t('upcoming.defaultImageAlt')" loading="lazy" />
           <div *ngIf="!image(event)" class="poster-fallback" aria-hidden="true"></div>
         </div>
 
@@ -30,15 +30,15 @@
           <div class="meta">
             <span>{{ display.productionType(production(event)?.type) }}</span>
             <span>{{ event.venue?.name || 'Madlenianum' }}</span>
-            <em *ngIf="event.isPremiere || event.badge === 'Premijera'">Premijera</em>
+            <em *ngIf="event.isPremiere || event.badge === 'Premijera'">{{ i18n.t('production.premiere') }}</em>
           </div>
-          <h3>{{ production(event)?.title || 'Program Madlenianuma' }}</h3>
+          <h3>{{ production(event)?.title || i18n.t('production.defaultTitle') }}</h3>
           <p>{{ production(event)?.shortDescription || production(event)?.subtitle }}</p>
         </div>
 
         <div class="event-actions">
-          <a *ngIf="production(event)?.slug" class="details" [routerLink]="['/predstave', production(event)?.slug]">ⓘ <span>Saznaj više</span></a>
-          <a *ngIf="display.eventSale(event).canPurchase && eventId(event)" class="buy" [routerLink]="['/kupovina', eventId(event)]" aria-label="Kupi karte">Karte</a>
+          <a *ngIf="production(event)?.slug" class="details" [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production(event)?.slug]">ⓘ <span>{{ i18n.t('common.learnMore') }}</span></a>
+          <a *ngIf="display.eventSale(event).canPurchase && eventId(event)" class="buy" [routerLink]="[locale.equivalentPath('/kupovina', locale.current()), eventId(event)]" [attr.aria-label]="i18n.t('repertoire.buyTickets')">{{ i18n.t('repertoire.buyTickets') }}</a>
           <span class="sale-status" *ngIf="!display.eventSale(event).canPurchase">{{ display.eventSale(event).label }}</span>
         </div>
       </article>
@@ -46,6 +46,6 @@
   </ng-container>
 
   <ng-template #emptyEvents>
-    <p class="section-empty">Novi termini biće uskoro objavljeni.</p>
+    <p class="section-empty">{{ i18n.t('home.noEvents') }}</p>
   </ng-template>
 </section>

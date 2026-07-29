@@ -1,10 +1,329 @@
-<div class="cms-form-page"><a class="back" routerLink="/admin">Nazad na kontrolnu tablu</a><header class="cms-form-hero"><div><p>Singleton konfiguracija</p><h1>Pocetna strana</h1><span>Upravljajte izborima i redosledom bez menjanja javnog dizajna.</span></div></header><p class="cms-alert" *ngIf="error()">{{error()}} <button (click)="load()">Pokusaj ponovo</button></p><p class="cms-loading" *ngIf="loading()">Ucitavanje...</p><form [formGroup]="form" *ngIf="!loading()" class="cms-long-form">
-<section class="cms-panel" formGroupName="hero"><header><div><span>1</span><h2>Hero slajdovi</h2></div><p>Koristi postojece Promo slajdove, bez dupliranja podataka.</p></header><div class="cms-grid"><label class="check"><input type="checkbox" formControlName="enabled"/>Hero je ukljucen</label><label>Nacin izbora<select formControlName="mode"><option value="automatic">Automatski</option><option value="manual">Rucni izbor</option></select></label><label>Broj slajdova<input type="number" min="1" max="12" formControlName="limit"/></label><label class="check"><input type="checkbox" formControlName="fallbackToAutomatic"/>Automatska rezerva</label><app-search-picker class="wide" label="Rucno izabrani slajdovi" mode="multiple" [options]="slides()" formControlName="selectedSlides"/></div></section>
-<section class="cms-panel" formGroupName="upcomingEvents"><header><div><span>2</span><h2>Predstojeci termini</h2></div><p>Automatski prikaz buducih termina ili rucni izbor.</p></header><div class="cms-grid"><label class="check"><input type="checkbox" formControlName="enabled"/>Sekcija je ukljucena</label><label>Nacin izbora<select formControlName="mode"><option value="automatic">Automatski</option><option value="manual">Rucni</option></select></label><label>Naslov sekcije<input formControlName="heading"/></label><label>Broj termina<input type="number" min="1" max="24" formControlName="limit"/></label><label>Od datuma<input type="date" formControlName="dateFrom"/></label><label>Do datuma<input type="date" formControlName="dateTo"/></label><app-search-picker class="wide" label="Rucno izabrani termini" mode="multiple" [options]="events()" formControlName="selectedEvents"/></div></section>
-<section class="cms-panel" formGroupName="repertoireProductions"><header><div><span>3</span><h2>Predstave na repertoaru</h2></div><p>Poseban izbor za javnu sekciju sa filterima po vrsti programa.</p></header><div class="cms-grid"><label class="check"><input type="checkbox" formControlName="enabled"/>Sekcija je ukljucena</label><label>Nacin izbora<select formControlName="mode"><option value="automatic">Automatski</option><option value="manual">Rucni</option></select></label><label>Naslov sekcije<input formControlName="heading"/></label><label>Broj predstava<input type="number" min="1" max="24" formControlName="limit"/></label><app-search-picker class="wide" label="Dozvoljeni tipovi predstava" mode="multiple" [options]="productionTypes()" formControlName="allowedTypes"/><app-search-picker class="wide" label="Rucno izabrane predstave" mode="multiple" [options]="productions()" formControlName="selectedProductions"/></div></section>
-<section class="cms-panel" formGroupName="featuredProductions"><header><div><span>4</span><h2>Izdvojene predstave</h2></div><p>Automatski koristi oznaku Izdvojeno ili rucni izbor.</p></header><div class="cms-grid"><label class="check"><input type="checkbox" formControlName="enabled"/>Sekcija je ukljucena</label><label>Nacin izbora<select formControlName="mode"><option value="automatic">Automatski</option><option value="manual">Rucni</option></select></label><label>Naslov sekcije<input formControlName="heading"/></label><label>Broj predstava<input type="number" min="1" max="24" formControlName="limit"/></label><app-search-picker class="wide" label="Dozvoljeni tipovi predstava" mode="multiple" [options]="productionTypes()" formControlName="allowedTypes"/><app-search-picker class="wide" label="Rucno izabrane predstave" mode="multiple" [options]="productions()" formControlName="selectedProductions"/></div></section>
-<section class="cms-panel" formGroupName="featuredNews"><header><div><span>5</span><h2>Izdvojene vesti</h2></div><p>Izaberite kategoriju, limit ili konkretne clanke.</p></header><div class="cms-grid"><label class="check"><input type="checkbox" formControlName="enabled"/>Sekcija je ukljucena</label><label>Nacin izbora<select formControlName="mode"><option value="automatic">Automatski</option><option value="manual">Rucni</option></select></label><label>Naslov sekcije<input formControlName="heading"/></label><label>Broj vesti<input type="number" min="1" max="24" formControlName="limit"/></label><label class="wide">Filter kategorije<input formControlName="category"/></label><app-search-picker class="wide" label="Rucno izabrane vesti" mode="multiple" [options]="news()" formControlName="selectedNews"/></div></section>
-<section class="cms-panel" formGroupName="institutionalTeaser"><header><div><span>6</span><h2>Institucionalni blok</h2></div><p>Kratak kontrolisani uvod ka institucionalnoj strani.</p></header><div class="cms-grid"><label class="check wide"><input type="checkbox" formControlName="enabled"/>Blok je ukljucen</label><label class="wide">Naslov<input formControlName="heading"/></label><app-rich-text-editor class="wide" label="Kratak tekst" formControlName="text"/><app-media-picker class="wide" label="Slika" mode="single" mediaKind="image" [value]="teaserImage()" (selectionChange)="updateTeaserImage($event)"/><label>CTA tekst<input formControlName="ctaLabel"/></label><label>CTA putanja<input formControlName="ctaUrl"/></label><app-search-picker class="wide" label="Povezana strana" [options]="pages()" formControlName="linkedPage"/></div></section>
-<section class="cms-panel"><header><div><span>7</span><h2>Urednicke CTA kartice</h2></div><p>Prikazuju se samo kartice koje vode na postojecu internu rutu ili spoljni URL.</p></header><label class="section-heading">Naslov sekcije<input formControlName="ctaCardsHeading"/></label><button type="button" class="add" (click)="addCard()">Dodaj karticu</button><div formArrayName="ctaCards"><div class="repeat" *ngFor="let group of groups(cards);let index=index" [formGroupName]="index"><div class="cms-grid"><label>Naslov<input formControlName="title"/></label><label>Tekst<input formControlName="text"/></label><label>Oznaka linka<input formControlName="linkLabel"/></label><label>Putanja ili URL<input formControlName="url"/></label><label class="check"><input type="checkbox" formControlName="enabled"/>Ukljucena</label><app-media-picker class="wide" label="Slika kartice" mode="single" mediaKind="image" [value]="cardImage(group)" (selectionChange)="updateCardImage(group,$event)"/></div><div class="row-actions"><button type="button" (click)="move(cards,index,-1)">Gore</button><button type="button" (click)="move(cards,index,1)">Dole</button><button type="button" class="danger" (click)="remove(cards,index)">Ukloni</button></div></div></div></section>
-<section class="cms-panel"><header><div><span>8</span><h2>Redosled sekcija</h2></div><p>Samo unapred definisane sekcije mogu biti prikazane.</p></header><div formArrayName="sections"><div class="section-row" *ngFor="let group of groups(sections);let index=index" [formGroupName]="index"><strong>{{group.get('sectionType')?.value}}</strong><label class="check"><input type="checkbox" formControlName="enabled"/>Vidljiva</label><div><button type="button" (click)="move(sections,index,-1)">Gore</button><button type="button" (click)="move(sections,index,1)">Dole</button></div></div></div></section>
-<section class="cms-panel"><header><div><span>9</span><h2>SEO</h2></div></header><app-seo-fields [group]="seo"/></section><footer class="cms-action-bar"><button type="button" class="secondary" (click)="preview()">Pregled sacuvane verzije</button><button type="button" class="primary" (click)="save()" [disabled]="saving()">{{saving()?'Cuvanje...':'Sacuvaj konfiguraciju'}}</button></footer></form></div>
+<div class="cms-form-page">
+  <a class="back" routerLink="/admin">Nazad na kontrolnu tablu</a>
+  <header class="cms-form-hero">
+    <div>
+      <p>Singleton konfiguracija</p>
+      <h1>Pocetna strana</h1>
+      <span>Upravljajte izborima i redosledom bez menjanja javnog dizajna.</span>
+    </div>
+  </header>
+  <p class="cms-alert" *ngIf="error()">
+    {{ error() }} <button (click)="load()">Pokusaj ponovo</button>
+  </p>
+  <p class="cms-loading" *ngIf="loading()">Ucitavanje...</p>
+  <form [formGroup]="form" *ngIf="!loading()" class="cms-long-form">
+    <app-admin-language-tabs
+      [active]="activeLanguage()"
+      [serbianComplete]="true"
+      [englishComplete]="englishComplete()"
+      (languageChange)="activeLanguage.set($event)"
+    />
+    <section class="cms-panel" formGroupName="translations" *ngIf="activeLanguage() === 'en'">
+      <header>
+        <div>
+          <span>EN</span>
+          <h2>English homepage content</h2>
+        </div>
+        <p>Only public text is translated. Selections, images and ordering remain shared.</p>
+      </header>
+      <div class="cms-grid" formGroupName="en">
+        <label>Upcoming events heading<input formControlName="upcomingEventsHeading" /></label>
+        <label>Repertoire heading<input formControlName="repertoireProductionsHeading" /></label>
+        <label
+          >Featured productions heading<input formControlName="featuredProductionsHeading"
+        /></label>
+        <label>Featured news heading<input formControlName="featuredNewsHeading" /></label>
+        <div class="wide cms-grid" formGroupName="institutionalTeaser">
+          <label class="wide">Institutional heading<input formControlName="heading" /></label>
+          <app-rich-text-editor class="wide" label="Institutional text" formControlName="text" />
+          <label>Institutional CTA label<input formControlName="ctaLabel" /></label>
+        </div>
+        <label>CTA cards heading<input formControlName="ctaCardsHeading" /></label>
+        <label>SEO title<input formControlName="seoTitle" /></label>
+        <label class="wide"
+          >SEO description<textarea rows="3" formControlName="seoDescription"></textarea>
+        </label>
+      </div>
+    </section>
+    <section class="cms-panel" formGroupName="hero">
+      <header>
+        <div>
+          <span>1</span>
+          <h2>Hero slajdovi</h2>
+        </div>
+        <p>Koristi postojece Promo slajdove, bez dupliranja podataka.</p>
+      </header>
+      <div class="cms-grid">
+        <label class="check"
+          ><input type="checkbox" formControlName="enabled" />Hero je ukljucen</label
+        ><label
+          >Nacin izbora<select formControlName="mode">
+            <option value="automatic">Automatski</option>
+            <option value="manual">Rucni izbor</option>
+          </select></label
+        ><label>Broj slajdova<input type="number" min="1" max="12" formControlName="limit" /></label
+        ><label class="check"
+          ><input type="checkbox" formControlName="fallbackToAutomatic" />Automatska rezerva</label
+        ><app-search-picker
+          class="wide"
+          label="Rucno izabrani slajdovi"
+          mode="multiple"
+          [options]="slides()"
+          formControlName="selectedSlides"
+        />
+      </div>
+    </section>
+    <section class="cms-panel" formGroupName="upcomingEvents">
+      <header>
+        <div>
+          <span>2</span>
+          <h2>Predstojeci termini</h2>
+        </div>
+        <p>Automatski prikaz buducih termina ili rucni izbor.</p>
+      </header>
+      <div class="cms-grid">
+        <label class="check"
+          ><input type="checkbox" formControlName="enabled" />Sekcija je ukljucena</label
+        ><label
+          >Nacin izbora<select formControlName="mode">
+            <option value="automatic">Automatski</option>
+            <option value="manual">Rucni</option>
+          </select></label
+        ><label *ngIf="activeLanguage() === 'sr'"
+          >Naslov sekcije<input formControlName="heading" /></label
+        ><label>Broj termina<input type="number" min="1" max="24" formControlName="limit" /></label
+        ><label>Od datuma<input type="date" formControlName="dateFrom" /></label
+        ><label>Do datuma<input type="date" formControlName="dateTo" /></label
+        ><app-search-picker
+          class="wide"
+          label="Rucno izabrani termini"
+          mode="multiple"
+          [options]="events()"
+          formControlName="selectedEvents"
+        />
+      </div>
+    </section>
+    <section class="cms-panel" formGroupName="repertoireProductions">
+      <header>
+        <div>
+          <span>3</span>
+          <h2>Predstave na repertoaru</h2>
+        </div>
+        <p>Poseban izbor za javnu sekciju sa filterima po vrsti programa.</p>
+      </header>
+      <div class="cms-grid">
+        <label class="check"
+          ><input type="checkbox" formControlName="enabled" />Sekcija je ukljucena</label
+        ><label
+          >Nacin izbora<select formControlName="mode">
+            <option value="automatic">Automatski</option>
+            <option value="manual">Rucni</option>
+          </select></label
+        ><label *ngIf="activeLanguage() === 'sr'"
+          >Naslov sekcije<input formControlName="heading" /></label
+        ><label
+          >Broj predstava<input type="number" min="1" max="24" formControlName="limit" /></label
+        ><app-search-picker
+          class="wide"
+          label="Dozvoljeni tipovi predstava"
+          mode="multiple"
+          [options]="productionTypes()"
+          formControlName="allowedTypes"
+        /><app-search-picker
+          class="wide"
+          label="Rucno izabrane predstave"
+          mode="multiple"
+          [options]="productions()"
+          formControlName="selectedProductions"
+        />
+      </div>
+    </section>
+    <section class="cms-panel" formGroupName="featuredProductions">
+      <header>
+        <div>
+          <span>4</span>
+          <h2>Izdvojene predstave</h2>
+        </div>
+        <p>Automatski koristi oznaku Izdvojeno ili rucni izbor.</p>
+      </header>
+      <div class="cms-grid">
+        <label class="check"
+          ><input type="checkbox" formControlName="enabled" />Sekcija je ukljucena</label
+        ><label
+          >Nacin izbora<select formControlName="mode">
+            <option value="automatic">Automatski</option>
+            <option value="manual">Rucni</option>
+          </select></label
+        ><label *ngIf="activeLanguage() === 'sr'"
+          >Naslov sekcije<input formControlName="heading" /></label
+        ><label
+          >Broj predstava<input type="number" min="1" max="24" formControlName="limit" /></label
+        ><app-search-picker
+          class="wide"
+          label="Dozvoljeni tipovi predstava"
+          mode="multiple"
+          [options]="productionTypes()"
+          formControlName="allowedTypes"
+        /><app-search-picker
+          class="wide"
+          label="Rucno izabrane predstave"
+          mode="multiple"
+          [options]="productions()"
+          formControlName="selectedProductions"
+        />
+      </div>
+    </section>
+    <section class="cms-panel" formGroupName="featuredNews">
+      <header>
+        <div>
+          <span>5</span>
+          <h2>Izdvojene vesti</h2>
+        </div>
+        <p>Izaberite kategoriju, limit ili konkretne clanke.</p>
+      </header>
+      <div class="cms-grid">
+        <label class="check"
+          ><input type="checkbox" formControlName="enabled" />Sekcija je ukljucena</label
+        ><label
+          >Nacin izbora<select formControlName="mode">
+            <option value="automatic">Automatski</option>
+            <option value="manual">Rucni</option>
+          </select></label
+        ><label *ngIf="activeLanguage() === 'sr'"
+          >Naslov sekcije<input formControlName="heading" /></label
+        ><label>Broj vesti<input type="number" min="1" max="24" formControlName="limit" /></label
+        ><label class="wide">Filter kategorije<input formControlName="category" /></label
+        ><app-search-picker
+          class="wide"
+          label="Rucno izabrane vesti"
+          mode="multiple"
+          [options]="news()"
+          formControlName="selectedNews"
+        />
+      </div>
+    </section>
+    <section class="cms-panel" formGroupName="institutionalTeaser">
+      <header>
+        <div>
+          <span>6</span>
+          <h2>Institucionalni blok</h2>
+        </div>
+        <p>Kratak kontrolisani uvod ka institucionalnoj strani.</p>
+      </header>
+      <div class="cms-grid">
+        <label class="check wide"
+          ><input type="checkbox" formControlName="enabled" />Blok je ukljucen</label
+        ><label class="wide" *ngIf="activeLanguage() === 'sr'"
+          >Naslov<input formControlName="heading" /></label
+        ><app-rich-text-editor
+          *ngIf="activeLanguage() === 'sr'"
+          class="wide"
+          label="Kratak tekst"
+          formControlName="text"
+        /><app-media-picker
+          class="wide"
+          label="Slika"
+          mode="single"
+          mediaKind="image"
+          [value]="teaserImage()"
+          (selectionChange)="updateTeaserImage($event)"
+        /><label *ngIf="activeLanguage() === 'sr'"
+          >CTA tekst<input formControlName="ctaLabel" /></label
+        ><label>CTA putanja<input formControlName="ctaUrl" /></label
+        ><app-search-picker
+          class="wide"
+          label="Povezana strana"
+          [options]="pages()"
+          formControlName="linkedPage"
+        />
+      </div>
+    </section>
+    <section class="cms-panel">
+      <header>
+        <div>
+          <span>7</span>
+          <h2>Urednicke CTA kartice</h2>
+        </div>
+        <p>Prikazuju se samo kartice koje vode na postojecu internu rutu ili spoljni URL.</p>
+      </header>
+      <label class="section-heading" *ngIf="activeLanguage() === 'sr'"
+        >Naslov sekcije<input formControlName="ctaCardsHeading" /></label
+      ><button type="button" class="add" (click)="addCard()">Dodaj karticu</button>
+      <div formArrayName="ctaCards">
+        <div
+          class="repeat"
+          *ngFor="let group of groups(cards); let index = index"
+          [formGroupName]="index"
+        >
+          <div class="cms-grid">
+            <ng-container *ngIf="activeLanguage() === 'sr'">
+              <label>Naslov<input formControlName="title" /></label>
+              <label>Tekst<input formControlName="text" /></label>
+              <label>Oznaka linka<input formControlName="linkLabel" /></label>
+            </ng-container>
+            <div class="wide cms-grid" formGroupName="english" *ngIf="activeLanguage() === 'en'">
+              <label>Title<input formControlName="title" /></label>
+              <label>Text<input formControlName="text" /></label>
+              <label>Link label<input formControlName="linkLabel" /></label>
+            </div>
+            <label>Putanja ili URL<input formControlName="url" /></label
+            ><label class="check"
+              ><input type="checkbox" formControlName="enabled" />Ukljucena</label
+            ><app-media-picker
+              class="wide"
+              label="Slika kartice"
+              mode="single"
+              mediaKind="image"
+              [value]="cardImage(group)"
+              (selectionChange)="updateCardImage(group, $event)"
+            />
+          </div>
+          <div class="row-actions">
+            <button type="button" (click)="move(cards, index, -1)">Gore</button
+            ><button type="button" (click)="move(cards, index, 1)">Dole</button
+            ><button type="button" class="danger" (click)="remove(cards, index)">Ukloni</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="cms-panel">
+      <header>
+        <div>
+          <span>8</span>
+          <h2>Redosled sekcija</h2>
+        </div>
+        <p>Samo unapred definisane sekcije mogu biti prikazane.</p>
+      </header>
+      <div formArrayName="sections">
+        <div
+          class="section-row"
+          *ngFor="let group of groups(sections); let index = index"
+          [formGroupName]="index"
+        >
+          <strong>{{ group.get('sectionType')?.value }}</strong
+          ><label class="check"><input type="checkbox" formControlName="enabled" />Vidljiva</label>
+          <div>
+            <button type="button" (click)="move(sections, index, -1)">Gore</button
+            ><button type="button" (click)="move(sections, index, 1)">Dole</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="cms-panel" *ngIf="activeLanguage() === 'sr'">
+      <header>
+        <div>
+          <span>9</span>
+          <h2>SEO</h2>
+        </div>
+      </header>
+      <app-seo-fields [group]="seo" />
+    </section>
+    <footer class="cms-action-bar">
+      <button type="button" class="secondary" (click)="preview()">
+        Pregled ({{ activeLanguage().toUpperCase() }})</button
+      ><button type="button" class="primary" (click)="save()" [disabled]="saving()">
+        {{ saving() ? 'Cuvanje...' : 'Sacuvaj konfiguraciju' }}
+      </button>
+    </footer>
+  </form>
+</div>

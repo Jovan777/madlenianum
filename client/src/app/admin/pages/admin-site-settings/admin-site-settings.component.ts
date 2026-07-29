@@ -5,21 +5,442 @@ import { RouterLink } from '@angular/router';
 import { MediaSelectionResult, MediaSelectionValue } from '../../../core/models/media.models';
 import { CmsAdminService } from '../../../core/services/cms-admin.service';
 import { AdminNotificationService } from '../../../core/services/admin-notification.service';
+import {
+  AdminContentLanguage,
+  AdminLanguageTabsComponent,
+} from '../../components/admin-language-tabs.component';
 import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
 import { SeoFieldsComponent } from '../../components/seo-fields/seo-fields.component';
 import { TagEditorComponent } from '../../components/tag-editor/tag-editor.component';
 
-@Component({selector:'app-admin-site-settings',standalone:true,imports:[CommonModule,ReactiveFormsModule,RouterLink,MediaPickerComponent,TagEditorComponent,SeoFieldsComponent],templateUrl:'./admin-site-settings.component.html',styleUrl:'./admin-site-settings.component.scss'})
-export class AdminSiteSettingsComponent implements OnInit{
-  private readonly fb=inject(FormBuilder);private readonly cms=inject(CmsAdminService);private readonly notifications=inject(AdminNotificationService);readonly loading=signal(false);readonly saving=signal(false);readonly error=signal('');readonly mainLogo=signal<MediaSelectionValue[]>([]);readonly footerLogo=signal<MediaSelectionValue[]>([]);readonly socialImage=signal<MediaSelectionValue[]>([]);
-  readonly form=this.fb.group({siteName:['Madlenianum',Validators.required],shortDescription:[''],mainLogo:[''],footerLogo:[''],contact:this.fb.group({address:[''],generalEmail:[''],ticketOfficeEmail:[''],phones:this.fb.control<string[]>([]),ticketOfficePhones:this.fb.control<string[]>([])}),fundusContact:this.fb.group({contactName:[''],email:[''],phone:[''],responseTimeText:['']}),commercialContact:this.fb.group({contactName:[''],email:[''],phone:[''],responseTimeText:['']}),socialLinks:this.fb.array<FormGroup>([]),legalLinks:this.fb.array<FormGroup>([]),footerNavigation:this.fb.array<FormGroup>([]),partnerLogos:this.fb.array<FormGroup>([]),defaultSeo:this.fb.group({title:[''],description:[''],keywords:this.fb.control<string[]>([]),canonicalUrl:[''],noIndex:[false]}),socialImage:[''],languages:this.fb.control<string[]>(['sr']),defaultLanguage:['sr'],maintenanceMessage:['']});
-  ngOnInit():void{this.load();}get contact():FormGroup{return this.form.controls.contact;}get social():FormArray{return this.form.controls.socialLinks;}get legal():FormArray{return this.form.controls.legalLinks;}get footer():FormArray{return this.form.controls.footerNavigation;}get partners():FormArray{return this.form.controls.partnerLogos;}get seo():FormGroup{return this.form.controls.defaultSeo;}groups(array:FormArray):FormGroup[]{return array.controls as FormGroup[];}footerLinks(group:FormGroup):FormArray{return group.get('links') as FormArray;}hasUnsavedChanges():boolean{return this.form.dirty&&!this.saving();}@HostListener('window:beforeunload',['$event']) beforeUnload(event:BeforeUnloadEvent):void{if(this.hasUnsavedChanges())event.preventDefault();}
-  load():void{this.loading.set(true);this.error.set('');this.cms.getSingleton<Record<string,unknown>>('site-settings').subscribe({next:({item})=>this.patch(item),error:(error)=>this.error.set(error?.error?.message||'Podesavanja nisu ucitana.'),complete:()=>this.loading.set(false)});}
-  patch(item:Record<string,unknown>):void{const contact=this.obj(item['contact']),fundusContact=this.obj(item['fundusContact']),commercialContact=this.obj(item['commercialContact']),seo=this.obj(item['defaultSeo']);this.form.patchValue({siteName:String(item['siteName']||'Madlenianum'),shortDescription:String(item['shortDescription']||''),mainLogo:this.id(item['mainLogo']),footerLogo:this.id(item['footerLogo']),contact:{address:String(contact['address']||''),generalEmail:String(contact['generalEmail']||''),ticketOfficeEmail:String(contact['ticketOfficeEmail']||''),phones:this.strings(contact['phones']),ticketOfficePhones:this.strings(contact['ticketOfficePhones'])},fundusContact:{contactName:String(fundusContact['contactName']||''),email:String(fundusContact['email']||''),phone:String(fundusContact['phone']||''),responseTimeText:String(fundusContact['responseTimeText']||'')},commercialContact:{contactName:String(commercialContact['contactName']||''),email:String(commercialContact['email']||''),phone:String(commercialContact['phone']||''),responseTimeText:String(commercialContact['responseTimeText']||'')},defaultSeo:{title:String(seo['title']||''),description:String(seo['description']||''),keywords:this.strings(seo['keywords']),canonicalUrl:String(seo['canonicalUrl']||''),noIndex:Boolean(seo['noIndex'])},socialImage:this.id(item['socialImage']),languages:this.strings(item['languages']).length?this.strings(item['languages']):['sr'],defaultLanguage:String(item['defaultLanguage']||'sr'),maintenanceMessage:String(item['maintenanceMessage']||'')});this.mainLogo.set(item['mainLogo']?[item['mainLogo'] as MediaSelectionValue]:[]);this.footerLogo.set(item['footerLogo']?[item['footerLogo'] as MediaSelectionValue]:[]);this.socialImage.set(item['socialImage']?[item['socialImage'] as MediaSelectionValue]:[]);this.replace(this.social,this.objects(item['socialLinks']),(value,index)=>this.socialGroup(value,index));this.replace(this.legal,this.objects(item['legalLinks']),(value,index)=>this.linkGroup(value,index));this.replace(this.footer,this.objects(item['footerNavigation']),(value,index)=>this.footerGroup(value,index));this.replace(this.partners,this.objects(item['partnerLogos']),(value,index)=>this.partnerGroup(value,index));this.form.markAsPristine();}
-  addSocial():void{this.social.push(this.socialGroup({},this.social.length));this.social.markAsDirty();}addLegal():void{this.legal.push(this.linkGroup({},this.legal.length));this.legal.markAsDirty();}addFooterGroup():void{this.footer.push(this.footerGroup({},this.footer.length));this.footer.markAsDirty();}addFooterLink(group:FormGroup):void{const links=this.footerLinks(group);links.push(this.linkGroup({},links.length));links.markAsDirty();}addPartner():void{this.partners.push(this.partnerGroup({},this.partners.length));this.partners.markAsDirty();}
-  remove(array:FormArray,index:number):void{array.removeAt(index);this.normalize(array);}move(array:FormArray,index:number,direction:-1|1):void{const target=index+direction;if(target<0||target>=array.length)return;const item=array.at(index);array.removeAt(index);array.insert(target,item);this.normalize(array);}mediaValue(group:FormGroup,field:string):MediaSelectionValue[]{const value=group.get(field)?.value;return value?[value]:[];}updateGroupMedia(group:FormGroup,field:string,selection:MediaSelectionResult):void{group.get(field)?.setValue(selection.ids[0]||'');group.markAsDirty();}updateTop(field:'mainLogo'|'footerLogo'|'socialImage',selection:MediaSelectionResult):void{this.form.controls[field].setValue(selection.ids[0]||'');this.form.controls[field].markAsDirty();const value=selection.items.length?selection.items:selection.ids;if(field==='mainLogo')this.mainLogo.set(value);if(field==='footerLogo')this.footerLogo.set(value);if(field==='socialImage')this.socialImage.set(value);}
-  save():void{if(this.form.invalid||this.saving()){this.form.markAllAsTouched();this.error.set('Proverite obavezna polja i linkove.');return;}this.saving.set(true);this.cms.updateSingleton<Record<string,unknown>>('site-settings',this.payload()).subscribe({next:({item})=>{this.notifications.success('Site Settings su sacuvani.');this.patch(item);},error:(error)=>{const message=error?.error?.message||'Cuvanje nije uspelo.';this.error.set(message);this.notifications.error(message);},complete:()=>this.saving.set(false)});}
-  private payload():Record<string,unknown>{const raw=this.form.getRawValue();return{...raw,mainLogo:raw.mainLogo||null,footerLogo:raw.footerLogo||null,socialImage:raw.socialImage||null,socialLinks:this.objects(raw.socialLinks).filter((item)=>item['platform']&&item['url']).map((item,index)=>({...item,displayOrder:index})),legalLinks:this.objects(raw.legalLinks).filter((item)=>item['label']&&item['url']).map((item,index)=>({...item,displayOrder:index})),footerNavigation:this.objects(raw.footerNavigation).filter((group)=>group['title']).map((group,index)=>({...group,displayOrder:index,links:this.objects(group['links']).filter((item)=>item['label']&&item['url']).map((item,itemIndex)=>({...item,displayOrder:itemIndex}))})),partnerLogos:this.objects(raw.partnerLogos).filter((item)=>item['media']).map((item,index)=>({...item,displayOrder:index}))};}
-  private socialGroup(value:Record<string,unknown>,index:number){return this.fb.group({platform:[String(value['platform']||''),Validators.required],label:[String(value['label']||'')],url:[String(value['url']||''),Validators.required],enabled:[value['enabled']!==false],displayOrder:[index]});}private linkGroup(value:Record<string,unknown>,index:number){return this.fb.group({label:[String(value['label']||''),Validators.required],url:[String(value['url']||''),Validators.required],enabled:[value['enabled']!==false],displayOrder:[index]});}private footerGroup(value:Record<string,unknown>,index:number){return this.fb.group({title:[String(value['title']||''),Validators.required],enabled:[value['enabled']!==false],displayOrder:[index],links:this.fb.array(this.objects(value['links']).map((item,itemIndex)=>this.linkGroup(item,itemIndex)))});}private partnerGroup(value:Record<string,unknown>,index:number){return this.fb.group({media:[this.id(value['media']),Validators.required],label:[String(value['label']||'')],url:[String(value['url']||'')],enabled:[value['enabled']!==false],displayOrder:[index]});}
-  private normalize(array:FormArray):void{array.controls.forEach((item,index)=>item.get('displayOrder')?.setValue(index));array.markAsDirty();}private replace(array:FormArray,values:Record<string,unknown>[],factory:(value:Record<string,unknown>,index:number)=>FormGroup):void{array.clear();values.forEach((value,index)=>array.push(factory(value,index)));}private id(value:unknown):string{if(typeof value==='string')return value;const item=this.obj(value);return String(item['_id']||item['id']||'');}private obj(value:unknown):Record<string,unknown>{return value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};}private objects(value:unknown):Record<string,unknown>[]{return Array.isArray(value)?value.map((item)=>this.obj(item)):[];}private strings(value:unknown):string[]{return Array.isArray(value)?value.map(String):[];}
+@Component({
+  selector: 'app-admin-site-settings',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    AdminLanguageTabsComponent,
+    MediaPickerComponent,
+    TagEditorComponent,
+    SeoFieldsComponent,
+  ],
+  templateUrl: './admin-site-settings.component.html',
+  styleUrl: './admin-site-settings.component.scss',
+})
+export class AdminSiteSettingsComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly cms = inject(CmsAdminService);
+  private readonly notifications = inject(AdminNotificationService);
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly error = signal('');
+  readonly mainLogo = signal<MediaSelectionValue[]>([]);
+  readonly footerLogo = signal<MediaSelectionValue[]>([]);
+  readonly socialImage = signal<MediaSelectionValue[]>([]);
+  readonly activeLanguage = signal<AdminContentLanguage>('sr');
+  readonly form = this.fb.group({
+    siteName: ['Madlenianum', Validators.required],
+    shortDescription: [''],
+    mainLogo: [''],
+    footerLogo: [''],
+    contact: this.fb.group({
+      address: [''],
+      generalEmail: [''],
+      ticketOfficeEmail: [''],
+      phones: this.fb.control<string[]>([]),
+      ticketOfficePhones: this.fb.control<string[]>([]),
+    }),
+    fundusContact: this.fb.group({
+      contactName: [''],
+      email: [''],
+      phone: [''],
+      responseTimeText: [''],
+    }),
+    commercialContact: this.fb.group({
+      contactName: [''],
+      email: [''],
+      phone: [''],
+      responseTimeText: [''],
+    }),
+    socialLinks: this.fb.array<FormGroup>([]),
+    legalLinks: this.fb.array<FormGroup>([]),
+    footerNavigation: this.fb.array<FormGroup>([]),
+    partnerLogos: this.fb.array<FormGroup>([]),
+    defaultSeo: this.fb.group({
+      title: [''],
+      description: [''],
+      keywords: this.fb.control<string[]>([]),
+      canonicalUrl: [''],
+      noIndex: [false],
+    }),
+    socialImage: [''],
+    languages: this.fb.control<string[]>(['sr']),
+    defaultLanguage: ['sr'],
+    maintenanceMessage: [''],
+    translations: this.fb.group({
+      en: this.fb.group({
+        siteName: [''],
+        shortDescription: [''],
+        contactAddress: [''],
+        fundusResponseTimeText: [''],
+        commercialResponseTimeText: [''],
+        maintenanceMessage: [''],
+        seoTitle: [''],
+        seoDescription: [''],
+      }),
+    }),
+  });
+  ngOnInit(): void {
+    this.load();
+  }
+  get contact(): FormGroup {
+    return this.form.controls.contact;
+  }
+  get social(): FormArray {
+    return this.form.controls.socialLinks;
+  }
+  get legal(): FormArray {
+    return this.form.controls.legalLinks;
+  }
+  get footer(): FormArray {
+    return this.form.controls.footerNavigation;
+  }
+  get partners(): FormArray {
+    return this.form.controls.partnerLogos;
+  }
+  get seo(): FormGroup {
+    return this.form.controls.defaultSeo;
+  }
+  get english(): FormGroup {
+    return this.form.controls.translations.controls.en;
+  }
+  englishComplete(): boolean {
+    return Boolean(this.english.get('siteName')?.value?.trim());
+  }
+  groups(array: FormArray): FormGroup[] {
+    return array.controls as FormGroup[];
+  }
+  footerLinks(group: FormGroup): FormArray {
+    return group.get('links') as FormArray;
+  }
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty && !this.saving();
+  }
+  @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) event.preventDefault();
+  }
+  load(): void {
+    this.loading.set(true);
+    this.error.set('');
+    this.cms.getSingleton<Record<string, unknown>>('site-settings').subscribe({
+      next: ({ item }) => this.patch(item),
+      error: (error) => this.error.set(error?.error?.message || 'Podesavanja nisu ucitana.'),
+      complete: () => this.loading.set(false),
+    });
+  }
+  patch(item: Record<string, unknown>): void {
+    const contact = this.obj(item['contact']),
+      fundusContact = this.obj(item['fundusContact']),
+      commercialContact = this.obj(item['commercialContact']),
+      seo = this.obj(item['defaultSeo']),
+      english = this.obj(this.obj(item['translations'])['en']),
+      translatedSocial = this.objects(english['socialLinks']),
+      translatedLegal = this.objects(english['legalLinks']),
+      translatedFooter = this.objects(english['footerNavigation']),
+      translatedPartners = this.objects(english['partnerLogos']);
+    this.form.patchValue({
+      siteName: String(item['siteName'] || 'Madlenianum'),
+      shortDescription: String(item['shortDescription'] || ''),
+      mainLogo: this.id(item['mainLogo']),
+      footerLogo: this.id(item['footerLogo']),
+      contact: {
+        address: String(contact['address'] || ''),
+        generalEmail: String(contact['generalEmail'] || ''),
+        ticketOfficeEmail: String(contact['ticketOfficeEmail'] || ''),
+        phones: this.strings(contact['phones']),
+        ticketOfficePhones: this.strings(contact['ticketOfficePhones']),
+      },
+      fundusContact: {
+        contactName: String(fundusContact['contactName'] || ''),
+        email: String(fundusContact['email'] || ''),
+        phone: String(fundusContact['phone'] || ''),
+        responseTimeText: String(fundusContact['responseTimeText'] || ''),
+      },
+      commercialContact: {
+        contactName: String(commercialContact['contactName'] || ''),
+        email: String(commercialContact['email'] || ''),
+        phone: String(commercialContact['phone'] || ''),
+        responseTimeText: String(commercialContact['responseTimeText'] || ''),
+      },
+      defaultSeo: {
+        title: String(seo['title'] || ''),
+        description: String(seo['description'] || ''),
+        keywords: this.strings(seo['keywords']),
+        canonicalUrl: String(seo['canonicalUrl'] || ''),
+        noIndex: Boolean(seo['noIndex']),
+      },
+      socialImage: this.id(item['socialImage']),
+      languages: this.strings(item['languages']).length ? this.strings(item['languages']) : ['sr'],
+      defaultLanguage: String(item['defaultLanguage'] || 'sr'),
+      maintenanceMessage: String(item['maintenanceMessage'] || ''),
+      translations: {
+        en: {
+          siteName: String(english['siteName'] || ''),
+          shortDescription: String(english['shortDescription'] || ''),
+          contactAddress: String(english['contactAddress'] || ''),
+          fundusResponseTimeText: String(english['fundusResponseTimeText'] || ''),
+          commercialResponseTimeText: String(english['commercialResponseTimeText'] || ''),
+          maintenanceMessage: String(english['maintenanceMessage'] || ''),
+          seoTitle: String(english['seoTitle'] || ''),
+          seoDescription: String(english['seoDescription'] || ''),
+        },
+      },
+    });
+    this.mainLogo.set(item['mainLogo'] ? [item['mainLogo'] as MediaSelectionValue] : []);
+    this.footerLogo.set(item['footerLogo'] ? [item['footerLogo'] as MediaSelectionValue] : []);
+    this.socialImage.set(item['socialImage'] ? [item['socialImage'] as MediaSelectionValue] : []);
+    this.replace(this.social, this.objects(item['socialLinks']), (value, index) =>
+      this.socialGroup(value, index, this.translatedEntry(translatedSocial, value, index)),
+    );
+    this.replace(this.legal, this.objects(item['legalLinks']), (value, index) =>
+      this.linkGroup(value, index, this.translatedEntry(translatedLegal, value, index)),
+    );
+    this.replace(this.footer, this.objects(item['footerNavigation']), (value, index) =>
+      this.footerGroup(value, index, this.translatedEntry(translatedFooter, value, index)),
+    );
+    this.replace(this.partners, this.objects(item['partnerLogos']), (value, index) =>
+      this.partnerGroup(value, index, this.translatedEntry(translatedPartners, value, index)),
+    );
+    this.form.markAsPristine();
+  }
+  addSocial(): void {
+    this.social.push(this.socialGroup({}, this.social.length));
+    this.social.markAsDirty();
+  }
+  addLegal(): void {
+    this.legal.push(this.linkGroup({}, this.legal.length));
+    this.legal.markAsDirty();
+  }
+  addFooterGroup(): void {
+    this.footer.push(this.footerGroup({}, this.footer.length));
+    this.footer.markAsDirty();
+  }
+  addFooterLink(group: FormGroup): void {
+    const links = this.footerLinks(group);
+    links.push(this.linkGroup({}, links.length));
+    links.markAsDirty();
+  }
+  addPartner(): void {
+    this.partners.push(this.partnerGroup({}, this.partners.length));
+    this.partners.markAsDirty();
+  }
+  remove(array: FormArray, index: number): void {
+    array.removeAt(index);
+    this.normalize(array);
+  }
+  move(array: FormArray, index: number, direction: -1 | 1): void {
+    const target = index + direction;
+    if (target < 0 || target >= array.length) return;
+    const item = array.at(index);
+    array.removeAt(index);
+    array.insert(target, item);
+    this.normalize(array);
+  }
+  mediaValue(group: FormGroup, field: string): MediaSelectionValue[] {
+    const value = group.get(field)?.value;
+    return value ? [value] : [];
+  }
+  updateGroupMedia(group: FormGroup, field: string, selection: MediaSelectionResult): void {
+    group.get(field)?.setValue(selection.ids[0] || '');
+    group.markAsDirty();
+  }
+  updateTop(
+    field: 'mainLogo' | 'footerLogo' | 'socialImage',
+    selection: MediaSelectionResult,
+  ): void {
+    this.form.controls[field].setValue(selection.ids[0] || '');
+    this.form.controls[field].markAsDirty();
+    const value = selection.items.length ? selection.items : selection.ids;
+    if (field === 'mainLogo') this.mainLogo.set(value);
+    if (field === 'footerLogo') this.footerLogo.set(value);
+    if (field === 'socialImage') this.socialImage.set(value);
+  }
+  save(): void {
+    if (this.form.invalid || this.saving()) {
+      this.form.markAllAsTouched();
+      this.error.set('Proverite obavezna polja i linkove.');
+      return;
+    }
+    this.saving.set(true);
+    this.cms.updateSingleton<Record<string, unknown>>('site-settings', this.payload()).subscribe({
+      next: ({ item }) => {
+        this.notifications.success('Site Settings su sacuvani.');
+        this.patch(item);
+      },
+      error: (error) => {
+        const message = error?.error?.message || 'Cuvanje nije uspelo.';
+        this.error.set(message);
+        this.notifications.error(message);
+      },
+      complete: () => this.saving.set(false),
+    });
+  }
+  private payload(): Record<string, unknown> {
+    const raw = this.form.getRawValue();
+    const social = this.objects(raw.socialLinks);
+    const legal = this.objects(raw.legalLinks);
+    const footer = this.objects(raw.footerNavigation);
+    const partners = this.objects(raw.partnerLogos);
+    return {
+      ...raw,
+      mainLogo: raw.mainLogo || null,
+      footerLogo: raw.footerLogo || null,
+      socialImage: raw.socialImage || null,
+      socialLinks: social
+        .filter((item) => item['platform'] && item['url'])
+        .map((item, index) => this.baseEntry(item, index)),
+      legalLinks: legal
+        .filter((item) => item['label'] && item['url'])
+        .map((item, index) => this.baseEntry(item, index)),
+      footerNavigation: footer
+        .filter((group) => group['title'])
+        .map((group, index) => ({
+          ...this.baseEntry(group, index),
+          displayOrder: index,
+          links: this.objects(group['links'])
+            .filter((item) => item['label'] && item['url'])
+            .map((item, itemIndex) => this.baseEntry(item, itemIndex)),
+        })),
+      partnerLogos: partners
+        .filter((item) => item['media'])
+        .map((item, index) => this.baseEntry(item, index)),
+      translations: {
+        en: {
+          ...raw.translations?.en,
+          socialLinks: social.map((item) => this.translatedLabel(item)),
+          legalLinks: legal.map((item) => this.translatedLabel(item)),
+          footerNavigation: footer.map((group) => ({
+            sourceId: group['sourceId'] || undefined,
+            title: this.obj(group['english'])['title'] || '',
+            links: this.objects(group['links']).map((item) => this.translatedLabel(item)),
+          })),
+          partnerLogos: partners.map((item) => this.translatedLabel(item)),
+        },
+      },
+    };
+  }
+  private socialGroup(
+    value: Record<string, unknown>,
+    index: number,
+    english: Record<string, unknown> = {},
+  ) {
+    return this.fb.group({
+      sourceId: [this.id(value)],
+      platform: [String(value['platform'] || ''), Validators.required],
+      label: [String(value['label'] || '')],
+      url: [String(value['url'] || ''), Validators.required],
+      enabled: [value['enabled'] !== false],
+      displayOrder: [index],
+      english: this.fb.group({ label: [String(english['label'] || '')] }),
+    });
+  }
+  private linkGroup(
+    value: Record<string, unknown>,
+    index: number,
+    english: Record<string, unknown> = {},
+  ) {
+    return this.fb.group({
+      sourceId: [this.id(value)],
+      label: [String(value['label'] || ''), Validators.required],
+      url: [String(value['url'] || ''), Validators.required],
+      enabled: [value['enabled'] !== false],
+      displayOrder: [index],
+      english: this.fb.group({ label: [String(english['label'] || '')] }),
+    });
+  }
+  private footerGroup(
+    value: Record<string, unknown>,
+    index: number,
+    english: Record<string, unknown> = {},
+  ) {
+    const translatedLinks = this.objects(english['links']);
+    return this.fb.group({
+      sourceId: [this.id(value)],
+      title: [String(value['title'] || ''), Validators.required],
+      enabled: [value['enabled'] !== false],
+      displayOrder: [index],
+      english: this.fb.group({ title: [String(english['title'] || '')] }),
+      links: this.fb.array(
+        this.objects(value['links']).map((item, itemIndex) =>
+          this.linkGroup(item, itemIndex, this.translatedEntry(translatedLinks, item, itemIndex)),
+        ),
+      ),
+    });
+  }
+  private partnerGroup(
+    value: Record<string, unknown>,
+    index: number,
+    english: Record<string, unknown> = {},
+  ) {
+    return this.fb.group({
+      sourceId: [this.id(value)],
+      media: [this.id(value['media']), Validators.required],
+      label: [String(value['label'] || '')],
+      url: [String(value['url'] || '')],
+      enabled: [value['enabled'] !== false],
+      displayOrder: [index],
+      english: this.fb.group({ label: [String(english['label'] || '')] }),
+    });
+  }
+  private baseEntry(item: Record<string, unknown>, index: number): Record<string, unknown> {
+    const { sourceId: _sourceId, english: _english, ...value } = item;
+    return { ...value, displayOrder: index };
+  }
+  private translatedLabel(item: Record<string, unknown>): Record<string, unknown> {
+    return {
+      sourceId: item['sourceId'] || undefined,
+      label: this.obj(item['english'])['label'] || '',
+    };
+  }
+  private translatedEntry(
+    translations: Record<string, unknown>[],
+    source: Record<string, unknown>,
+    index: number,
+  ): Record<string, unknown> {
+    const sourceId = this.id(source);
+    return (
+      translations.find((entry) => String(entry['sourceId'] || '') === sourceId) ||
+      translations[index] ||
+      {}
+    );
+  }
+  private normalize(array: FormArray): void {
+    array.controls.forEach((item, index) => item.get('displayOrder')?.setValue(index));
+    array.markAsDirty();
+  }
+  private replace(
+    array: FormArray,
+    values: Record<string, unknown>[],
+    factory: (value: Record<string, unknown>, index: number) => FormGroup,
+  ): void {
+    array.clear();
+    values.forEach((value, index) => array.push(factory(value, index)));
+  }
+  private id(value: unknown): string {
+    if (typeof value === 'string') return value;
+    const item = this.obj(value);
+    return String(item['_id'] || item['id'] || '');
+  }
+  private obj(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  }
+  private objects(value: unknown): Record<string, unknown>[] {
+    return Array.isArray(value) ? value.map((item) => this.obj(item)) : [];
+  }
+  private strings(value: unknown): string[] {
+    return Array.isArray(value) ? value.map(String) : [];
+  }
 }

@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const StaticPage = require("../models/StaticPage");
 const { pageDto } = require("../services/cmsDto.service");
 const { populatePage } = require("../services/cmsPopulate.service");
+const { assignLocalizedPayload } = require("../services/localizedContent.service");
 const {
   applyAudit,
   applyPublishing,
@@ -46,7 +47,7 @@ const getStructuredPage = asyncHandler(async (req, res) => {
 const previewStaticPage = asyncHandler(async (req, res) => {
   const page = await populatePage(StaticPage.findById(req.params.id));
   if (!page) throw createHttpError(404, "Strana nije pronadjena.");
-  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: pageDto(page) });
+  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: pageDto(page, req.locale || req.query.lang || "sr") });
 });
 
 const previewStructuredPage = asyncHandler(async (req, res) => {
@@ -54,7 +55,7 @@ const previewStructuredPage = asyncHandler(async (req, res) => {
   if (!STRUCTURED_TYPES.includes(pageType)) throw createHttpError(400, "Nepodrzan tip strukturirane strane.");
   const page = await populatePage(StaticPage.findOne({ pageType }));
   if (!page) throw createHttpError(404, "Strana nije pronadjena.");
-  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: pageDto(page) });
+  res.json({ success: true, preview: true, robots: "noindex,nofollow", item: pageDto(page, req.locale || req.query.lang || "sr") });
 });
 
 const createStaticPage = asyncHandler(async (req, res) => {
@@ -74,7 +75,7 @@ const updateStaticPage = asyncHandler(async (req, res) => {
   const page = await StaticPage.findById(req.params.id);
   if (!page) throw createHttpError(404, "Strana nije pronadjena.");
   const previousStatus = page.status;
-  Object.assign(page, req.body);
+  assignLocalizedPayload(page, req.body);
   applyAudit(page, req.admin);
   applyPublishing(page, previousStatus);
   await page.save();
@@ -91,7 +92,7 @@ const updateStructuredPage = asyncHandler(async (req, res) => {
   let page = await StaticPage.findOne({ pageType });
   const previousStatus = page?.status;
   if (!page) page = new StaticPage({ ...defaults, pageType, status: "draft" });
-  Object.assign(page, req.body, { pageType });
+  assignLocalizedPayload(page, { ...req.body, pageType });
   applyAudit(page, req.admin, { isNew: page.isNew });
   applyPublishing(page, previousStatus);
   await page.save();

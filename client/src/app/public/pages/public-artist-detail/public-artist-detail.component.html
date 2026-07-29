@@ -1,4 +1,4 @@
-<div class="loading-state" *ngIf="isLoading()">Učitavanje umetnika...</div>
+<div class="loading-state" *ngIf="isLoading()">{{ 'artists.loading' | publicTranslate }}</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <main class="artist-profile" *ngIf="!isLoading() && artist() as item">
@@ -8,13 +8,13 @@
     </figure>
 
     <article class="profile-copy" data-motion="right">
-      <a class="back-link" routerLink="/umetnici"><span aria-hidden="true">←</span> Svi umetnici</a>
+      <a class="back-link" [routerLink]="locale.artistPath()"><span aria-hidden="true">←</span> {{ 'artists.back' | publicTranslate }}</a>
       <p class="eyebrow">{{ professions(item) }}</p>
       <h1>{{ name(item) }}</h1>
-      <div class="biography" [innerHTML]="item.biography || 'Biografija će biti dodata uskoro.'"></div>
+      <div class="biography" [innerHTML]="item.biography || ('artists.biographySoon' | publicTranslate)"></div>
 
       <section class="public-links" *ngIf="links(item).length" aria-labelledby="public-links-title">
-        <h2 id="public-links-title">Pronađite umetnika online</h2>
+        <h2 id="public-links-title">{{ 'artists.findOnline' | publicTranslate }}</h2>
         <div data-motion-stagger>
           <a *ngFor="let link of links(item)" [href]="link.url" target="_blank" rel="noopener noreferrer" data-motion-item data-motion-card>
             <span>{{ linkType(link) }}</span>
@@ -30,13 +30,13 @@
     <section class="artist-gallery" *ngIf="galleryItems.length" data-motion="up">
       <header class="section-head">
         <div>
-          <p class="eyebrow">Iza scene</p>
-          <h2>Iz galerije</h2>
+          <p class="eyebrow">{{ 'artists.behindScenes' | publicTranslate }}</p>
+          <h2>{{ 'artists.fromGallery' | publicTranslate }}</h2>
         </div>
-        <p>Fotografije povezane sa umetnikom i njegovim radom u Madlenianumu.</p>
+        <p>{{ 'artists.galleryText' | publicTranslate }}</p>
       </header>
       <div class="gallery-grid" data-motion-stagger>
-        <button *ngFor="let galleryItem of galleryItems; let index = index" type="button" (click)="openGallery(galleryItems, index)" [attr.aria-label]="'Otvori fotografiju ' + (index + 1)" data-motion-item data-motion-card>
+        <button *ngFor="let galleryItem of galleryItems; let index = index" type="button" (click)="openGallery(galleryItems, index)" [attr.aria-label]="'artists.openImage' | publicTranslate: { number: index + 1 }" data-motion-item data-motion-card>
           <img [src]="galleryImage(galleryItem)" [alt]="galleryItem.altText || name(item)" loading="lazy" />
           <span *ngIf="galleryItem.caption">{{ galleryItem.caption }}</span>
         </button>
@@ -47,20 +47,20 @@
   <section class="artist-productions" *ngIf="productions().length > 0" data-motion="up">
     <header class="section-head">
       <div>
-        <p class="eyebrow">Na sceni</p>
-        <h2>Povezane predstave</h2>
+        <p class="eyebrow">{{ 'artists.onStage' | publicTranslate }}</p>
+        <h2>{{ 'artists.relatedProductions' | publicTranslate }}</h2>
       </div>
-      <p>Predstave iz repertoara u kojima ovaj umetnik učestvuje.</p>
+      <p>{{ 'artists.relatedProductionsText' | publicTranslate }}</p>
     </header>
 
     <div class="production-grid" data-motion-stagger>
-      <a *ngFor="let production of productions(); let index = index" [routerLink]="['/predstave', production.slug]" data-motion-item data-motion-card>
+      <a *ngFor="let production of productions(); let index = index" [routerLink]="locale.productionPath(production.slug)" data-motion-item data-motion-card>
         <figure><img [src]="productionImage(production, index)" [alt]="production.title" loading="lazy" /></figure>
         <div>
           <span>{{ publicApi.typeLabel(production.type) }}</span>
           <h3>{{ production.title }}</h3>
           <p>{{ productionMeta(production) }}</p>
-          <strong>Detalji predstave <i aria-hidden="true">→</i></strong>
+          <strong>{{ 'repertoire.details' | publicTranslate }} <i aria-hidden="true">→</i></strong>
         </div>
       </a>
     </div>

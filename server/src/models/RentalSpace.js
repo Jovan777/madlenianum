@@ -8,6 +8,24 @@ const {
   seoSchema,
 } = require("./schemas/cms.schemas");
 
+const translationSchema = new mongoose.Schema({
+  slug: { type: String, lowercase: true, trim: true },
+  title: String,
+  shortDescription: String,
+  description: String,
+  amenities: [String],
+  technicalEquipment: [String],
+  suitableEventTypes: [String],
+  accessibilityInfo: String,
+  dressingRooms: String,
+  cateringInfo: String,
+  barInfo: String,
+  internetInfo: String,
+  avInfo: String,
+  seoTitle: String,
+  seoDescription: String,
+}, { _id: false });
+
 const rentalSpaceSchema = new mongoose.Schema(
   {
     title: { type: String, required: [true, "Naziv prostora je obavezan."], trim: true },
@@ -35,6 +53,7 @@ const rentalSpaceSchema = new mongoose.Schema(
     publishedAt: Date,
     isFeatured: { type: Boolean, default: false },
     displayOrder: { type: Number, min: 0, default: 0 },
+    translations: { sr: translationSchema, en: translationSchema },
     seo: { type: seoSchema, default: () => ({}) },
     ...auditFields,
   },
@@ -44,6 +63,10 @@ const rentalSpaceSchema = new mongoose.Schema(
 rentalSpaceSchema.pre("validate", function () {
   if (!this.slug && this.title) this.slug = slugify(this.title);
   if (this.isModified("slug") && this.slug) this.slug = slugify(this.slug);
+  if (this.translations?.en) {
+    this.translations.en.slug = this.translations.en.slug ? slugify(this.translations.en.slug) : undefined;
+    this.translations.en.description = sanitizeRichText(this.translations.en.description);
+  }
   this.description = sanitizeRichText(this.description);
 
   const galleryIds = (this.galleryItems || []).map((item) => String(item.media));
@@ -54,5 +77,6 @@ rentalSpaceSchema.pre("validate", function () {
 
 rentalSpaceSchema.index({ status: 1, isFeatured: -1, displayOrder: 1, title: 1 });
 rentalSpaceSchema.index({ status: 1, seatedCapacity: 1, standingCapacity: 1 });
+rentalSpaceSchema.index({ "translations.en.slug": 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("RentalSpace", rentalSpaceSchema, "rentalspaces");

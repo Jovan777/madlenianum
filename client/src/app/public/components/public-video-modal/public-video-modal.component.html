@@ -1,16 +1,16 @@
 <div class="modal-backdrop" role="presentation" (mousedown)="close()">
-  <section class="video-dialog" role="dialog" aria-modal="true" [attr.aria-label]="video().title || 'Trejler'" (mousedown)="$event.stopPropagation()">
+  <section class="video-dialog" role="dialog" aria-modal="true" [attr.aria-label]="video().title || i18n.t('common.trailer')" (mousedown)="$event.stopPropagation()">
     <header>
-      <h2>{{ video().title || 'Trejler' }}</h2>
-      <button #closeButton type="button" (click)="close()" aria-label="Zatvori video">×</button>
+      <h2>{{ video().title || i18n.t('common.trailer') }}</h2>
+      <button #closeButton type="button" (click)="close()" [attr.aria-label]="i18n.t('common.closeVideo')">×</button>
     </header>
     <div class="video-frame" *ngIf="embedUrl(); else externalVideo">
-      <iframe [src]="embedUrl()" [title]="video().title || 'Trejler'" allow="fullscreen; picture-in-picture" allowfullscreen></iframe>
+      <iframe [src]="embedUrl()" [title]="video().title || i18n.t('common.trailer')" allow="fullscreen; picture-in-picture" allowfullscreen></iframe>
     </div>
     <ng-template #externalVideo>
       <div class="external-video">
-        <p>Video je dostupan na spoljnoj platformi.</p>
-        <a [href]="video().url" target="_blank" rel="noopener noreferrer">Otvori video</a>
+        <p>{{ i18n.t('common.externalVideo') }}</p>
+        <a [href]="video().url" target="_blank" rel="noopener noreferrer">{{ i18n.t('common.openVideo') }}</a>
       </div>
     </ng-template>
   </section>

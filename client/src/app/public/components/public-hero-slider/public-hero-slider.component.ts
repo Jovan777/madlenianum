@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 
 import { PublicEvent, PublicProduction, PublicPromoSlide } from '../../../core/models/public.models';
 import { MediaUrlService } from '../../../core/services/media-url.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 import { PublicDisplayService } from '../../shared/public-display.service';
 
 @Component({
@@ -20,6 +22,8 @@ export class PublicHeroSliderComponent {
   readonly imageFailed = signal(false);
   readonly media = inject(MediaUrlService);
   readonly display = inject(PublicDisplayService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   readonly activeSlide = computed(() => this.slides()[this.activeIndex()] || null);
   readonly production = computed(() => {

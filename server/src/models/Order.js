@@ -93,6 +93,7 @@ const statusHistorySchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
   {
+    locale: { type: String, enum: ["sr", "en"], default: "sr", index: true },
     orderCode: {
       type: String,
       unique: true,

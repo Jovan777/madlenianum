@@ -26,6 +26,7 @@ const {
   expireOrderIfNeeded,
   processExpiredOrders,
 } = require("../services/orderLifecycle.service");
+const { localizedValue, normalizeLocale } = require("../services/locale.service");
 
 const conflict = (message, details) => {
   const error = new Error(message);
@@ -143,8 +144,16 @@ const getEventSeats = asyncHandler(async (req, res) => {
     success: true,
     event: {
       id: event._id,
-      production: event.production,
-      venue: event.venue,
+      production: event.production ? {
+        ...event.production.toObject(),
+        title: localizedValue(event.production, "title", req.locale),
+        slug: localizedValue(event.production, "slug", req.locale),
+      } : null,
+      venue: event.venue ? {
+        ...event.venue.toObject(),
+        name: localizedValue(event.venue, "name", req.locale),
+        slug: localizedValue(event.venue, "slug", req.locale),
+      } : null,
       startsAt: event.startsAt,
       endsAt: event.endsAt,
       saleStatus: event.saleStatus,
@@ -403,13 +412,15 @@ const persistOrderAttempt = async ({
   idempotencyKey,
   checkoutKey,
   notes,
+  locale,
 }, dbSession = null) => {
   let subtotalAmount = 0;
   const itemStatus = action === "purchase" ? "pending_payment" : "reserved";
   const productionId = event.production?._id || event.production;
-  const productionTitle = event.production?.title || "";
+  const orderLocale = normalizeLocale(locale);
+  const productionTitle = localizedValue(event.production, "title", orderLocale, { fallback: orderLocale === "sr" });
   const venueId = event.venue?._id || event.venue;
-  const venueName = event.venue?.name || "";
+  const venueName = localizedValue(event.venue, "name", orderLocale, { fallback: orderLocale === "sr" });
   const orderItemsPayload = seats.map((seat) => {
     const price = getSeatPrice(seat, event.pricePlan);
     if (!price) {
@@ -444,6 +455,7 @@ const persistOrderAttempt = async ({
   let order = null;
   try {
     const orderPayload = {
+      locale: orderLocale,
       customerSnapshot,
       orderType: action === "purchase" ? "purchase" : "reservation",
       sessionId,
@@ -639,6 +651,7 @@ const createOrder = asyncHandler(async (req, res) => {
       idempotencyKey,
       checkoutKey,
       notes: req.body.notes,
+      locale: req.locale,
     });
   } catch (error) {
     if (error.code === 11000 && error.keyPattern?.idempotencyKey) {
@@ -666,7 +679,7 @@ const createOrder = asyncHandler(async (req, res) => {
     action,
     order: publicOrderDto(populatedOrder),
     accessToken: persisted.accessToken,
-    secureOrderUrl: `${baseUrl}/porudzbina/${encodeURIComponent(populatedOrder.orderCode)}?token=${encodeURIComponent(persisted.accessToken)}`,
+    secureOrderUrl: `${baseUrl}${req.locale === "en" ? "/en/order" : "/porudzbina"}/${encodeURIComponent(populatedOrder.orderCode)}?token=${encodeURIComponent(persisted.accessToken)}`,
     emailStatus: delivery.sent ? "sent" : populatedOrder.emailDelivery?.status || "failed",
   });
 });

@@ -4,6 +4,7 @@ const PropScenographyItem = require("../models/PropScenographyItem");
 const {
   applyAudit,
   applyPublishing,
+  combineFilters,
   createHttpError,
   escapeRegex,
   paginationFrom,
@@ -19,6 +20,8 @@ const {
   costumeDto,
   propScenographyDto,
 } = require("../services/phase6aDto.service");
+const { localeAvailabilityFilter, localizedSearchFields, localizedSlugQuery } = require("../services/locale.service");
+const { assignLocalizedPayload } = require("../services/localizedContent.service");
 
 const sortFor = (value) => {
   const map = {
@@ -30,21 +33,21 @@ const sortFor = (value) => {
   return map[value] || "displayOrder title";
 };
 
-const publicCostumeFilter = (query) => {
-  const filter = publicPublishedFilter();
+const publicCostumeFilter = (query, locale) => {
+  const filter = { ...publicPublishedFilter(), ...localeAvailabilityFilter(locale) };
   if (query.gender) filter.gender = query.gender;
   if (query.epoch) filter.epoch = query.epoch;
   if (query.condition) filter.condition = query.condition;
   if (query.isFeatured !== undefined) filter.isFeatured = query.isFeatured === "true";
   if (query.q) {
     const search = new RegExp(escapeRegex(query.q), "i");
-    filter.$and = [{ $or: [{ title: search }, { shortDescription: search }, { description: search }, { inventoryNumber: search }] }];
+    filter.$and = [{ $or: [...localizedSearchFields(["title", "shortDescription", "description"], locale).map((field) => ({ [field]: search })), { inventoryNumber: search }] }];
   }
   return filter;
 };
 
-const publicPropFilter = (query) => {
-  const filter = publicPublishedFilter();
+const publicPropFilter = (query, locale) => {
+  const filter = { ...publicPublishedFilter(), ...localeAvailabilityFilter(locale) };
   if (query.itemType) filter.itemType = query.itemType;
   if (query.category) filter.category = query.category;
   if (query.epochOrStyle) filter.epochOrStyle = query.epochOrStyle;
@@ -52,41 +55,49 @@ const publicPropFilter = (query) => {
   if (query.isFeatured !== undefined) filter.isFeatured = query.isFeatured === "true";
   if (query.q) {
     const search = new RegExp(escapeRegex(query.q), "i");
-    filter.$and = [{ $or: [{ title: search }, { description: search }, { category: search }, { inventoryNumber: search }] }];
+    filter.$and = [{ $or: [...localizedSearchFields(["title", "description", "category"], locale).map((field) => ({ [field]: search })), { inventoryNumber: search }] }];
   }
   return filter;
 };
 
 const listPublicCostumes = asyncHandler(async (req, res) => {
   const { page, limit, skip } = paginationFrom(req.query, { limit: 12 });
-  const filter = publicCostumeFilter(req.query);
+  const filter = publicCostumeFilter(req.query, req.locale);
   const [items, total] = await Promise.all([
     populateCostume(CostumeItem.find(filter).sort(sortFor(req.query.sort)).skip(skip).limit(limit)),
     CostumeItem.countDocuments(filter),
   ]);
-  sendList(res, { items: items.map((item) => costumeDto(item)), total, page, limit });
+  sendList(res, { items: items.map((item) => costumeDto(item, { locale: req.locale })), total, page, limit });
 });
 
 const getPublicCostume = asyncHandler(async (req, res) => {
-  const item = await populateCostume(CostumeItem.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
-  if (!item) throw createHttpError(404, "Kostim nije pronadjen.");
-  res.json({ success: true, item: costumeDto(item) });
+  const item = await populateCostume(CostumeItem.findOne(combineFilters(
+    localizedSlugQuery(req.params.slug, req.locale),
+    publicPublishedFilter(),
+    localeAvailabilityFilter(req.locale)
+  )));
+  if (!item) throw createHttpError(404, req.locale === "en" ? "Costume not found." : "Kostim nije pronadjen.");
+  res.json({ success: true, locale: req.locale, item: costumeDto(item, { locale: req.locale }) });
 });
 
 const listPublicPropsScenography = asyncHandler(async (req, res) => {
   const { page, limit, skip } = paginationFrom(req.query, { limit: 12 });
-  const filter = publicPropFilter(req.query);
+  const filter = publicPropFilter(req.query, req.locale);
   const [items, total] = await Promise.all([
     populatePropScenography(PropScenographyItem.find(filter).sort(sortFor(req.query.sort)).skip(skip).limit(limit)),
     PropScenographyItem.countDocuments(filter),
   ]);
-  sendList(res, { items: items.map((item) => propScenographyDto(item)), total, page, limit });
+  sendList(res, { items: items.map((item) => propScenographyDto(item, { locale: req.locale })), total, page, limit });
 });
 
 const getPublicPropScenography = asyncHandler(async (req, res) => {
-  const item = await populatePropScenography(PropScenographyItem.findOne({ slug: req.params.slug, ...publicPublishedFilter() }));
-  if (!item) throw createHttpError(404, "Rekvizit ili scenografija nije pronadjen.");
-  res.json({ success: true, item: propScenographyDto(item) });
+  const item = await populatePropScenography(PropScenographyItem.findOne(combineFilters(
+    localizedSlugQuery(req.params.slug, req.locale),
+    publicPublishedFilter(),
+    localeAvailabilityFilter(req.locale)
+  )));
+  if (!item) throw createHttpError(404, req.locale === "en" ? "Prop or scenography item not found." : "Rekvizit ili scenografija nije pronadjen.");
+  res.json({ success: true, locale: req.locale, item: propScenographyDto(item, { locale: req.locale }) });
 });
 
 const createCrud = ({ Model, populate, dto, notFound, fields }) => {
@@ -125,7 +136,7 @@ const createCrud = ({ Model, populate, dto, notFound, fields }) => {
     const item = await Model.findById(req.params.id);
     if (!item) throw createHttpError(404, notFound);
     const previousStatus = item.status;
-    Object.assign(item, req.body);
+    assignLocalizedPayload(item, req.body);
     applyAudit(item, req.admin);
     applyPublishing(item, previousStatus);
     await item.save();

@@ -1,1 +1,97 @@
-<div class="cms-form-page"><a class="back" routerLink="/admin/pages">Nazad na strane</a><header class="cms-form-hero"><div><p>Strukturirana strana</p><h1>O nama</h1><span>Kontrolisane sekcije bez JSON-a i tehnickih polja.</span></div><span class="status-badge">{{form.controls.status.value}}</span></header><p class="cms-alert" *ngIf="error()">{{error()}} <button (click)="load()">Pokusaj ponovo</button></p><p class="cms-loading" *ngIf="loading()">Ucitavanje...</p><form [formGroup]="form" *ngIf="!loading()" class="cms-long-form"><section class="cms-panel"><header><div><span>1</span><h2>Osnovno i objavljivanje</h2></div><p>Jedna autoritativna About strana.</p></header><div class="cms-grid"><label>Naslov<input formControlName="title"/></label><label>Slug<input formControlName="slug"/></label><label>Status<select formControlName="status"><option *ngFor="let option of statuses" [value]="option[0]">{{option[1]}}</option></select></label><label>Datum objave<input type="datetime-local" formControlName="publishedAt"/></label></div></section><section class="cms-panel"><header><div><span>2</span><h2>Sekcije</h2></div><p>Dodajte samo podrzane tipove i uredite njihov redosled.</p></header><app-about-sections-editor [array]="sections"/></section><section class="cms-panel"><header><div><span>3</span><h2>SEO</h2></div></header><app-seo-fields [group]="seo"/></section><footer class="cms-action-bar"><a routerLink="/admin/pages">Odustani</a><button type="button" class="secondary" (click)="preview()">Pregled sacuvane verzije</button><button type="button" class="secondary" (click)="save('draft')" [disabled]="saving()">Sacuvaj nacrt</button><button type="button" class="primary" (click)="save('published')" [disabled]="saving()">{{saving()?'Cuvanje...':'Objavi'}}</button></footer></form></div>
+<div class="cms-form-page">
+  <a class="back" routerLink="/admin/pages">Nazad na strane</a>
+  <header class="cms-form-hero">
+    <div>
+      <p>Strukturirana strana</p>
+      <h1>O nama</h1>
+      <span>Kontrolisane sekcije bez JSON-a i tehnickih polja.</span>
+    </div>
+    <span class="status-badge">{{ form.controls.status.value }}</span>
+  </header>
+  <p class="cms-alert" *ngIf="error()">
+    {{ error() }} <button (click)="load()">Pokusaj ponovo</button>
+  </p>
+  <p class="cms-loading" *ngIf="loading()">Ucitavanje...</p>
+  <form [formGroup]="form" *ngIf="!loading()" class="cms-long-form">
+    <app-admin-language-tabs
+      [active]="activeLanguage()"
+      [serbianComplete]="true"
+      [englishComplete]="englishComplete()"
+      (languageChange)="activeLanguage.set($event)"
+    />
+    <section class="cms-panel">
+      <header>
+        <div>
+          <span>1</span>
+          <h2>Osnovno i objavljivanje</h2>
+        </div>
+        <p>Jedna autoritativna About strana.</p>
+      </header>
+      <div class="cms-grid" *ngIf="activeLanguage() === 'sr'">
+        <label>Naslov<input formControlName="title" /></label
+        ><label>Slug<input formControlName="slug" /></label>
+      </div>
+      <div class="cms-grid" formGroupName="translations" *ngIf="activeLanguage() === 'en'">
+        <div class="wide cms-grid" formGroupName="en">
+          <label>Title<input formControlName="title" /></label>
+          <label>English slug<input formControlName="slug" /></label>
+        </div>
+      </div>
+      <div class="cms-grid">
+        <label
+          >Status<select formControlName="status">
+            <option *ngFor="let option of statuses" [value]="option[0]">{{ option[1] }}</option>
+          </select></label
+        ><label>Datum objave<input type="datetime-local" formControlName="publishedAt" /></label>
+      </div>
+    </section>
+    <section class="cms-panel">
+      <header>
+        <div>
+          <span>2</span>
+          <h2>Sekcije</h2>
+        </div>
+        <p>Dodajte samo podrzane tipove i uredite njihov redosled.</p>
+      </header>
+      <app-about-sections-editor *ngIf="activeLanguage() === 'sr'" [array]="sections" />
+      <div formGroupName="translations" *ngIf="activeLanguage() === 'en'">
+        <div formGroupName="en">
+          <app-about-sections-editor [array]="englishSections" [translationMode]="true" />
+        </div>
+      </div>
+    </section>
+    <section class="cms-panel" *ngIf="activeLanguage() === 'sr'">
+      <header>
+        <div>
+          <span>3</span>
+          <h2>SEO</h2>
+        </div>
+      </header>
+      <app-seo-fields [group]="seo" />
+    </section>
+    <section class="cms-panel" formGroupName="translations" *ngIf="activeLanguage() === 'en'">
+      <header>
+        <div>
+          <span>3</span>
+          <h2>English SEO</h2>
+        </div>
+      </header>
+      <div class="cms-grid" formGroupName="en">
+        <label>SEO title<input formControlName="seoTitle" /></label>
+        <label class="wide"
+          >SEO description<textarea rows="3" formControlName="seoDescription"></textarea>
+        </label>
+      </div>
+    </section>
+    <footer class="cms-action-bar">
+      <a routerLink="/admin/pages">Odustani</a
+      ><button type="button" class="secondary" (click)="preview()">
+        Pregled ({{ activeLanguage().toUpperCase() }})</button
+      ><button type="button" class="secondary" (click)="save('draft')" [disabled]="saving()">
+        Sacuvaj nacrt</button
+      ><button type="button" class="primary" (click)="save('published')" [disabled]="saving()">
+        {{ saving() ? 'Cuvanje...' : 'Objavi' }}
+      </button>
+    </footer>
+  </form>
+</div>

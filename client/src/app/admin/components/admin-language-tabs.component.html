@@ -1,0 +1,24 @@
+<div class="language-tabs" role="tablist" aria-label="Jezik sadržaja">
+  <button
+    type="button"
+    role="tab"
+    [class.active]="active() === 'sr'"
+    [attr.aria-selected]="active() === 'sr'"
+    (click)="languageChange.emit('sr')"
+  >
+    <span>SR</span>
+    Srpski
+    <em [class.complete]="serbianComplete()">{{ serbianComplete() ? 'Spremno' : 'Nedostaje sadržaj' }}</em>
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [class.active]="active() === 'en'"
+    [attr.aria-selected]="active() === 'en'"
+    (click)="languageChange.emit('en')"
+  >
+    <span>EN</span>
+    English
+    <em [class.complete]="englishComplete()">{{ englishComplete() ? 'Spremno' : 'Nedostaje prevod' }}</em>
+  </button>
+</div>

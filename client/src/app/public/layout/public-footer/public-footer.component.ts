@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 
 import { PublicNavLink, PublicSiteSettings } from '../../../core/models/public.models';
 import { MediaUrlService } from '../../../core/services/media-url.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 import { isAvailablePublicDestination, isExternalUrl } from '../../shared/public-navigation';
 
 @Component({
@@ -18,6 +20,12 @@ export class PublicFooterComponent {
   readonly media = inject(MediaUrlService);
   readonly currentYear = new Date().getFullYear();
   readonly isExternal = isExternalUrl;
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
+
+  internalPath(path: string): string {
+    return this.locale.equivalentPath(path, this.locale.current());
+  }
 
   readonly navigationGroups = computed(() => (this.settings()?.footerNavigation || [])
     .map((group) => ({

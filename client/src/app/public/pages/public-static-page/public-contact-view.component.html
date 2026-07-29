@@ -2,52 +2,52 @@
   <div class="contact-hero__shade"></div>
   <div class="contact-hero__content">
     <p class="eyebrow">Madlenianum</p>
-    <h1>{{ page?.title || 'Kontakt' }}</h1>
-    <p>Tu smo za informacije o programu, ulaznicama, saradnji i organizaciji događaja.</p>
+    <h1>{{ page?.title || ('nav.contact' | publicTranslate) }}</h1>
+    <p>{{ 'contact.heroText' | publicTranslate }}</p>
   </div>
 </section>
 
 <main class="contact-page">
   <section class="contact-intro" data-motion="up">
-    <div><p class="eyebrow">Razgovarajmo</p><h2>Posetite nas ili nam pišite</h2></div>
+    <div><p class="eyebrow">{{ 'contact.eyebrow' | publicTranslate }}</p><h2>{{ 'contact.visitOrWrite' | publicTranslate }}</h2></div>
     <div class="contact-intro__copy" [innerHTML]="page?.contact?.introduction || page?.body"></div>
   </section>
 
-  <section class="contact-facts" aria-label="Kontakt podaci" data-motion-stagger>
-    <div class="contact-fact" data-motion-item data-motion-card><span>Adresa</span><strong>{{ address() }}</strong></div>
-    <div class="contact-fact" data-motion-item data-motion-card><span>Telefon</span><a [href]="phoneHref()">{{ phone() }}</a></div>
-    <div class="contact-fact" data-motion-item data-motion-card><span>E-mail</span><a [href]="'mailto:' + email()">{{ email() }}</a></div>
-    <div class="contact-fact" data-motion-item data-motion-card><span>Radno vreme</span><strong>{{ officeHours() }}</strong></div>
+  <section class="contact-facts" [attr.aria-label]="'contact.details' | publicTranslate" data-motion-stagger>
+    <div class="contact-fact" data-motion-item data-motion-card><span>{{ 'contact.address' | publicTranslate }}</span><strong>{{ address() }}</strong></div>
+    <div class="contact-fact" data-motion-item data-motion-card><span>{{ 'contact.phone' | publicTranslate }}</span><a [href]="phoneHref()">{{ phone() }}</a></div>
+    <div class="contact-fact" data-motion-item data-motion-card><span>{{ 'contact.email' | publicTranslate }}</span><a [href]="'mailto:' + email()">{{ email() }}</a></div>
+    <div class="contact-fact" data-motion-item data-motion-card><span>{{ 'contact.officeHours' | publicTranslate }}</span><strong>{{ officeHours() }}</strong></div>
   </section>
 
   <section class="contact-workspace" data-motion="up">
     <div class="contact-map" data-motion="left">
-      <iframe [src]="mapUrl" title="Lokacija Madlenianuma" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <iframe [src]="mapUrl" [title]="'contact.mapTitle' | publicTranslate" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       <div class="contact-map__footer">
-        <div><span>Naša lokacija</span><strong>{{ address() }}</strong></div>
-        <a [href]="page?.contact?.mapUrl || 'https://maps.google.com/?q=Madlenianum+Zemun'" target="_blank" rel="noreferrer">Otvori mapu</a>
+        <div><span>{{ 'contact.location' | publicTranslate }}</span><strong>{{ address() }}</strong></div>
+        <a [href]="page?.contact?.mapUrl || 'https://maps.google.com/?q=Madlenianum+Zemun'" target="_blank" rel="noreferrer">{{ 'contact.openMap' | publicTranslate }}</a>
       </div>
     </div>
 
     <div class="contact-form-wrap" data-motion="right">
-      <p class="eyebrow">Pošaljite poruku</p>
-      <h2>Kako možemo da pomognemo?</h2>
-      <p class="form-lead">Popunite formu i naš tim će Vam odgovoriti u najkraćem roku.</p>
+      <p class="eyebrow">{{ 'contact.formEyebrow' | publicTranslate }}</p>
+      <h2>{{ 'contact.formTitle' | publicTranslate }}</h2>
+      <p class="form-lead">{{ 'contact.formIntro' | publicTranslate }}</p>
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <label>Ime i prezime *<input type="text" formControlName="fullName" autocomplete="name" /></label>
-        <div class="form-row"><label>E-mail *<input type="email" formControlName="email" autocomplete="email" /></label><label>Telefon<input type="tel" formControlName="phone" autocomplete="tel" /></label></div>
-        <label>Naslov poruke<input type="text" formControlName="subject" /></label>
-        <label>Poruka *<textarea formControlName="message" rows="5"></textarea></label>
-        <p class="form-validation" *ngIf="form.touched && form.invalid">Unesite ime, ispravnu e-mail adresu i poruku od najmanje 10 karaktera.</p>
-        <p class="form-success" *ngIf="sent()">Hvala Vam. Poruka je uspešno poslata.</p>
+        <label>{{ 'forms.fullName' | publicTranslate }} *<input type="text" formControlName="fullName" autocomplete="name" /></label>
+        <div class="form-row"><label>{{ 'forms.email' | publicTranslate }} *<input type="email" formControlName="email" autocomplete="email" /></label><label>{{ 'forms.phone' | publicTranslate }}<input type="tel" formControlName="phone" autocomplete="tel" /></label></div>
+        <label>{{ 'contact.subject' | publicTranslate }}<input type="text" formControlName="subject" /></label>
+        <label>{{ 'forms.message' | publicTranslate }} *<textarea formControlName="message" rows="5"></textarea></label>
+        <p class="form-validation" *ngIf="form.touched && form.invalid">{{ 'contact.validation' | publicTranslate }}</p>
+        <p class="form-success" *ngIf="sent()">{{ 'contact.success' | publicTranslate }}</p>
         <p class="form-error" *ngIf="error()">{{ error() }}</p>
-        <button type="submit" [disabled]="sending()">{{ sending() ? 'Slanje...' : 'Pošaljite poruku' }}<span aria-hidden="true">→</span></button>
+        <button type="submit" [disabled]="sending()">{{ (sending() ? 'forms.sending' : 'forms.sendMessage') | publicTranslate }}<span aria-hidden="true">→</span></button>
       </form>
     </div>
   </section>
 
   <section class="contact-extra" *ngIf="additionalItems().length || socialLinks().length" data-motion="up">
     <div *ngFor="let item of additionalItems()"><span>{{ item.label }}</span><a *ngIf="item.link; else plainValue" [href]="item.link">{{ item.value }}</a><ng-template #plainValue><strong>{{ item.value }}</strong></ng-template></div>
-    <div *ngIf="socialLinks().length"><span>Pratite nas</span><p><a *ngFor="let link of socialLinks()" [href]="link.url" target="_blank" rel="noreferrer">{{ link.label || link.platform }}</a></p></div>
+    <div *ngIf="socialLinks().length"><span>{{ 'contact.follow' | publicTranslate }}</span><p><a *ngFor="let link of socialLinks()" [href]="link.url" target="_blank" rel="noreferrer">{{ link.label || link.platform }}</a></p></div>
   </section>
 </main>

@@ -5,15 +5,43 @@
   <p class="cms-loading" *ngIf="isLoading()">Ucitavanje predstave...</p>
 
   <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!isLoading()" class="cms-long-form">
+    <app-admin-language-tabs
+      [active]="activeLanguage()"
+      [serbianComplete]="form.controls.title.valid"
+      [englishComplete]="englishComplete()"
+      (languageChange)="activeLanguage.set($event)"
+    />
+
+    <section class="cms-panel" formGroupName="translations" *ngIf="activeLanguage() === 'en'">
+      <div formGroupName="en">
+        <header><div><span>EN</span><h2>English content</h2></div><p>English pages become public only when the title and English slug are entered.</p></header>
+        <div class="cms-grid">
+          <label class="wide">Title *<input formControlName="title" /></label>
+          <label>English slug *<input formControlName="slug" placeholder="english-page-slug" /></label>
+          <label>Author / composer<input formControlName="authorComposer" /></label>
+          <label>Original title<input formControlName="originalTitle" /></label>
+          <label class="wide">Subtitle<input formControlName="subtitle" /></label>
+          <label>Season<input formControlName="season" /></label>
+          <label>Performance language<input formControlName="performanceLanguage" /></label>
+          <label>Subtitles<input formControlName="subtitles" /></label>
+          <app-tag-editor class="wide" label="English tags" formControlName="tags" />
+          <label class="wide">Short description<textarea rows="3" formControlName="shortDescription"></textarea></label>
+          <div class="wide"><app-rich-text-editor label="Description" formControlName="description" /></div>
+          <div class="wide"><app-rich-text-editor label="Synopsis" formControlName="synopsis" /></div>
+          <label class="wide">Announcement text<textarea rows="3" formControlName="announcementText"></textarea></label>
+          <label>SEO title<input formControlName="seoTitle" /></label>
+          <label>SEO description<textarea rows="3" formControlName="seoDescription"></textarea></label>
+        </div>
+      </div>
+    </section>
+
     <section class="cms-panel"><header><div><span>1</span><h2>Osnovni podaci</h2></div><p>Naziv, vrsta i prakticne informacije o predstavi.</p></header><div class="cms-grid">
-      <label class="wide">Naslov *<input formControlName="title" /><small class="error" *ngIf="form.controls.title.touched&&form.controls.title.invalid">Naslov je obavezan.</small></label>
-      <label>Slug<input formControlName="slug" placeholder="automatski iz naslova" /><small>Menjajte rucno samo kada je potrebno.</small></label>
+      <label class="wide" *ngIf="activeLanguage() === 'sr'">Naslov *<input formControlName="title" /><small class="error" *ngIf="form.controls.title.touched&&form.controls.title.invalid">Naslov je obavezan.</small></label>
+      <label *ngIf="activeLanguage() === 'sr'">Slug<input formControlName="slug" placeholder="automatski iz naslova" /><small>Menjajte rucno samo kada je potrebno.</small></label>
       <label>Vrsta *<select formControlName="type"><option *ngFor="let option of productionTypes()" [value]="option.value">{{ option.label }}</option></select></label>
-      <label>Autor / kompozitor<input formControlName="authorComposer" /></label><label>Originalni naslov<input formControlName="originalTitle" /></label><label class="wide">Podnaslov<input formControlName="subtitle" /></label>
-      <label>Sezona<input formControlName="season" placeholder="2026/2027" /></label><label>Datum premijere<input type="date" formControlName="premiereDate" /></label>
+      <ng-container *ngIf="activeLanguage() === 'sr'"><label>Autor / kompozitor<input formControlName="authorComposer" /></label><label>Originalni naslov<input formControlName="originalTitle" /></label><label class="wide">Podnaslov<input formControlName="subtitle" /></label><label>Sezona<input formControlName="season" placeholder="2026/2027" /></label></ng-container><label>Datum premijere<input type="date" formControlName="premiereDate" /></label>
       <label>Podrazumevana scena<select formControlName="venue"><option value="">Bez podrazumevane scene</option><option *ngFor="let venue of venueOptions()" [value]="venue.id">{{ venue.label }}</option></select><small>Ovo je samo predlog za nove termine.</small></label>
-      <label>Trajanje u minutima<input type="number" min="0" formControlName="durationMinutes" /></label><label>Jezik izvodjenja<input formControlName="performanceLanguage" /></label><label>Titlovi<input formControlName="subtitles" /></label>
-      <app-tag-editor class="wide" label="Oznake" formControlName="tags" />
+      <label>Trajanje u minutima<input type="number" min="0" formControlName="durationMinutes" /></label><ng-container *ngIf="activeLanguage() === 'sr'"><label>Jezik izvodjenja<input formControlName="performanceLanguage" /></label><label>Titlovi<input formControlName="subtitles" /></label><app-tag-editor class="wide" label="Oznake" formControlName="tags" /></ng-container>
     </div></section>
 
     <section class="cms-panel"><header><div><span>2</span><h2>Objavljivanje</h2></div><p>Novi sadrzaj ostaje nacrt dok ga administrator izricito ne objavi.</p></header><div class="cms-grid">
@@ -22,7 +50,7 @@
       <label class="check"><input type="checkbox" formControlName="isPremiere" /><span>Premijera</span></label><label class="check"><input type="checkbox" formControlName="isOnRepertoire" /><span>Na repertoaru</span></label><label class="check"><input type="checkbox" formControlName="isFeatured" /><span>Izdvojena predstava</span></label>
     </div></section>
 
-    <section class="cms-panel"><header><div><span>3</span><h2>Opis i sinopsis</h2></div><p>Urednicki tekst koji se prikazuje na javnoj stranici predstave.</p></header>
+    <section class="cms-panel" *ngIf="activeLanguage() === 'sr'"><header><div><span>3</span><h2>Opis i sinopsis</h2></div><p>Urednicki tekst koji se prikazuje na javnoj stranici predstave.</p></header>
       <label>Kratak opis<textarea rows="3" formControlName="shortDescription"></textarea></label>
       <app-rich-text-editor label="Dugi opis" formControlName="description" />
       <app-rich-text-editor label="Sinopsis" formControlName="synopsis" />
@@ -30,24 +58,24 @@
 
     <section class="cms-panel"><header><div><span>4</span><h2>Poster i galerija</h2></div><p>Slike se biraju iz postojece Media Library.</p></header>
       <app-media-picker label="Poster / glavna slika" mode="single" mediaKind="image" [value]="posterSelection()" (selectionChange)="updatePoster($event)" />
-      <app-structured-gallery-editor formControlName="galleryItems" />
+      <app-structured-gallery-editor formControlName="galleryItems" [language]="activeLanguage()" />
     </section>
 
-    <section class="cms-panel"><header><div><span>5</span><h2>Video i trejler</h2></div><p>Dozvoljeni su strukturirani YouTube, Vimeo i odobreni spoljni linkovi.</p></header><app-video-links-editor [array]="videos" [providers]="videoProviders()" /></section>
-    <section class="cms-panel"><header><div><span>6</span><h2>Kreativni tim</h2></div><p>Normalizovana uloga omogucava javnom sajtu da pouzdano prikaze glavne autore.</p></header><app-creative-team-editor [array]="creativeTeam" [artists]="artistOptions()" [roles]="creativeRoles()" /></section>
-    <section class="cms-panel"><header><div><span>7</span><h2>Podela</h2></div><p>Dodajte po jedan red za svakog izvodjaca, ukljucujuci alternacije iste uloge.</p></header><app-cast-editor [array]="cast" [artists]="artistOptions()" /></section>
-    <section class="cms-panel"><header><div><span>8</span><h2>Kritike</h2></div><p>CMS cuva samo podatke i link do izvornog teksta.</p></header><app-review-links-editor [array]="reviews" /></section>
+    <section class="cms-panel"><header><div><span>5</span><h2>Video i trejler</h2></div><p>URL, thumbnail i glavni trejler su zajednicki; naslov se prevodi.</p></header><app-video-links-editor [array]="videos" [providers]="videoProviders()" [language]="activeLanguage()" /></section>
+    <section class="cms-panel"><header><div><span>6</span><h2>Kreativni tim</h2></div><p>Umetnik i redosled su zajednicki, dok se naziv uloge, ime bez profila i napomena prevode.</p></header><app-creative-team-editor [array]="creativeTeam" [artists]="artistOptions()" [roles]="creativeRoles()" [language]="activeLanguage()" /></section>
+    <section class="cms-panel"><header><div><span>7</span><h2>Podela</h2></div><p>Umetnik je zajednicki, a lik, ime bez profila i napomena imaju posebnu EN verziju.</p></header><app-cast-editor [array]="cast" [artists]="artistOptions()" [language]="activeLanguage()" /></section>
+    <section class="cms-panel"><header><div><span>8</span><h2>Kritike</h2></div><p>Link i datum su zajednicki, naslov, publikacija i napomena se prevode.</p></header><app-review-links-editor [array]="reviews" [language]="activeLanguage()" /></section>
     <section class="cms-panel"><header><div><span>9</span><h2>Preporucene predstave</h2></div><p>Rucni izbor je stabilan i ne dozvoljava duplikate ili vezu ka istoj predstavi.</p></header><app-recommended-productions-picker [options]="productionOptions()" formControlName="recommendedProductions" /></section>
 
     <section class="cms-panel" formGroupName="announcement"><header><div><span>10</span><h2>Najava</h2></div><p>Predstava moze biti najavljena i pre nego sto dobije konkretan termin.</p></header><div class="cms-grid">
-      <label class="check wide"><input type="checkbox" formControlName="isAnnounced" /><span>Prikazi kao najavu</span></label><label>Mesec<input type="number" min="1" max="12" formControlName="month" /></label><label>Godina<input type="number" min="2000" max="2200" formControlName="year" /></label><label>Pocetak prikaza<input type="datetime-local" formControlName="startsAt" /></label><label>Kraj prikaza<input type="datetime-local" formControlName="endsAt" /></label><label class="wide">Tekst najave<textarea rows="3" formControlName="text"></textarea></label>
+      <label class="check wide"><input type="checkbox" formControlName="isAnnounced" /><span>Prikazi kao najavu</span></label><label>Mesec<input type="number" min="1" max="12" formControlName="month" /></label><label>Godina<input type="number" min="2000" max="2200" formControlName="year" /></label><label>Pocetak prikaza<input type="datetime-local" formControlName="startsAt" /></label><label>Kraj prikaza<input type="datetime-local" formControlName="endsAt" /></label><label class="wide" *ngIf="activeLanguage() === 'sr'">Tekst najave<textarea rows="3" formControlName="text"></textarea></label>
       <app-media-picker class="wide" label="Slika najave" mode="single" mediaKind="image" [value]="announcementSelection()" (selectionChange)="updateAnnouncementImage($event)" />
     </div></section>
-    <section class="cms-panel"><header><div><span>11</span><h2>SEO</h2></div><p>Naslov i opis za pretrazivace mogu se razlikovati od javnog naslova.</p></header><app-seo-fields [group]="seo" /></section>
+    <section class="cms-panel" *ngIf="activeLanguage() === 'sr'"><header><div><span>11</span><h2>SEO</h2></div><p>Naslov i opis za pretrazivace mogu se razlikovati od javnog naslova.</p></header><app-seo-fields [group]="seo" /></section>
 
     <footer class="cms-action-bar">
       <a routerLink="/admin/productions">Odustani</a>
-      <button type="button" class="secondary" (click)="preview()">Pregled sacuvane verzije</button>
+      <button type="button" class="secondary" (click)="preview()">Pregled: {{ activeLanguage() === 'en' ? 'English' : 'Srpski' }}</button>
       <button type="button" class="secondary" (click)="save('draft')" [disabled]="isSaving()">Sacuvaj kao nacrt</button>
       <button type="button" class="primary" (click)="save('published')" [disabled]="isSaving()">{{ isSaving() ? 'Cuvanje...' : 'Objavi' }}</button>
     </footer>

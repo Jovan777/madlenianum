@@ -88,7 +88,15 @@ const contactDataSchema = new mongoose.Schema(
 );
 
 const translationSchema = new mongoose.Schema(
-  { title: String, body: String, seoTitle: String, seoDescription: String },
+  {
+    slug: { type: String, lowercase: true, trim: true },
+    title: String,
+    body: String,
+    sections: [mongoose.Schema.Types.Mixed],
+    contact: mongoose.Schema.Types.Mixed,
+    seoTitle: String,
+    seoDescription: String,
+  },
   { _id: false }
 );
 
@@ -119,6 +127,16 @@ const staticPageSchema = new mongoose.Schema(
 staticPageSchema.pre("validate", function () {
   if (!this.slug && this.title) this.slug = slugify(this.title);
   if (this.isModified("slug") && this.slug) this.slug = slugify(this.slug);
+  if (this.translations?.en) {
+    this.translations.en.slug = this.translations.en.slug ? slugify(this.translations.en.slug) : undefined;
+    this.translations.en.body = sanitizeRichText(this.translations.en.body);
+    if (this.translations.en.contact) {
+      this.translations.en.contact.introduction = sanitizeRichText(this.translations.en.contact.introduction);
+    }
+    for (const section of this.translations.en.sections || []) {
+      section.body = sanitizeRichText(section.body);
+    }
+  }
   this.body = sanitizeRichText(this.body);
 
   if (this.contact) this.contact.introduction = sanitizeRichText(this.contact.introduction);
@@ -139,6 +157,7 @@ staticPageSchema.pre("validate", function () {
 
 staticPageSchema.index({ pageType: 1, status: 1 });
 staticPageSchema.index({ status: 1, title: 1 });
+staticPageSchema.index({ "translations.en.slug": 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("StaticPage", staticPageSchema, "static_pages");
 module.exports.ABOUT_SECTION_TYPES = ABOUT_SECTION_TYPES;

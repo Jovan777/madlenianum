@@ -1,32 +1,32 @@
-<div class="loading-state" *ngIf="isLoading()">Učitavanje umetnika...</div>
+<div class="loading-state" *ngIf="isLoading()">{{ i18n.t('common.loading') }}</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <main class="artists-page" *ngIf="!isLoading()">
   <section class="artists-hero" data-motion="up">
     <div>
-      <p class="eyebrow">Ansambl Madlenianuma</p>
-      <h1>Umetnici</h1>
-      <p class="artists-hero__intro">Izvođači, autori i saradnici čiji talenat, iskustvo i posvećenost oblikuju naš repertoar.</p>
+      <p class="eyebrow">{{ i18n.t('artists.heroEyebrow') }}</p>
+      <h1>{{ i18n.t('artists.title') }}</h1>
+      <p class="artists-hero__intro">{{ i18n.t('artists.subtitle') }}</p>
     </div>
     <aside *ngIf="artists().length">
       <strong>{{ artists().length | number:'2.0-0' }}</strong>
-      <span>objavljena profila</span>
+      <span>{{ i18n.t('artists.publishedProfiles') }}</span>
     </aside>
   </section>
 
   <section class="artists-list" aria-labelledby="artists-list-title" data-motion="up">
     <header>
       <div>
-        <p class="eyebrow">Lica scene</p>
-        <h2 id="artists-list-title">Naš ansambl</h2>
+        <p class="eyebrow">{{ i18n.t('artists.stageFaces') }}</p>
+        <h2 id="artists-list-title">{{ i18n.t('artists.ensemble') }}</h2>
       </div>
-      <p>Upoznajte umetnike i otkrijte predstave u kojima učestvuju.</p>
+      <p>{{ i18n.t('artists.listIntro') }}</p>
     </header>
 
-    <div class="empty-state" *ngIf="artists().length === 0">Umetnici još nisu objavljeni.</div>
+    <div class="empty-state" *ngIf="artists().length === 0">{{ i18n.t('artists.empty') }}</div>
 
     <div class="artist-grid" *ngIf="artists().length > 0" data-motion-stagger>
-      <a class="artist-card" *ngFor="let artist of artists()" [routerLink]="['/umetnici', artist.slug]" data-motion-item data-motion-card>
+      <a class="artist-card" *ngFor="let artist of artists()" [routerLink]="[locale.equivalentPath('/umetnici', locale.current()), artist.slug]" data-motion-item data-motion-card>
         <figure>
           <img *ngIf="image(artist); else portraitPlaceholder" [src]="image(artist)" [alt]="name(artist)" loading="lazy" />
           <ng-template #portraitPlaceholder><span class="portrait-placeholder">{{ initials(artist) }}</span></ng-template>
@@ -34,7 +34,7 @@
         <div class="artist-card__copy">
           <span class="artist-card__profession">{{ professions(artist) }}</span>
           <h3>{{ name(artist) }}</h3>
-          <span class="artist-card__link">Profil umetnika <i aria-hidden="true">→</i></span>
+          <span class="artist-card__link">{{ i18n.t('artists.profile') }} <i aria-hidden="true">→</i></span>
         </div>
       </a>
     </div>

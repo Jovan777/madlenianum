@@ -26,6 +26,7 @@ const OrderItem = require("../models/OrderItem");
 const SeatLock = require("../models/SeatLock");
 const EventSeatOverride = require("../models/EventSeatOverride");
 const { runPhase6ASeed } = require("./phase6a.seed");
+const seedEnglishContent = require("./seedEnglishContent");
 
 const UPLOAD_ROOT = path.join(__dirname, "../../uploads/madlenianum");
 
@@ -186,6 +187,13 @@ const galleryItems = (items) => (items || []).map((media, index) => ({
   caption: "",
   credit: "Madlenianum",
   altText: media.alt || media.title || "",
+  translations: {
+    en: {
+      caption: "",
+      credit: "Madlenianum",
+      altText: seedEnglishContent.translateSeedMetadata(media.alt || media.title || ""),
+    },
+  },
   displayOrder: index,
 }));
 
@@ -213,6 +221,14 @@ const normalizeCredits = (items) => (items || []).map((entry, index) => ({
   artist: entry.artist,
   name: entry.name || "",
   note: entry.note || "",
+  translations: {
+    en: {
+      label: seedEnglishContent.translateSeedMetadata(entry.label || entry.role || ""),
+      name: seedEnglishContent.translateSeedMetadata(entry.name || "", { preserveUnknown: true }),
+      note: seedEnglishContent.translateSeedMetadata(entry.note || ""),
+      ...(entry.translations?.en || {}),
+    },
+  },
   displayOrder: entry.displayOrder ?? entry.order ?? index,
 }));
 
@@ -223,6 +239,14 @@ const normalizeCast = (items) => (items || []).flatMap((entry, index) => {
       name: entry.name || "",
       role: entry.role || entry.character || "",
       note: entry.note || "",
+      translations: {
+        en: {
+          name: seedEnglishContent.translateSeedMetadata(entry.name || "", { preserveUnknown: true }),
+          role: seedEnglishContent.translateSeedMetadata(entry.role || entry.character || "", { preserveUnknown: true }),
+          note: seedEnglishContent.translateSeedMetadata(entry.note || ""),
+          ...(entry.translations?.en || {}),
+        },
+      },
       displayOrder: entry.displayOrder ?? entry.order ?? index,
     }];
   }
@@ -235,12 +259,72 @@ const normalizeCast = (items) => (items || []).flatMap((entry, index) => {
     name: names[personIndex] || "",
     role: entry.character || "",
     note: entry.note || "",
+    translations: {
+      en: {
+        name: seedEnglishContent.translateSeedMetadata(names[personIndex] || "", { preserveUnknown: true }),
+        role: seedEnglishContent.translateSeedMetadata(entry.character || "", { preserveUnknown: true }),
+        note: seedEnglishContent.translateSeedMetadata(entry.note || ""),
+        ...(entry.translations?.en || {}),
+      },
+    },
     displayOrder: (entry.order ?? index) + personIndex,
   }));
 });
 
-const upsertArtist = async ({ displayName, professions, biography, image, gallery = [], links = [] }) => {
+const meaningfulTranslationValues = (value = {}) => Object.fromEntries(
+  Object.entries(value || {}).filter(([, entry]) => (
+    Array.isArray(entry) ? entry.length > 0 : entry !== undefined && entry !== null && entry !== ""
+  ))
+);
+
+const seedTranslations = (existing, sr, en) => ({
+  sr: {
+    ...meaningfulTranslationValues(sr),
+    ...meaningfulTranslationValues(existing?.sr),
+  },
+  en: {
+    ...meaningfulTranslationValues(en),
+    ...meaningfulTranslationValues(existing?.en),
+  },
+});
+
+const translatedStructuredSections = (sections = [], translations = []) => sections.map((section, index) => {
+  const translated = translations[index] || {};
+  return {
+    ...section,
+    ...translated,
+    timelineItems: (section.timelineItems || []).map((item, itemIndex) => ({
+      ...item,
+      ...(translated.timelineItems?.[itemIndex] || {}),
+    })),
+    featureItems: (section.featureItems || []).map((item, itemIndex) => ({
+      ...item,
+      ...(translated.featureItems?.[itemIndex] || {}),
+    })),
+    galleryItems: (section.galleryItems || []).map((item, itemIndex) => ({
+      ...item,
+      caption: translated.galleryItems?.[itemIndex]?.caption
+        || seedEnglishContent.translateSeedMetadata(item.caption),
+      credit: translated.galleryItems?.[itemIndex]?.credit
+        || seedEnglishContent.translateSeedMetadata(item.credit, { preserveUnknown: true }),
+      altText: translated.galleryItems?.[itemIndex]?.altText
+        || seedEnglishContent.translateSeedMetadata(item.altText),
+    })),
+  };
+});
+
+const upsertArtist = async ({
+  displayName,
+  professions,
+  biography,
+  image,
+  gallery = [],
+  links = [],
+  english = {},
+}) => {
   const slug = slugify(displayName);
+  const existing = await Artist.findOne({ slug }).select("translations").lean();
+  const resolvedEnglish = { ...seedEnglishContent.artists[slug], ...english };
 
   return Artist.findOneAndUpdate(
     { slug },
@@ -252,8 +336,21 @@ const upsertArtist = async ({ displayName, professions, biography, image, galler
       image: image?._id,
       gallery: gallery.map((item) => item._id),
       galleryItems: galleryItems(gallery),
-      links: links.map((item, index) => ({ ...item, displayOrder: index })),
-      translations: {},
+      links: links.map((item, index) => ({
+        ...item,
+        translations: {
+          en: {
+            label: seedEnglishContent.translateSeedMetadata(item.label),
+            ...(item.translations?.en || {}),
+          },
+        },
+        displayOrder: index,
+      })),
+      translations: seedTranslations(
+        existing?.translations,
+        { slug, displayName, professions, biography },
+        resolvedEnglish
+      ),
       status: "published",
       publishedAt: new Date(),
       seo: {
@@ -334,8 +431,11 @@ const upsertProduction = async ({
   videos = [],
   reviews = [],
   durationMinutes = 90,
+  english = {},
 }) => {
   const slug = slugify(title);
+  const existing = await Production.findOne({ slug }).select("translations").lean();
+  const resolvedEnglish = { ...seedEnglishContent.productions[slug], ...english };
 
   const payload = {
     title,
@@ -357,13 +457,47 @@ const upsertProduction = async ({
     gallery: gallery.map((item) => item._id),
     galleryItems: galleryItems(gallery),
     videoUrls: videos.map((item) => ({ label: item.title, url: item.url })),
-    videos,
+    videos: videos.map((item) => ({
+      ...item,
+      translations: {
+        en: {
+          title: seedEnglishContent.translateSeedMetadata(item.title),
+          ...(item.translations?.en || {}),
+        },
+      },
+    })),
     creativeTeam: normalizeCredits(creativeTeam),
     cast: normalizeCast(cast),
-    reviews,
+    reviews: reviews.map((item) => ({
+      ...item,
+      translations: {
+        en: {
+          title: seedEnglishContent.translateSeedMetadata(item.title),
+          publication: seedEnglishContent.translateSeedMetadata(item.publication, { preserveUnknown: true }),
+          note: seedEnglishContent.translateSeedMetadata(item.note),
+          ...(item.translations?.en || {}),
+        },
+      },
+    })),
     season: "2025/2026",
     tags,
-    translations: {},
+    translations: seedTranslations(
+      existing?.translations,
+      {
+        slug,
+        title,
+        authorComposer,
+        originalTitle: originalTitle || "",
+        subtitle: subtitle || "",
+        shortDescription,
+        description,
+        synopsis: synopsis || "",
+        performanceLanguage: "sr",
+        season: "2025/2026",
+        tags,
+      },
+      resolvedEnglish
+    ),
     seo: {
       title: `${title} | Madlenianum`,
       description: shortDescription,
@@ -468,15 +602,19 @@ const upsertPromoSlide = async ({
   event,
   activeFrom,
   activeUntil,
+  english = {},
 }) => {
   const slug = slugify(title);
+  const existing = await PromoSlide.findOne({ slug }).select("translations").lean();
+  const resolvedEnglish = { ...seedEnglishContent.promoSlides[slug], ...english };
+  const description = subtitle || "";
 
   return PromoSlide.findOneAndUpdate(
     { slug },
     {
       title,
       slug,
-      description: subtitle || "",
+      description,
       image: image?._id,
       linkLabel: "Pogledajte više",
       linkUrl: production ? `/predstave/${production.slug}` : "",
@@ -485,6 +623,11 @@ const upsertPromoSlide = async ({
       activeFrom: activeFrom || new Date(Date.now() - 24 * 60 * 60 * 1000),
       activeUntil: activeUntil || (event?.startsAt ? new Date(event.startsAt.getTime() + 24 * 60 * 60 * 1000) : undefined),
       language: "sr",
+      translations: seedTranslations(
+        existing?.translations,
+        { slug, title, description, linkLabel: "Pogledajte vise" },
+        resolvedEnglish
+      ),
       status: "published",
       publishedAt: new Date(),
     },
@@ -504,7 +647,10 @@ const upsertStaticPage = async ({
   image,
   sections = [],
   contact = {},
+  english = {},
 }) => {
+  const existing = await StaticPage.findOne({ slug }).select("translations").lean();
+  const resolvedEnglish = { ...seedEnglishContent.staticPages[slug], ...english };
   return StaticPage.findOneAndUpdate(
     { slug },
     {
@@ -518,7 +664,15 @@ const upsertStaticPage = async ({
       attachments: [],
       sections,
       contact,
-      translations: {},
+      translations: seedTranslations(
+        existing?.translations,
+        { slug, title, body, sections, contact },
+        {
+          ...resolvedEnglish,
+          sections: translatedStructuredSections(sections, resolvedEnglish.sections),
+          contact: resolvedEnglish.contact ? { ...contact, ...resolvedEnglish.contact } : undefined,
+        }
+      ),
       seo: {
         title: `${title} | Madlenianum`,
         description: body.slice(0, 150),
@@ -535,8 +689,20 @@ const upsertStaticPage = async ({
   );
 };
 
-const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, relatedProduction, category = "vest" }) => {
+const upsertNews = async ({
+  title,
+  subtitle,
+  excerpt,
+  body,
+  image,
+  gallery,
+  relatedProduction,
+  category = "vest",
+  english = {},
+}) => {
   const slug = slugify(title);
+  const existing = await News.findOne({ slug }).select("translations").lean();
+  const resolvedEnglish = { ...seedEnglishContent.news[slug], ...english };
   return News.findOneAndUpdate(
     { slug },
     {
@@ -553,9 +719,17 @@ const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, rela
         label: "Program Madlenianuma",
         url: "https://madlenianum.rs/",
         type: "website",
+        translations: {
+          en: { label: "Madlenianum Programme" },
+        },
         displayOrder: 0,
       }],
       relatedProduction: relatedProduction?._id,
+      translations: seedTranslations(
+        existing?.translations,
+        { slug, title, subtitle, excerpt, body },
+        resolvedEnglish
+      ),
       publishedAt: new Date(),
       status: "published",
       isFeatured: true,
@@ -570,7 +744,8 @@ const upsertNews = async ({ title, subtitle, excerpt, body, image, gallery, rela
 };
 
 const upsertHomepageConfig = async ({ slides, events, productions, featuredProductions, news, teaserImage, aboutPage, ctaCards }) => {
-  return HomepageConfig.findOneAndUpdate(
+  const existing = await HomepageConfig.findOne({ key: "default" }).select("translations").lean();
+  const config = await HomepageConfig.findOneAndUpdate(
     { key: "default" },
     {
       key: "default",
@@ -603,10 +778,73 @@ const upsertHomepageConfig = async ({ slides, events, productions, featuredProdu
     },
     { returnDocument: "after", upsert: true, runValidators: true }
   );
+
+  const englishCards = [
+    {
+      title: "Guest performances",
+      text: "Programmes and partnerships that Madlenianum develops with artists and institutions.",
+      linkLabel: "Contact us",
+    },
+    {
+      title: "Venue rental",
+      text: "Discover the possibilities for organising events in Madlenianum's venues.",
+      linkLabel: "Contact us",
+    },
+    {
+      title: "Costume and prop rental",
+      text: "Send an enquiry to the Madlenianum team about available costumes and stage props.",
+      linkLabel: "Contact us",
+    },
+  ];
+
+  config.translations = seedTranslations(
+    existing?.translations,
+    {
+      upcomingEventsHeading: config.upcomingEvents.heading,
+      repertoireProductionsHeading: config.repertoireProductions.heading,
+      featuredProductionsHeading: config.featuredProductions.heading,
+      featuredNewsHeading: config.featuredNews.heading,
+      institutionalTeaser: {
+        heading: config.institutionalTeaser.heading,
+        text: config.institutionalTeaser.text,
+        ctaLabel: config.institutionalTeaser.ctaLabel,
+      },
+      ctaCardsHeading: config.ctaCardsHeading,
+      ctaCards: config.ctaCards.map((card) => ({
+        sourceId: card._id,
+        title: card.title,
+        text: card.text,
+        linkLabel: card.linkLabel,
+      })),
+      seoTitle: config.seo.title,
+      seoDescription: config.seo.description,
+    },
+    {
+      upcomingEventsHeading: "Upcoming events",
+      repertoireProductionsHeading: "On the repertoire",
+      featuredProductionsHeading: "Do not miss",
+      featuredNewsHeading: "Behind the scenes",
+      institutionalTeaser: {
+        heading: "Madlenianum",
+        text: "<p>Madlenianum is where opera, theatre, music and movement meet. In Zemun, we create a programme connecting artists and audiences, tradition and contemporary expression.</p>",
+        ctaLabel: "About us",
+      },
+      ctaCardsHeading: "Partnership",
+      ctaCards: config.ctaCards.map((card, index) => ({
+        sourceId: card._id,
+        ...englishCards[index],
+      })),
+      seoTitle: "Madlenianum Opera & Theatre",
+      seoDescription: "Madlenianum Opera and Theatre in Zemun.",
+    }
+  );
+  await config.save();
+  return config;
 };
 
 const upsertSiteSettings = async ({ socialImage }) => {
-  return SiteSettings.findOneAndUpdate(
+  const existing = await SiteSettings.findOne({ key: "default" }).select("translations").lean();
+  const settings = await SiteSettings.findOneAndUpdate(
     { key: "default" },
     {
       key: "default",
@@ -661,6 +899,44 @@ const upsertSiteSettings = async ({ socialImage }) => {
     },
     { returnDocument: "after", upsert: true, runValidators: true }
   );
+
+  const englishFooterGroups = [
+    { title: "Programme", links: ["Repertoire", "Productions"] },
+    { title: "Artists", links: ["All artists"] },
+    { title: "Madlenianum", links: ["About us", "Contact", "Order lookup"] },
+  ];
+  settings.translations = seedTranslations(
+    existing?.translations,
+    {
+      siteName: settings.siteName,
+      shortDescription: settings.shortDescription,
+      contactAddress: settings.contact.address,
+      footerNavigation: settings.footerNavigation.map((group) => ({
+        sourceId: group._id,
+        title: group.title,
+        links: group.links.map((link) => ({ sourceId: link._id, label: link.label })),
+      })),
+      seoTitle: settings.defaultSeo.title,
+      seoDescription: settings.defaultSeo.description,
+    },
+    {
+      siteName: "Madlenianum",
+      shortDescription: "Madlenianum Opera and Theatre in Zemun.",
+      contactAddress: "32 Glavna Street, Zemun, Belgrade",
+      footerNavigation: settings.footerNavigation.map((group, groupIndex) => ({
+        sourceId: group._id,
+        title: englishFooterGroups[groupIndex]?.title || group.title,
+        links: group.links.map((link, linkIndex) => ({
+          sourceId: link._id,
+          label: englishFooterGroups[groupIndex]?.links[linkIndex] || link.label,
+        })),
+      })),
+      seoTitle: "Madlenianum Opera & Theatre",
+      seoDescription: "Madlenianum Opera and Theatre in Zemun.",
+    }
+  );
+  await settings.save();
+  return settings;
 };
 
 const upsertCustomer = async ({ fullName, email, phone, city }) => {

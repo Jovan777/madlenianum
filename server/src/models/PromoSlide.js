@@ -7,7 +7,7 @@ const {
 } = require("./schemas/cms.schemas");
 
 const translationSchema = new mongoose.Schema(
-  { title: String, description: String, linkLabel: String },
+  { slug: String, title: String, subtitle: String, description: String, linkLabel: String },
   { _id: false }
 );
 
@@ -35,6 +35,7 @@ const promoSlideSchema = new mongoose.Schema(
 promoSlideSchema.pre("validate", function () {
   if (!this.slug && this.title) this.slug = slugify(this.title);
   if (this.isModified("slug") && this.slug) this.slug = slugify(this.slug);
+  if (this.translations?.en?.slug) this.translations.en.slug = slugify(this.translations.en.slug);
   if (this.linkUrl && !this.linkUrl.startsWith("/") && !isHttpUrl(this.linkUrl)) {
     this.invalidate("linkUrl", "Link mora biti interna putanja ili HTTP/HTTPS URL.");
   }

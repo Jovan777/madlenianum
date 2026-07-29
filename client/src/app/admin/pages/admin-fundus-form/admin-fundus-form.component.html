@@ -1,4 +1,177 @@
-<div class="cms-form-page"><a class="back" routerLink="/admin/fundus">Nazad na Fundus</a><header class="cms-form-hero"><div><p>{{isCostume?'Kostimi':'Rekviziti i scenografija'}}</p><h1>{{itemId()?'Uredi predmet':'Novi predmet'}}</h1><span>Javni katalog sa strukturiranim podacima i Media Library sadržajem.</span></div></header><p class="cms-alert" *ngIf="error()">{{error()}}</p><p class="cms-loading" *ngIf="loading()">Učitavanje...</p><form *ngIf="!loading()" [formGroup]="form" class="cms-long-form">
-<section class="cms-panel"><header><div><span>1</span><h2>Osnovni podaci</h2></div></header><div class="cms-grid"><label>Naziv *<input formControlName="title"/></label><label>Slug<input formControlName="slug"/></label><label>Inventarski broj *<input formControlName="inventoryNumber"/></label><label>Stanje<select formControlName="condition"><option *ngFor="let option of conditions" [value]="option.value">{{option.label}}</option></select></label><label *ngIf="isCostume">Pol<select formControlName="gender"><option value="female">Ženski</option><option value="male">Muški</option><option value="unisex">Uniseks</option><option value="children">Dečji</option><option value="other">Ostalo</option></select></label><label *ngIf="isCostume">Epoha<input formControlName="epoch"/></label><label *ngIf="isCostume">Veličina<input formControlName="size"/></label><label *ngIf="isCostume">Boja<input formControlName="color"/></label><label *ngIf="!isCostume">Vrsta<select formControlName="itemType"><option value="prop">Rekvizit</option><option value="scenography">Scenografija</option></select></label><label *ngIf="!isCostume">Kategorija<input formControlName="category"/></label><label *ngIf="!isCostume">Epoha / stil<input formControlName="epochOrStyle"/></label><label>Materijal<input formControlName="material"/></label><label *ngIf="!isCostume">Težina (kg)<input type="number" min="0" formControlName="weight"/></label><label class="wide" *ngIf="isCostume">Kratak opis<textarea rows="3" formControlName="shortDescription"></textarea></label><label class="wide">Napomena o dostupnosti<textarea rows="3" formControlName="availabilityNote"></textarea></label></div><div class="cms-grid" *ngIf="!isCostume"><label>Širina (cm)<input type="number" min="0" formControlName="widthCm"/></label><label>Visina (cm)<input type="number" min="0" formControlName="heightCm"/></label><label>Dubina (cm)<input type="number" min="0" formControlName="depthCm"/></label><label>Opis dimenzija<input formControlName="dimensionNote"/></label></div></section>
-<section class="cms-panel"><header><div><span>2</span><h2>Opis i mediji</h2></div></header><app-rich-text-editor formControlName="description"/><app-media-picker label="Glavna slika" mode="single" mediaKind="image" [value]="mainImage()" (selectionChange)="updateImage($event)"/><app-structured-gallery-editor formControlName="galleryItems"/></section>
-<section class="cms-panel"><header><div><span>3</span><h2>Povezivanje i objavljivanje</h2></div></header><div class="cms-grid"><label>Povezana predstava<select formControlName="relatedProduction"><option value="">Bez povezane predstave</option><option *ngFor="let production of productions()" [value]="production.id||production._id">{{production.title}}</option></select></label><label>Status<select formControlName="status"><option value="draft">Nacrt</option><option value="published">Objavljeno</option><option value="archived">Arhivirano</option></select></label><label>Datum objave<input type="datetime-local" formControlName="publishedAt"/></label><label>Redosled prikaza<input type="number" min="0" formControlName="displayOrder"/></label><label class="check"><input type="checkbox" formControlName="isFeatured"/>Izdvojeno</label></div></section><section class="cms-panel"><header><div><span>4</span><h2>SEO</h2></div></header><app-seo-fields [group]="seo"/></section><footer class="cms-action-bar"><a routerLink="/admin/fundus">Odustani</a><button type="button" class="secondary" (click)="preview()" [disabled]="!itemId()">Pregled</button><button type="button" class="secondary" (click)="save('draft')" [disabled]="saving()">Sačuvaj nacrt</button><button type="button" class="primary" (click)="save('published')" [disabled]="saving()">{{saving()?'Čuvanje...':'Objavi'}}</button></footer></form></div>
+<div class="cms-form-page">
+  <a class="back" routerLink="/admin/fundus">Nazad na Fundus</a>
+  <header class="cms-form-hero">
+    <div>
+      <p>{{ isCostume ? 'Kostimi' : 'Rekviziti i scenografija' }}</p>
+      <h1>{{ itemId() ? 'Uredi predmet' : 'Novi predmet' }}</h1>
+      <span>Javni katalog sa strukturiranim podacima i Media Library sadržajem.</span>
+    </div>
+  </header>
+  <p class="cms-alert" *ngIf="error()">{{ error() }}</p>
+  <p class="cms-loading" *ngIf="loading()">Učitavanje...</p>
+  <form *ngIf="!loading()" [formGroup]="form" class="cms-long-form">
+    <app-admin-language-tabs
+      [active]="activeLanguage()"
+      [serbianComplete]="form.controls.title.valid"
+      [englishComplete]="englishComplete()"
+      (languageChange)="activeLanguage.set($event)"
+    />
+    <section class="cms-panel" formGroupName="translations" *ngIf="activeLanguage() === 'en'">
+      <div formGroupName="en">
+        <header>
+          <div>
+            <span>EN</span>
+            <h2>English catalogue content</h2>
+          </div>
+          <p>English content is public after a title and English slug are entered.</p>
+        </header>
+        <div class="cms-grid">
+          <label>Title *<input formControlName="title" /></label>
+          <label>English slug *<input formControlName="slug" /></label>
+          <label class="wide" *ngIf="isCostume"
+            >Short description<textarea rows="3" formControlName="shortDescription"></textarea>
+          </label>
+          <label *ngIf="isCostume">Period<input formControlName="epoch" /></label>
+          <label *ngIf="isCostume">Size<input formControlName="size" /></label>
+          <label *ngIf="isCostume">Colour<input formControlName="color" /></label>
+          <label *ngIf="!isCostume">Category<input formControlName="category" /></label>
+          <label *ngIf="!isCostume">Period / style<input formControlName="epochOrStyle" /></label>
+          <label *ngIf="!isCostume"
+            >Dimensions note<input formControlName="dimensionsNote"
+          /></label>
+          <label>Material<input formControlName="material" /></label>
+          <label class="wide"
+            >Availability note<textarea rows="3" formControlName="availabilityNote"></textarea>
+          </label>
+          <div class="wide">
+            <app-rich-text-editor label="Description" formControlName="description" />
+          </div>
+          <label>SEO title<input formControlName="seoTitle" /></label>
+          <label
+            >SEO description<textarea rows="3" formControlName="seoDescription"></textarea>
+          </label>
+        </div>
+      </div>
+    </section>
+    <section class="cms-panel" *ngIf="activeLanguage() === 'sr'">
+      <header>
+        <div>
+          <span>1</span>
+          <h2>Osnovni podaci</h2>
+        </div>
+      </header>
+      <div class="cms-grid">
+        <label>Naziv *<input formControlName="title" /></label
+        ><label>Slug<input formControlName="slug" /></label
+        ><label>Inventarski broj *<input formControlName="inventoryNumber" /></label
+        ><label
+          >Stanje<select formControlName="condition">
+            <option *ngFor="let option of conditions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select></label
+        ><label *ngIf="isCostume"
+          >Pol<select formControlName="gender">
+            <option value="female">Ženski</option>
+            <option value="male">Muški</option>
+            <option value="unisex">Uniseks</option>
+            <option value="children">Dečji</option>
+            <option value="other">Ostalo</option>
+          </select></label
+        ><label *ngIf="isCostume">Epoha<input formControlName="epoch" /></label
+        ><label *ngIf="isCostume">Veličina<input formControlName="size" /></label
+        ><label *ngIf="isCostume">Boja<input formControlName="color" /></label
+        ><label *ngIf="!isCostume"
+          >Vrsta<select formControlName="itemType">
+            <option value="prop">Rekvizit</option>
+            <option value="scenography">Scenografija</option>
+          </select></label
+        ><label *ngIf="!isCostume">Kategorija<input formControlName="category" /></label
+        ><label *ngIf="!isCostume">Epoha / stil<input formControlName="epochOrStyle" /></label
+        ><label>Materijal<input formControlName="material" /></label
+        ><label *ngIf="!isCostume"
+          >Težina (kg)<input type="number" min="0" formControlName="weight" /></label
+        ><label class="wide" *ngIf="isCostume"
+          >Kratak opis<textarea rows="3" formControlName="shortDescription"></textarea></label
+        ><label class="wide"
+          >Napomena o dostupnosti<textarea rows="3" formControlName="availabilityNote"></textarea>
+        </label>
+      </div>
+      <div class="cms-grid" *ngIf="!isCostume">
+        <label>Širina (cm)<input type="number" min="0" formControlName="widthCm" /></label
+        ><label>Visina (cm)<input type="number" min="0" formControlName="heightCm" /></label
+        ><label>Dubina (cm)<input type="number" min="0" formControlName="depthCm" /></label
+        ><label>Opis dimenzija<input formControlName="dimensionNote" /></label>
+      </div>
+    </section>
+    <section class="cms-panel">
+      <header>
+        <div>
+          <span>2</span>
+          <h2>{{ activeLanguage() === 'sr' ? 'Opis i mediji' : 'Deljeni mediji' }}</h2>
+        </div>
+      </header>
+      <app-rich-text-editor
+        *ngIf="activeLanguage() === 'sr'"
+        formControlName="description"
+      /><app-media-picker
+        label="Glavna slika"
+        mode="single"
+        mediaKind="image"
+        [value]="mainImage()"
+        (selectionChange)="updateImage($event)"
+      /><app-structured-gallery-editor formControlName="galleryItems" [language]="activeLanguage()" />
+    </section>
+    <section class="cms-panel">
+      <header>
+        <div>
+          <span>3</span>
+          <h2>Povezivanje i objavljivanje</h2>
+        </div>
+      </header>
+      <div class="cms-grid">
+        <label
+          >Povezana predstava<select formControlName="relatedProduction">
+            <option value="">Bez povezane predstave</option>
+            <option
+              *ngFor="let production of productions()"
+              [value]="production.id || production._id"
+            >
+              {{ production.title }}
+            </option>
+          </select></label
+        ><label
+          >Status<select formControlName="status">
+            <option value="draft">Nacrt</option>
+            <option value="published">Objavljeno</option>
+            <option value="archived">Arhivirano</option>
+          </select></label
+        ><label>Datum objave<input type="datetime-local" formControlName="publishedAt" /></label
+        ><label
+          >Redosled prikaza<input type="number" min="0" formControlName="displayOrder" /></label
+        ><label class="check"
+          ><input type="checkbox" formControlName="isFeatured" />Izdvojeno</label
+        >
+      </div>
+    </section>
+    <section class="cms-panel" *ngIf="activeLanguage() === 'sr'">
+      <header>
+        <div>
+          <span>4</span>
+          <h2>SEO</h2>
+        </div>
+      </header>
+      <app-seo-fields [group]="seo" />
+    </section>
+    <footer class="cms-action-bar">
+      <a routerLink="/admin/fundus">Odustani</a
+      ><button type="button" class="secondary" (click)="preview()" [disabled]="!itemId()">
+        Pregled ({{ activeLanguage().toUpperCase() }})</button
+      ><button type="button" class="secondary" (click)="save('draft')" [disabled]="saving()">
+        Sačuvaj nacrt</button
+      ><button type="button" class="primary" (click)="save('published')" [disabled]="saving()">
+        {{ saving() ? 'Čuvanje...' : 'Objavi' }}
+      </button>
+    </footer>
+  </form>
+</div>

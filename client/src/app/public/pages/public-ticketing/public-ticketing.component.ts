@@ -2,12 +2,15 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, Subscription } from 'rxjs';
 
 import { PublicEvent, PublicOrder, PublicSeat } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
 import { PublicSeatMapComponent } from '../../components/public-seat-map/public-seat-map.component';
 import { PublicTicketEventCardComponent } from '../../components/public-ticket-event-card/public-ticket-event-card.component';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 type TicketStep = 1 | 2 | 3 | 4;
 type OrderAction = 'reserve' | 'purchase';
@@ -21,15 +24,19 @@ type OrderAction = 'reserve' | 'purchase';
     RouterLink,
     PublicSeatMapComponent,
     PublicTicketEventCardComponent,
+    PublicTranslatePipe,
   ],
   templateUrl: './public-ticketing.component.html',
   styleUrl: './public-ticketing.component.scss',
 })
 export class PublicTicketingComponent implements OnInit, OnDestroy {
   readonly publicApi = inject(PublicApiService);
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private timerId: number | null = null;
+  private routeSubscription?: Subscription;
 
   readonly eventId = signal('');
   readonly event = signal<PublicEvent | null>(null);
@@ -59,11 +66,16 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.eventId.set(this.route.snapshot.paramMap.get('eventId') || '');
-    this.loadSeats(true, true);
+    this.routeSubscription = this.route.paramMap.subscribe((params) => {
+      const eventId = params.get('eventId') || '';
+      if (!eventId || eventId === this.eventId()) return;
+      this.resetForEvent(eventId);
+      this.loadSeats(true, true);
+    });
   }
 
   ngOnDestroy(): void {
+    this.routeSubscription?.unsubscribe();
     this.stopHoldTimer();
   }
 
@@ -81,7 +93,7 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
           if (restoreLocks) this.restoreCheckout();
         },
         error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Sedišta trenutno nisu dostupna.');
+          this.errorMessage.set(error?.error?.message || this.i18n.t('ticketing.seatsUnavailable'));
         },
       });
   }
@@ -124,7 +136,7 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
 
   beginCheckout(action: OrderAction): void {
     if (!this.selectedSeatIds().length) {
-      this.errorMessage.set('Izaberite bar jedno sedište.');
+      this.errorMessage.set(this.i18n.t('ticketing.selectAtLeastOne'));
       return;
     }
     this.desiredAction.set(action);
@@ -146,11 +158,11 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
           this.checkoutKey.set(response.checkoutKey || checkoutKey);
           this.startHoldTimer(response.expiresAt);
           this.step.set(2);
-          this.successMessage.set('Sedišta su privremeno sačuvana dok unosite podatke.');
+          this.successMessage.set(this.i18n.t('ticketing.holdCreated'));
           this.loadSeats();
         },
         error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Čuvanje sedišta nije uspelo.');
+          this.errorMessage.set(error?.error?.message || this.i18n.t('ticketing.holdFailed'));
           if (error?.error?.details?.refreshSeats) this.loadSeats();
         },
       });
@@ -160,11 +172,11 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
     this.clearMessages();
     if (this.customerForm.invalid) {
       this.customerForm.markAllAsTouched();
-      this.errorMessage.set('Popunite ime, prezime i email.');
+      this.errorMessage.set(this.i18n.t('ticketing.invalidForm'));
       return;
     }
     if (!this.lockedSeatIds().length) {
-      this.errorMessage.set('Čuvanje sedišta je isteklo. Izaberite sedišta ponovo.');
+      this.errorMessage.set(this.i18n.t('ticketing.holdExpired'));
       this.step.set(1);
       return;
     }
@@ -209,13 +221,13 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
           this.step.set(4);
           this.successMessage.set(
             response.action === 'purchase'
-              ? 'Kupovina je pokrenuta. Plaćanje još nije evidentirano.'
-              : 'Rezervacija je uspešno potvrđena.'
+              ? this.i18n.t('ticketing.purchaseStarted')
+              : this.i18n.t('ticketing.reservationConfirmed')
           );
           this.loadSeats();
         },
         error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Potvrda nije uspela.');
+          this.errorMessage.set(error?.error?.message || this.i18n.t('ticketing.confirmationFailed'));
           if (error?.error?.details?.refreshSeats) {
             this.lockedSeatIds.set([]);
             this.checkoutKey.set('');
@@ -258,11 +270,11 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
           this.holdExpiresAt.set('');
           this.stopHoldTimer();
           if (goToFirstStep) this.step.set(1);
-          this.successMessage.set('Sedišta su oslobođena.');
+          this.successMessage.set(this.i18n.t('ticketing.released'));
           this.loadSeats();
         },
         error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Oslobađanje sedišta nije uspelo.');
+          this.errorMessage.set(error?.error?.message || this.i18n.t('ticketing.releaseFailed'));
         },
       });
   }
@@ -270,7 +282,7 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
   holdExpiresLabel(): string {
     if (!this.holdExpiresAt()) return `${this.event()?.lockDurationMinutes || 15} min`;
     const remainingMs = new Date(this.holdExpiresAt()).getTime() - this.nowTick();
-    if (remainingMs <= 0) return 'isteklo';
+    if (remainingMs <= 0) return this.i18n.t('ticketing.expired');
     const totalSeconds = Math.ceil(remainingMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
@@ -283,15 +295,45 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
 
   completedStatusLabel(): string {
     return this.order()?.statusLabel
-      || (this.completedAction() === 'purchase' ? 'Kupovina u toku' : 'Rezervisano');
+      || (this.completedAction() === 'purchase'
+        ? this.i18n.t('ticketing.purchaseInProgress')
+        : this.i18n.t('ticketing.reserved'));
+  }
+
+  availableLabel(): string {
+    return this.i18n.t('ticketing.availableCount', { count: this.availabilityCount() });
+  }
+
+  selectedTicketsLabel(): string {
+    return this.i18n.t('ticketing.ticketsCount', { count: this.selectedSeats().length });
+  }
+
+  holdRemainingLabel(): string {
+    return this.i18n.t('ticketing.holdRemaining', { time: this.holdExpiresLabel() });
+  }
+
+  expiryLabel(value: string): string {
+    const date = new Intl.DateTimeFormat(this.locale.isEnglish() ? 'en-GB' : 'sr-Latn-RS', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Belgrade',
+    }).format(new Date(value));
+    return this.i18n.t('ticketing.expiresAt', { date });
+  }
+
+  emailSentLabel(email: string): string {
+    return this.i18n.t('ticketing.emailSent', { email });
   }
 
   fieldError(field: keyof typeof this.customerForm.controls): string {
     const control = this.customerForm.controls[field];
     if (!control.touched || !control.errors) return '';
-    if (control.errors['required']) return 'Polje je obavezno.';
-    if (control.errors['email']) return 'Unesite ispravnu email adresu.';
-    return 'Vrednost nije ispravna.';
+    if (control.errors['required']) return this.i18n.t('forms.required');
+    if (control.errors['email']) return this.i18n.t('forms.invalidEmail');
+    return this.i18n.t('ticketing.invalidValue');
   }
 
   private restoreCheckout(): void {
@@ -304,7 +346,7 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
         this.checkoutKey.set(response.checkoutKey || '');
         this.startHoldTimer(response.expiresAt);
         this.step.set(2);
-        this.successMessage.set('Nastavili ste prethodno započetu rezervaciju sedišta.');
+        this.successMessage.set(this.i18n.t('ticketing.resumed'));
       },
     });
   }
@@ -321,7 +363,7 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
         this.selectedSeatIds.set([]);
         this.checkoutKey.set('');
         this.step.set(1);
-        this.errorMessage.set('Vreme za potvrdu je isteklo. Izaberite sedišta ponovo.');
+        this.errorMessage.set(this.i18n.t('ticketing.timeExpired'));
         this.loadSeats();
       }
     }, 1000);
@@ -337,6 +379,22 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
   private clearMessages(): void {
     this.errorMessage.set('');
     this.successMessage.set('');
+  }
+
+  private resetForEvent(eventId: string): void {
+    this.stopHoldTimer();
+    this.eventId.set(eventId);
+    this.event.set(null);
+    this.seats.set([]);
+    this.selectedSeatIds.set([]);
+    this.lockedSeatIds.set([]);
+    this.checkoutKey.set('');
+    this.confirmedSeats.set([]);
+    this.order.set(null);
+    this.publicAccessToken.set('');
+    this.holdExpiresAt.set('');
+    this.step.set(1);
+    this.clearMessages();
   }
 
   private createRequestKey(): string {

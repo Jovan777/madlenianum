@@ -16,12 +16,15 @@
     "migrate:structured-content": "node src/migration/migrateStructuredContent.js",
     "migrate:phase4a-ticketing": "node src/migration/migratePhase4aTicketing.js",
     "migrate:phase5-orders": "node src/migration/migratePhase5Orders.js",
+    "migrate:localization": "node src/migration/migrateLocalization.js",
     "test:cms": "node src/tests/cms.smoke.js",
     "test:phase4a": "node src/tests/phase4a-ticketing.smoke.js",
     "test:phase4b": "node src/tests/phase4b-seat-map.smoke.js",
     "test:ticketing-flow": "node src/tests/ticketing-guest-flow.smoke.js",
     "test:phase5": "node src/tests/phase5-orders.smoke.js",
-    "test:phase6a": "node src/tests/phase6a-fundus-rental.smoke.js"
+    "test:phase6a": "node src/tests/phase6a-fundus-rental.smoke.js",
+    "test:localization": "node src/tests/localization.smoke.js",
+    "test:localization-data": "node src/tests/localization-content-audit.js --compact --strict"
   },
   "keywords": [],
   "author": "",

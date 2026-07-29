@@ -1,6 +1,6 @@
 import { GalleryItemInput, SeoFields } from './cms.models';
 import { MediaItem } from './media.models';
-import { PublicGalleryItem, PublicMedia, PublicProduction, PublicSeo, PublicVenue } from './public.models';
+import { PublicGalleryItem, PublicLocalizationMeta, PublicMedia, PublicProduction, PublicSeo, PublicVenue } from './public.models';
 
 export type ContentStatus = 'draft' | 'published' | 'archived';
 export type CostumeGender = 'female' | 'male' | 'unisex' | 'children' | 'other';
@@ -30,7 +30,7 @@ export interface Phase6AItemResponse<T> {
   message?: string;
 }
 
-export interface FundusBaseItem {
+export interface FundusBaseItem extends PublicLocalizationMeta {
   id: string;
   title: string;
   slug: string;
@@ -69,7 +69,7 @@ export interface PropScenographyItem extends FundusBaseItem {
   weight?: number;
 }
 
-export interface RentalSpace {
+export interface RentalSpace extends PublicLocalizationMeta {
   id: string;
   title: string;
   slug: string;
@@ -166,6 +166,7 @@ export interface RentalInquiryPayload {
   approximateGuestCount?: number | null;
   note?: string;
   idempotencyKey: string;
+  locale?: 'sr' | 'en';
 }
 
 export interface EventPlanningInquiryPayload {
@@ -180,6 +181,7 @@ export interface EventPlanningInquiryPayload {
   eventType?: string;
   note?: string;
   idempotencyKey: string;
+  locale?: 'sr' | 'en';
 }
 
 export interface FundusAdminPayload {

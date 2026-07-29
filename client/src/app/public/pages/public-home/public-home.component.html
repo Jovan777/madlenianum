@@ -1,11 +1,11 @@
 <div class="home-loading" *ngIf="loading()" role="status" aria-live="polite">
-  <span>Učitavanje programa...</span>
+  <span>{{ 'home.loadingProgramme' | publicTranslate }}</span>
 </div>
 
 <section class="home-error" *ngIf="!loading() && error()" role="alert">
-  <h1>Početna strana nije učitana</h1>
+  <h1>{{ 'home.loadFailed' | publicTranslate }}</h1>
   <p>{{ error() }}</p>
-  <button type="button" (click)="load()">Pokušaj ponovo</button>
+  <button type="button" (click)="load()">{{ 'common.retry' | publicTranslate }}</button>
 </section>
 
 <main class="home" *ngIf="!loading() && !error() && config() as homeConfig">
@@ -18,25 +18,25 @@
   <app-public-upcoming-events
     *ngIf="homeConfig.upcomingEvents.enabled"
     [events]="events()"
-    [heading]="homeConfig.upcomingEvents.heading || 'Predstojeći događaji'"
+    [heading]="homeConfig.upcomingEvents.heading || ('home.upcoming' | publicTranslate)"
   />
 
   <app-public-repertoire-section
     *ngIf="homeConfig.repertoireProductions.enabled"
     [productions]="repertoireProductions()"
-    [heading]="homeConfig.repertoireProductions.heading || 'Šta je na repertoaru'"
+    [heading]="homeConfig.repertoireProductions.heading || ('home.repertoire' | publicTranslate)"
   />
 
   <app-public-featured-section
     *ngIf="homeConfig.featuredProductions.enabled"
     [productions]="featuredProductions()"
-    [heading]="homeConfig.featuredProductions.heading || 'Ne propustite'"
+    [heading]="homeConfig.featuredProductions.heading || ('home.featured' | publicTranslate)"
   />
 
   <app-public-news-section
     *ngIf="homeConfig.featuredNews.enabled"
     [items]="news()"
-    [heading]="homeConfig.featuredNews.heading || 'Iza kulisa'"
+    [heading]="homeConfig.featuredNews.heading || ('home.behindScenes' | publicTranslate)"
   />
 
   <app-public-institutional-teaser
@@ -46,6 +46,6 @@
 
   <app-public-cta-cards
     [cards]="homeConfig.ctaCards"
-    [heading]="homeConfig.ctaCardsHeading || 'Partnerstvo'"
+    [heading]="homeConfig.ctaCardsHeading || ('home.partnership' | publicTranslate)"
   />
 </main>

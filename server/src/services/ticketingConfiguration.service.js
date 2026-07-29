@@ -118,6 +118,7 @@ const normalizeEventPayload = (payload = {}, existingEvent = null) => {
     "lockDurationMinutes",
     "basePrice",
     "notes",
+    "translations",
   ];
 
   directFields.forEach((field) => {

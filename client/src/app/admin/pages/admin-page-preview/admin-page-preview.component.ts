@@ -1,2 +1,45 @@
-import { CommonModule } from '@angular/common';import { Component,OnInit,inject,signal } from '@angular/core';import { ActivatedRoute,RouterLink } from '@angular/router';import { CmsAdminService } from '../../../core/services/cms-admin.service';import { MediaUrlService } from '../../../core/services/media-url.service';
-@Component({selector:'app-admin-page-preview',standalone:true,imports:[CommonModule,RouterLink],templateUrl:'./admin-page-preview.component.html',styleUrl:'./admin-page-preview.component.scss'})export class AdminPagePreviewComponent implements OnInit{private readonly route=inject(ActivatedRoute);private readonly cms=inject(CmsAdminService);readonly media=inject(MediaUrlService);readonly item=signal<Record<string,unknown>|null>(null);readonly loading=signal(true);readonly error=signal('');readonly pageType=signal<'about'|'contact'>('about');ngOnInit():void{this.pageType.set(this.route.snapshot.data['pageType']==='contact'?'contact':'about');this.cms.previewStructuredPage<Record<string,unknown>>(this.pageType()).subscribe({next:(response)=>this.item.set(response.item),error:(error)=>this.error.set(error?.error?.message||'Pregled nije dostupan.'),complete:()=>this.loading.set(false)});}sections():Record<string,unknown>[]{const value=this.item()?.['sections'];return Array.isArray(value)?value as Record<string,unknown>[]:[];}image(value:unknown):string{return this.media.resolve(value);}editLink():string{return this.pageType()==='about'?'/admin/pages/about':'/admin/pages/contact';}}
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { CmsAdminService } from '../../../core/services/cms-admin.service';
+import { MediaUrlService } from '../../../core/services/media-url.service';
+
+@Component({
+  selector: 'app-admin-page-preview',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './admin-page-preview.component.html',
+  styleUrl: './admin-page-preview.component.scss',
+})
+export class AdminPagePreviewComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly cms = inject(CmsAdminService);
+  readonly media = inject(MediaUrlService);
+  readonly item = signal<Record<string, unknown> | null>(null);
+  readonly loading = signal(true);
+  readonly error = signal('');
+  readonly pageType = signal<'about' | 'contact'>('about');
+
+  ngOnInit(): void {
+    this.pageType.set(this.route.snapshot.data['pageType'] === 'contact' ? 'contact' : 'about');
+    const language = this.route.snapshot.queryParamMap.get('lang') === 'en' ? 'en' : 'sr';
+    this.cms.previewStructuredPage<Record<string, unknown>>(this.pageType(), language).subscribe({
+      next: (response) => this.item.set(response.item),
+      error: (error) => this.error.set(error?.error?.message || 'Pregled nije dostupan.'),
+      complete: () => this.loading.set(false),
+    });
+  }
+
+  sections(): Record<string, unknown>[] {
+    const value = this.item()?.['sections'];
+    return Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
+  }
+
+  image(value: unknown): string {
+    return this.media.resolve(value);
+  }
+
+  editLink(): string {
+    return this.pageType() === 'about' ? '/admin/pages/about' : '/admin/pages/contact';
+  }
+}

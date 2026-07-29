@@ -23,10 +23,13 @@ const NEWS_CATEGORIES = [
 
 const translationSchema = new mongoose.Schema(
   {
+    slug: { type: String, lowercase: true, trim: true },
     title: String,
     subtitle: String,
     excerpt: String,
     body: String,
+    categoryLabel: String,
+    attachmentLabel: String,
     seoTitle: String,
     seoDescription: String,
   },
@@ -59,6 +62,10 @@ const newsSchema = new mongoose.Schema(
 newsSchema.pre("validate", function () {
   if (!this.slug && this.title) this.slug = slugify(this.title);
   if (this.isModified("slug") && this.slug) this.slug = slugify(this.slug);
+  if (this.translations?.en) {
+    this.translations.en.slug = this.translations.en.slug ? slugify(this.translations.en.slug) : undefined;
+    this.translations.en.body = sanitizeRichText(this.translations.en.body);
+  }
   this.body = sanitizeRichText(this.body);
 
   const galleryIds = (this.galleryItems || []).map((item) => String(item.media));
@@ -70,6 +77,7 @@ newsSchema.pre("validate", function () {
 newsSchema.index({ status: 1, publishedAt: -1 });
 newsSchema.index({ category: 1, status: 1, publishedAt: -1 });
 newsSchema.index({ isFeatured: 1, status: 1, publishedAt: -1 });
+newsSchema.index({ "translations.en.slug": 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("News", newsSchema, "news");
 module.exports.NEWS_CATEGORIES = NEWS_CATEGORIES;

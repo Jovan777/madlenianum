@@ -1,47 +1,47 @@
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Madlenianum početna strana">
+    <a class="brand" [routerLink]="homeRoute()" (click)="closeMenu()" [attr.aria-label]="i18n.t('footer.homeLabel')">
       <img [src]="logo()" [alt]="settings()?.siteName || 'Madlenianum'" />
     </a>
 
-    <nav class="desktop-nav" aria-label="Glavna navigacija">
-      <button class="nav-trigger" type="button" aria-haspopup="true" [attr.aria-expanded]="openDesktopMenu() === 'repertoire'" [class.active]="repertoireRouteIsActive() || openDesktopMenu() === 'repertoire'" (click)="toggleDesktopMenu('repertoire')">Repertoar<span class="chevron" aria-hidden="true"></span></button>
-      <button class="nav-trigger" type="button" aria-haspopup="true" [attr.aria-expanded]="openDesktopMenu() === 'partners'" [class.active]="openDesktopMenu() === 'partners'" (click)="toggleDesktopMenu('partners')">Partnerstvo<span class="chevron" aria-hidden="true"></span></button>
-      <button class="nav-trigger" type="button" aria-haspopup="true" [attr.aria-expanded]="openDesktopMenu() === 'rental'" [class.active]="rentalRouteIsActive() || openDesktopMenu() === 'rental'" (click)="toggleDesktopMenu('rental')">Fundusi<span class="chevron" aria-hidden="true"></span></button>
-      <a routerLink="/vesti" routerLinkActive="active">Vesti</a>
-      <a routerLink="/strana/o-nama" routerLinkActive="active">O Madlenianumu</a>
-      <a routerLink="/strana/kontakt" routerLinkActive="active">Kontakt</a>
+    <nav class="desktop-nav" [attr.aria-label]="locale.isEnglish() ? 'Main navigation' : 'Glavna navigacija'">
+      <button class="nav-trigger" type="button" aria-haspopup="true" [attr.aria-expanded]="openDesktopMenu() === 'repertoire'" [class.active]="repertoireRouteIsActive() || openDesktopMenu() === 'repertoire'" (click)="toggleDesktopMenu('repertoire')">{{ i18n.t('nav.repertoire') }}<span class="chevron" aria-hidden="true"></span></button>
+      <button class="nav-trigger" type="button" aria-haspopup="true" [attr.aria-expanded]="openDesktopMenu() === 'partners'" [class.active]="openDesktopMenu() === 'partners'" (click)="toggleDesktopMenu('partners')">{{ i18n.t('nav.partnership') }}<span class="chevron" aria-hidden="true"></span></button>
+      <button class="nav-trigger" type="button" aria-haspopup="true" [attr.aria-expanded]="openDesktopMenu() === 'rental'" [class.active]="rentalRouteIsActive() || openDesktopMenu() === 'rental'" (click)="toggleDesktopMenu('rental')">{{ i18n.t('nav.fundus') }}<span class="chevron" aria-hidden="true"></span></button>
+      <a [routerLink]="path('/vesti')" routerLinkActive="active">{{ i18n.t('nav.news') }}</a>
+      <a [routerLink]="aboutRoute()" routerLinkActive="active">{{ i18n.t('nav.about') }}</a>
+      <a [routerLink]="contactRoute()" routerLinkActive="active">{{ i18n.t('nav.contact') }}</a>
 
       <div class="language-selector">
-        <button class="language-trigger" type="button" aria-label="Izbor jezika" aria-haspopup="true" [attr.aria-expanded]="languageMenuOpen()" (click)="toggleLanguageMenu()">
-          <img src="/madlenianum/about/Serbia.png" alt="Srpski" /><span class="language-code">SR</span><span class="chevron" aria-hidden="true"></span>
+        <button class="language-trigger" type="button" [attr.aria-label]="locale.isEnglish() ? 'Choose language' : 'Izbor jezika'" aria-haspopup="true" [attr.aria-expanded]="languageMenuOpen()" (click)="toggleLanguageMenu()">
+          <img [src]="locale.isEnglish() ? '/madlenianum/about/United States.png' : '/madlenianum/about/Serbia.png'" alt="" /><span class="language-code">{{ locale.isEnglish() ? 'EN' : 'SR' }}</span><span class="chevron" aria-hidden="true"></span>
         </button>
         <div class="language-menu" [class.is-open]="languageMenuOpen()" [attr.aria-hidden]="!languageMenuOpen()" [attr.inert]="languageMenuOpen() ? null : ''">
-          <button type="button" class="selected" title="Srpski"><img src="/madlenianum/about/Serbia.png" alt="" />Srpski</button>
-          <button type="button" title="English"><img src="/madlenianum/about/United States.png" alt="" />English</button>
+          <button type="button" [class.selected]="!locale.isEnglish()" (click)="switchLanguage('sr')"><img src="/madlenianum/about/Serbia.png" alt="" />{{ i18n.t('language.serbian') }}</button>
+          <button type="button" [class.selected]="locale.isEnglish()" (click)="switchLanguage('en')"><img src="/madlenianum/about/United States.png" alt="" />{{ i18n.t('language.english') }}</button>
         </div>
       </div>
     </nav>
 
-    <button class="menu-button" type="button" [attr.aria-label]="menuOpen() ? 'Zatvori navigaciju' : 'Otvori navigaciju'" aria-controls="mobile-navigation" [attr.aria-expanded]="menuOpen()" [class.open]="menuOpen()" (click)="toggleMenu()"><span></span><span></span><span></span></button>
+    <button class="menu-button" type="button" [attr.aria-label]="menuOpen() ? (locale.isEnglish() ? 'Close navigation' : 'Zatvori navigaciju') : (locale.isEnglish() ? 'Open navigation' : 'Otvori navigaciju')" aria-controls="mobile-navigation" [attr.aria-expanded]="menuOpen()" [class.open]="menuOpen()" (click)="toggleMenu()"><span></span><span></span><span></span></button>
   </div>
 </header>
 
-<nav class="mega-menu repertoire-menu" [class.is-open]="openDesktopMenu() === 'repertoire'" [attr.aria-hidden]="openDesktopMenu() !== 'repertoire'" [attr.inert]="openDesktopMenu() === 'repertoire' ? null : ''" aria-label="Repertoar">
+<nav class="mega-menu repertoire-menu" [class.is-open]="openDesktopMenu() === 'repertoire'" [attr.aria-hidden]="openDesktopMenu() !== 'repertoire'" [attr.inert]="openDesktopMenu() === 'repertoire' ? null : ''" [attr.aria-label]="i18n.t('nav.repertoire')">
   <div class="mega-menu-inner">
-    <h2>Aktuelno</h2>
+    <h2>{{ i18n.t('repertoire.current') }}</h2>
     <div class="repertoire-grid">
-      <a class="repertoire-card" *ngFor="let item of repertoireItems" [routerLink]="item.path" [queryParams]="item.queryParams || null" (click)="closeMenu()">
-        <span class="repertoire-image"><img [src]="menuImage(item)" alt="" aria-hidden="true" /></span><span>{{ item.label }}</span>
+      <a class="repertoire-card" *ngFor="let item of repertoireItems; let index = index" [routerLink]="path(item.path)" [queryParams]="item.queryParams || null" (click)="closeMenu()">
+        <span class="repertoire-image"><img [src]="menuImage(item)" alt="" aria-hidden="true" /></span><span>{{ repertoireItemLabel(index) }}</span>
       </a>
-      <div class="repertoire-secondary"><a routerLink="/predstave" (click)="closeMenu()">Sve predstave</a><a routerLink="/repertoar" (click)="closeMenu()">Predstojeći događaji</a></div>
+      <div class="repertoire-secondary"><a [routerLink]="path('/predstave')" (click)="closeMenu()">{{ i18n.t('nav.allProductions') }}</a><a [routerLink]="path('/repertoar')" (click)="closeMenu()">{{ i18n.t('nav.upcomingEvents') }}</a></div>
     </div>
   </div>
 </nav>
 
 <nav class="mega-menu partnership-menu" [class.is-open]="openDesktopMenu() === 'partners'" [attr.aria-hidden]="openDesktopMenu() !== 'partners'" [attr.inert]="openDesktopMenu() === 'partners' ? null : ''" aria-label="Partnerstvo">
   <div class="mega-menu-inner compact-menu-inner">
-    <div class="compact-menu-heading"><div><p>Partnerstvo</p><h2>Zepter svet</h2></div><span>Kompanije, institucije i brendovi povezani zajedničkom vizijom.</span></div>
+    <div class="compact-menu-heading"><div><p>{{ i18n.t('nav.partnership') }}</p><h2>{{ i18n.t('nav.zepterWorld') }}</h2></div><span>{{ i18n.t('nav.partnershipDescription') }}</span></div>
     <div class="partner-grid">
       <a *ngFor="let item of partnerItems" [href]="item.url" target="_blank" rel="noreferrer" [attr.aria-label]="item.label" (click)="closeMenu()"><img [src]="item.image" [alt]="item.label" /><span>{{ item.label }}</span></a>
     </div>
@@ -50,11 +50,11 @@
 
 <nav class="mega-menu rental-menu" [class.is-open]="openDesktopMenu() === 'rental'" [attr.aria-hidden]="openDesktopMenu() !== 'rental'" [attr.inert]="openDesktopMenu() === 'rental' ? null : ''" aria-label="Fundusi i zakup">
   <div class="mega-menu-inner compact-menu-inner rental-inner">
-    <div class="compact-menu-heading"><div><p>Istražite</p><h2>Fundusi i prostori</h2></div></div>
+    <div class="compact-menu-heading"><div><p>{{ i18n.t('nav.explore') }}</p><h2>{{ i18n.t('nav.collectionsVenues') }}</h2></div></div>
     <div class="rental-grid">
-      <a *ngFor="let item of rentalItems" [routerLink]="item.path" (click)="closeMenu()">
+      <a *ngFor="let item of rentalItems; let index = index" [routerLink]="path(item.path)" (click)="closeMenu()">
         <figure><img [src]="item.image" alt="" aria-hidden="true" /></figure>
-        <div><h3>{{ item.label }}</h3><p>{{ item.description }}</p><span>Otvorite stranicu <b aria-hidden="true">→</b></span></div>
+        <div><h3>{{ rentalItemLabel(index) }}</h3><p>{{ rentalItemDescription(index) }}</p><span>{{ locale.isEnglish() ? 'Open page' : 'Otvorite stranicu' }} <b aria-hidden="true">→</b></span></div>
       </a>
     </div>
   </div>
@@ -62,9 +62,9 @@
 
 <div class="menu-backdrop" [class.is-open]="menuOpen() || openDesktopMenu()" aria-hidden="true" (click)="closeMenu()"></div>
 
-<nav id="mobile-navigation" class="mobile-panel" [class.is-open]="menuOpen()" [attr.aria-hidden]="!menuOpen()" [attr.inert]="menuOpen() ? null : ''" aria-label="Mobilna navigacija">
-  <div class="mobile-main-links"><a routerLink="/repertoar" routerLinkActive="active" (click)="closeMenu()">Repertoar</a><a routerLink="/vesti" routerLinkActive="active" (click)="closeMenu()">Vesti</a><a routerLink="/strana/o-nama" routerLinkActive="active" (click)="closeMenu()">O Madlenianumu</a><a routerLink="/strana/kontakt" routerLinkActive="active" (click)="closeMenu()">Kontakt</a></div>
-  <section><h2>Fundusi i zakup</h2><a *ngFor="let item of rentalItems" [routerLink]="item.path" (click)="closeMenu()">{{ item.label }}</a></section>
-  <section><h2>Partnerstvo</h2><div class="mobile-partners"><a *ngFor="let item of partnerItems" [href]="item.url" target="_blank" rel="noreferrer" [attr.aria-label]="item.label"><img [src]="item.image" [alt]="item.label" /></a></div></section>
-  <div class="mobile-languages"><span>Jezik</span><button type="button"><img src="/madlenianum/about/Serbia.png" alt="" />Srpski</button><button type="button"><img src="/madlenianum/about/United States.png" alt="" />English</button></div>
+<nav id="mobile-navigation" class="mobile-panel" [class.is-open]="menuOpen()" [attr.aria-hidden]="!menuOpen()" [attr.inert]="menuOpen() ? null : ''" [attr.aria-label]="locale.isEnglish() ? 'Mobile navigation' : 'Mobilna navigacija'">
+  <div class="mobile-main-links"><a [routerLink]="path('/repertoar')" routerLinkActive="active" (click)="closeMenu()">{{ i18n.t('nav.repertoire') }}</a><a [routerLink]="path('/vesti')" routerLinkActive="active" (click)="closeMenu()">{{ i18n.t('nav.news') }}</a><a [routerLink]="aboutRoute()" routerLinkActive="active" (click)="closeMenu()">{{ i18n.t('nav.about') }}</a><a [routerLink]="contactRoute()" routerLinkActive="active" (click)="closeMenu()">{{ i18n.t('nav.contact') }}</a></div>
+  <section><h2>{{ locale.isEnglish() ? 'Collections and rental' : 'Fundusi i zakup' }}</h2><a *ngFor="let item of rentalItems; let index = index" [routerLink]="path(item.path)" (click)="closeMenu()">{{ rentalItemLabel(index) }}</a></section>
+  <section><h2>{{ i18n.t('nav.partnership') }}</h2><div class="mobile-partners"><a *ngFor="let item of partnerItems" [href]="item.url" target="_blank" rel="noreferrer" [attr.aria-label]="item.label"><img [src]="item.image" [alt]="item.label" /></a></div></section>
+  <div class="mobile-languages"><span>{{ locale.isEnglish() ? 'Language' : 'Jezik' }}</span><button type="button" [class.selected]="!locale.isEnglish()" (click)="switchLanguage('sr')"><img src="/madlenianum/about/Serbia.png" alt="" />{{ i18n.t('language.serbian') }}</button><button type="button" [class.selected]="locale.isEnglish()" (click)="switchLanguage('en')"><img src="/madlenianum/about/United States.png" alt="" />{{ i18n.t('language.english') }}</button></div>
 </nav>

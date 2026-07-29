@@ -1,6 +1,6 @@
 <article>
-  <a class="poster" [routerLink]="['/predstave', production().slug]" [attr.aria-label]="'Detalji predstave ' + production().title">
+  <a class="poster" [routerLink]="locale.productionPath(production().slug)" [attr.aria-label]="i18n.t('repertoire.details') + ': ' + production().title">
     <img [src]="image()" [alt]="production().title" loading="lazy" />
   </a>
-  <h2><a [routerLink]="['/predstave', production().slug]">{{ production().title }}</a></h2>
+  <h2><a [routerLink]="locale.productionPath(production().slug)">{{ production().title }}</a></h2>
 </article>

@@ -5,6 +5,40 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const connectDB = require('../config/db');
 const RentalSpace = require('../models/RentalSpace');
+const seedEnglishContent = require('./seedEnglishContent');
+
+const meaningfulTranslationValues = (value = {}) => Object.fromEntries(
+  Object.entries(value || {}).filter(([, entry]) => (
+    Array.isArray(entry) ? entry.length > 0 : entry !== undefined && entry !== null && entry !== ''
+  ))
+);
+
+const seedTranslations = (existing, sr, en) => ({
+  sr: {
+    ...meaningfulTranslationValues(sr),
+    ...meaningfulTranslationValues(existing?.sr),
+  },
+  en: {
+    ...meaningfulTranslationValues(en),
+    ...meaningfulTranslationValues(existing?.en),
+  },
+});
+
+const translationFields = [
+  'slug',
+  'title',
+  'shortDescription',
+  'description',
+  'amenities',
+  'technicalEquipment',
+  'suitableEventTypes',
+  'accessibilityInfo',
+  'dressingRooms',
+  'cateringInfo',
+  'barInfo',
+  'internetInfo',
+  'avInfo',
+];
 
 const rentalSpaces = [
   {
@@ -116,11 +150,23 @@ const run = async () => {
     await connectDB();
 
     for (const space of rentalSpaces) {
+      const existing = await RentalSpace.findOne({ slug: space.slug })
+        .select('translations')
+        .lean();
+      const serbian = Object.fromEntries(
+        translationFields.map((field) => [field, space[field]])
+      );
+
       await RentalSpace.findOneAndUpdate(
         { slug: space.slug },
         {
           $set: {
             ...space,
+            translations: seedTranslations(
+              existing?.translations,
+              serbian,
+              seedEnglishContent.rentalSpaces[space.slug]
+            ),
             status: 'published',
             publishedAt: new Date(),
             seo: {

@@ -98,6 +98,19 @@ const PUBLIC_EXACT_ROUTES = new Set([
   '/porudzbina',
 ]);
 
+const PUBLIC_ENGLISH_EXACT_ROUTES = new Set([
+  '/en',
+  '/en/repertoire',
+  '/en/productions',
+  '/en/artists',
+  '/en/fundus',
+  '/en/venue-rental',
+  '/en/news',
+  '/en/about',
+  '/en/contact',
+  '/en/order',
+]);
+
 export function isExternalUrl(value: string): boolean {
   return /^https?:\/\//i.test(value.trim());
 }
@@ -109,11 +122,19 @@ export function isAvailablePublicDestination(value: string): boolean {
   }
 
   return PUBLIC_EXACT_ROUTES.has(url)
+    || PUBLIC_ENGLISH_EXACT_ROUTES.has(url)
     || /^\/predstave\/[^/]+$/.test(url)
     || /^\/umetnici\/[^/]+$/.test(url)
     || /^\/vesti\/[^/]+$/.test(url)
     || /^\/fundusi\/(kostimi|rekviziti-scenografija)\/[^/]+$/.test(url)
     || /^\/zakup-prostora\/[^/]+$/.test(url)
     || /^\/kupovina\/[^/]+$/.test(url)
-    || /^\/porudzbina\/[^/]+$/.test(url);
+    || /^\/porudzbina\/[^/]+$/.test(url)
+    || /^\/en\/productions\/[^/]+$/.test(url)
+    || /^\/en\/artists\/[^/]+$/.test(url)
+    || /^\/en\/news\/[^/]+$/.test(url)
+    || /^\/en\/fundus\/(costumes|props-scenography)\/[^/]+$/.test(url)
+    || /^\/en\/venue-rental\/[^/]+$/.test(url)
+    || /^\/en\/tickets\/[^/]+$/.test(url)
+    || /^\/en\/order\/[^/]+$/.test(url);
 }

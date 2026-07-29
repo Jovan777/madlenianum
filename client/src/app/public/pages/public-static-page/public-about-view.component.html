@@ -3,14 +3,14 @@
   <div class="about-hero__content">
     <p>Institucija kulture</p>
     <h1>O Madlenianumu</h1>
-    <span>Dobrodošli u Operu i teatar Madlenianum, mesto gde se klasična tradicija susreće sa modernim scenskim izrazom.</span>
+    <span>{{ 'about.welcome' | publicTranslate }}</span>
   </div>
 </section>
 
 <main class="about-page">
   <section class="about-intro about-container" data-motion="up">
     <div class="about-intro__copy" data-motion="left">
-      <p class="section-kicker">Naša kuća</p>
+      <p class="section-kicker">{{ 'about.house' | publicTranslate }}</p>
       <h2>{{ introHeading() }}</h2>
       <div [innerHTML]="introBody()"></div>
     </div>
@@ -19,7 +19,7 @@
 
   <section class="about-timeline about-container" data-motion="up">
     <p class="section-kicker">Istorija</p>
-    <h2>Naša priča</h2>
+    <h2>{{ 'about.story' | publicTranslate }}</h2>
     <div class="timeline-list" data-motion-stagger>
       <article class="timeline-item" *ngFor="let item of timeline(); let index = index" [class.timeline-item--right]="index % 2 === 1" data-motion-item>
         <div class="timeline-copy"><h3>{{ item.title }}</h3><p>{{ item.description }}</p></div>
@@ -31,32 +31,32 @@
   <section class="about-features about-container" data-motion="up">
     <div class="about-features__copy" data-motion="left">
       <p class="section-kicker">Na sceni</p>
-      <h2>Pozornica koja inspiriše umetnike</h2>
-      <article><h3>Akustično savršenstvo</h3><p>Velika sala ubraja se među najakustičnije prostore na Balkanu, pružajući čist i neizmenjen zvuk bez obzira na poziciju sedenja.</p></article>
-      <article><h3>Tehnologija poslednje generacije</h3><p>Napredni sistemi scenske rasvete, audio opreme, simultanog prevoda i digitalnog titlovanja podržavaju najzahtevnije produkcije.</p></article>
-      <article><h3>Umetnost u detaljima</h3><p>Enterijerom dominira čuveni luster u foajeu, delo arhitekte Boreka Šipeka, sastavljeno od hiljadu delova bojenog češkog stakla.</p></article>
+      <h2>{{ 'about.stageTitle' | publicTranslate }}</h2>
+      <article><h3>{{ 'about.acousticsTitle' | publicTranslate }}</h3><p>{{ 'about.acousticsText' | publicTranslate }}</p></article>
+      <article><h3>{{ 'about.technologyTitle' | publicTranslate }}</h3><p>{{ 'about.technologyText' | publicTranslate }}</p></article>
+      <article><h3>{{ 'about.detailsTitle' | publicTranslate }}</h3><p>{{ 'about.detailsText' | publicTranslate }}</p></article>
     </div>
     <div class="about-features__visual" data-motion="right" data-motion-card>
       <img [src]="featureImage()" alt="Velika scena Madlenianuma" />
-      <div><button type="button" aria-label="Prethodna fotografija" (click)="changeFeature(-1)">‹</button><button type="button" aria-label="Sledeća fotografija" (click)="changeFeature(1)">›</button></div>
+      <div><button type="button" [attr.aria-label]="'common.previousImage' | publicTranslate" (click)="changeFeature(-1)">‹</button><button type="button" [attr.aria-label]="'common.nextImage' | publicTranslate" (click)="changeFeature(1)">›</button></div>
     </div>
   </section>
 
   <section class="about-mission about-container" [style.background-image]="'url(' + aboutImages[3] + ')'" data-motion="scale">
     <div class="about-mission__overlay"></div>
     <div class="about-mission__content">
-      <p>Naša misija je jednostavna, ali ambiciozna: da beogradskoj i svetskoj publici pružimo umetnost bez kompromisa. Madlenianum raste kao zadužbina koja ugošćuje vrhunske domaće i strane umetnike i pomera granice produkcije.</p>
-      <a routerLink="/repertoar">Pogledajte repertoar <span aria-hidden="true">→</span></a>
+      <p>{{ 'about.mission' | publicTranslate }}</p>
+      <a [routerLink]="locale.equivalentPath('/repertoar', locale.current())">{{ 'about.viewRepertoire' | publicTranslate }} <span aria-hidden="true">→</span></a>
     </div>
   </section>
 
   <section class="about-founder about-container" data-motion="up">
-    <p class="section-kicker">Reč osnivača</p>
+    <p class="section-kicker">{{ 'about.founderEyebrow' | publicTranslate }}</p>
     <div class="about-founder__panel" data-motion="scale">
       <div>
-        <h2>Zadužbinarstvo kao dar društvu</h2>
-        <blockquote>„Umetnost je jedina stvar koja preživljava vekove i spaja ljude tamo gde politika i ekonomija zakazuju. Madlenianum je stvoren iz ljubavi prema stvaralaštvu i želje da Beograd dobije slobodnu, modernu i večnu scenu.“</blockquote>
-        <span>Madlena Zepter, osnivač</span>
+        <h2>{{ 'about.founderTitle' | publicTranslate }}</h2>
+        <blockquote>{{ 'about.founderQuote' | publicTranslate }}</blockquote>
+        <span>{{ 'about.founderCredit' | publicTranslate }}</span>
       </div>
       <img [src]="founderImage" alt="Madlena Zepter" />
     </div>
@@ -67,6 +67,6 @@
   <div class="about-gallery__inner">
     <p class="section-kicker">Iza scene</p>
     <h2>Galerija</h2>
-    <div class="about-gallery__grid" data-motion-stagger><figure *ngFor="let image of galleryImages()" data-motion-item data-motion-card><img [src]="image.src" [alt]="image.alt" /><figcaption *ngIf="image.credit">Foto: {{ image.credit }}</figcaption></figure></div>
+    <div class="about-gallery__grid" data-motion-stagger><figure *ngFor="let image of galleryImages()" data-motion-item data-motion-card><img [src]="image.src" [alt]="image.alt" /><figcaption *ngIf="image.credit">{{ 'production.photoCredit' | publicTranslate }}: {{ image.credit }}</figcaption></figure></div>
   </div>
 </section>

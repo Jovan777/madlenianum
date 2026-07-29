@@ -4,9 +4,11 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, Subject, finalize, takeUntil } from 'rxjs';
 
-import { COSTUME_GENDER_OPTIONS } from '../../../core/models/phase6a-labels';
+import { COSTUME_GENDER_OPTIONS, costumeGenderLabel } from '../../../core/models/phase6a-labels';
 import { CostumeItem, Phase6AListResponse, PropScenographyItem } from '../../../core/models/phase6a.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
+import { PublicLocaleService } from '../../../core/services/public-locale.service';
+import { PublicI18nService } from '../../i18n/public-i18n.service';
 
 type FundusTab = 'costumes' | 'props';
 
@@ -23,6 +25,8 @@ export class PublicFundusComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly destroy$ = new Subject<void>();
+  readonly locale = inject(PublicLocaleService);
+  readonly i18n = inject(PublicI18nService);
 
   readonly activeTab = signal<FundusTab>('costumes');
   readonly costumes = signal<CostumeItem[]>([]);
@@ -68,9 +72,30 @@ export class PublicFundusComponent implements OnInit, OnDestroy {
   heroImage(): string { return '/madlenianum/fundus_wallpaper.png'; }
   image(item: CostumeItem | PropScenographyItem): string { return this.api.mediaUrl(item.mainImage) || '/madlenianum/logo.png'; }
   visibleItems(): Array<CostumeItem | PropScenographyItem> { return this.activeTab() === 'costumes' ? this.costumes() : this.props(); }
-  detailRoute(item: CostumeItem | PropScenographyItem): string[] { return this.activeTab() === 'costumes' ? ['/fundusi/kostimi', item.slug] : ['/fundusi/rekviziti-scenografija', item.slug]; }
+  detailRoute(item: CostumeItem | PropScenographyItem): string[] {
+    const base = this.activeTab() === 'costumes'
+      ? this.locale.equivalentPath('/fundusi/kostimi', this.locale.current())
+      : this.locale.equivalentPath('/fundusi/rekviziti-scenografija', this.locale.current());
+    return [base, item.slug];
+  }
   trackById(_index: number, item: CostumeItem | PropScenographyItem): string { return item.id; }
   pageNumbers(): number[] { return Array.from({ length: this.totalPages() }, (_, index) => index + 1); }
+  genderLabel(value: string): string {
+    return value ? costumeGenderLabel(value, this.locale.current()) : this.i18n.t('fundus.gender');
+  }
+  epochLabel(value: string): string {
+    if (!this.locale.isEnglish()) return value;
+    const labels: Record<string, string> = {
+      Austrougarska: 'Austro-Hungarian',
+      '19. vek': '19th century',
+      '20. vek': '20th century',
+      'klasicni stil': 'Classical style',
+      'istorijski stil': 'Historical style',
+      savremeno: 'Contemporary',
+      razno: 'Various',
+    };
+    return labels[value] || value;
+  }
   hasActiveFilters(): boolean {
     const raw = this.filters.getRawValue();
     return this.activeTab() === 'costumes'
@@ -95,7 +120,7 @@ export class PublicFundusComponent implements OnInit, OnDestroy {
         }
         this.total.set(response.total); this.totalPages.set(response.totalPages || response.pagination?.totalPages || 1);
       },
-      error: (error) => this.error.set(error?.error?.message || 'Fundus trenutno nije dostupan.'),
+      error: (error) => this.error.set(error?.error?.message || this.i18n.t('fundus.error')),
     });
   }
 

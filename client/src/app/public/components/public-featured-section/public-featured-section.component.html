@@ -1,7 +1,7 @@
 <section class="featured-section" *ngIf="productions().length" data-motion="up">
   <header>
-    <h2>{{ heading() || 'Ne propustite' }}</h2>
-    <a routerLink="/predstave">Sve najave</a>
+    <h2>{{ heading() || i18n.t('home.featured') }}</h2>
+    <a [routerLink]="locale.equivalentPath('/predstave', locale.current())">{{ i18n.t('repertoire.allProductions') }}</a>
   </header>
 
   <div class="feature-layout" data-motion-stagger>
@@ -12,8 +12,8 @@
         <h3>{{ production.title }}</h3>
         <p>{{ production.shortDescription || production.subtitle }}</p>
         <div class="actions">
-          <a [routerLink]="['/predstave', production.slug]">ⓘ Saznaj više</a>
-          <button *ngIf="trailer(production) as video" type="button" (click)="activeVideo.set(video)">▷ Pogledaj trejler</button>
+          <a [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production.slug]">ⓘ {{ i18n.t('common.learnMore') }}</a>
+          <button *ngIf="trailer(production) as video" type="button" (click)="activeVideo.set(video)">▷ {{ i18n.t('common.watchTrailer') }}</button>
         </div>
       </div>
     </article>
@@ -26,8 +26,8 @@
           <h3>{{ production.title }}</h3>
           <p>{{ production.shortDescription || production.subtitle }}</p>
           <div class="actions">
-            <a [routerLink]="['/predstave', production.slug]">ⓘ Saznaj više</a>
-            <button *ngIf="trailer(production) as video" type="button" (click)="activeVideo.set(video)" [attr.aria-label]="'Pogledaj trejler za ' + production.title">▷</button>
+            <a [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production.slug]">ⓘ {{ i18n.t('common.learnMore') }}</a>
+            <button *ngIf="trailer(production) as video" type="button" (click)="activeVideo.set(video)" [attr.aria-label]="i18n.t('common.watchTrailer') + ': ' + production.title">▷</button>
           </div>
         </div>
       </article>

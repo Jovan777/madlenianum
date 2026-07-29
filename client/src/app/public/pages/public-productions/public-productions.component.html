@@ -1,17 +1,17 @@
-<div class="loading-state" *ngIf="isLoading()">Ucitavanje predstava...</div>
+<div class="loading-state" *ngIf="isLoading()">{{ i18n.t('common.loading') }}</div>
 <div class="error-state" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
 <section class="productions" *ngIf="!isLoading()">
   <header class="page-head" data-motion="up">
-    <p class="eyebrow">Repertoar</p>
-    <h1>Predstave</h1>
-    <p>Opera, drama, balet, koncerti i posebni scenski programi na jednom mestu.</p>
+    <p class="eyebrow">{{ i18n.t('productions.eyebrow') }}</p>
+    <h1>{{ i18n.t('productions.title') }}</h1>
+    <p>{{ locale.isEnglish() ? 'Opera, drama, ballet, concerts and special stage programmes in one place.' : 'Opera, drama, balet, koncerti i posebni scenski programi na jednom mestu.' }}</p>
   </header>
 
-  <nav class="type-row" aria-label="Filter predstava" *ngIf="productions().length" data-motion="fade">
+  <nav class="type-row" [attr.aria-label]="'productions.filters' | publicTranslate" *ngIf="productions().length" data-motion="fade">
     <a
       *ngFor="let type of types()"
-      [routerLink]="['/predstave']"
+      [routerLink]="[locale.equivalentPath('/predstave', locale.current())]"
       [queryParams]="{ type: type }"
       [class.active]="activeType() === type"
     >
@@ -20,14 +20,14 @@
   </nav>
 
   <div class="empty-state" *ngIf="filteredProductions().length === 0">
-    Nema objavljenih predstava za izabrani filter.
+    {{ i18n.t('productions.empty') }}
   </div>
 
   <div class="work-grid" *ngIf="filteredProductions().length > 0" data-motion-stagger>
     <a
       class="work-card"
       *ngFor="let production of filteredProductions(); let index = index"
-      [routerLink]="['/predstave', production.slug]"
+      [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production.slug]"
       data-motion-item
       data-motion-card
     >

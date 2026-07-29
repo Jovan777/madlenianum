@@ -5,13 +5,13 @@
         <h2>{{ group.title }}</h2>
         <ng-container *ngFor="let link of group.links">
           <a *ngIf="isExternal(link.url); else internalNavigation" [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
-          <ng-template #internalNavigation><a [routerLink]="link.url">{{ link.label }}</a></ng-template>
+          <ng-template #internalNavigation><a [routerLink]="internalPath(link.url)">{{ link.label }}</a></ng-template>
         </ng-container>
       </nav>
     </div>
 
     <div class="footer-brand">
-      <a routerLink="/" aria-label="Madlenianum početna strana"><img [src]="logo()" [alt]="settings()?.siteName || 'Madlenianum'" /></a>
+      <a [routerLink]="locale.isEnglish() ? '/en' : '/'" [attr.aria-label]="i18n.t('footer.homeLabel')"><img [src]="logo()" [alt]="settings()?.siteName || 'Madlenianum'" /></a>
       <p class="copyright">© {{ currentYear }} {{ settings()?.siteName || 'Madlenianum' }}</p>
       <p *ngIf="settings()?.shortDescription">{{ settings()?.shortDescription }}</p>
       <address *ngIf="settings()?.contact?.address">{{ settings()?.contact?.address }}</address>
@@ -31,7 +31,7 @@
   <nav class="legal" *ngIf="legalLinks().length" aria-label="Pravni linkovi">
     <ng-container *ngFor="let link of legalLinks()">
       <a *ngIf="isExternal(link.url); else internalLegal" [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
-      <ng-template #internalLegal><a [routerLink]="link.url">{{ link.label }}</a></ng-template>
+      <ng-template #internalLegal><a [routerLink]="internalPath(link.url)">{{ link.label }}</a></ng-template>
     </ng-container>
   </nav>
 </footer>

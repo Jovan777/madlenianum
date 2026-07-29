@@ -3,6 +3,7 @@ const Artist = require("../models/Artist");
 const Production = require("../models/Production");
 const { artistDto, productionSummaryDto } = require("../services/cmsDto.service");
 const { populateArtist, populateProduction } = require("../services/cmsPopulate.service");
+const { assignLocalizedPayload } = require("../services/localizedContent.service");
 const {
   applyAudit,
   applyPublishing,
@@ -51,7 +52,7 @@ const previewArtist = asyncHandler(async (req, res) => {
     success: true,
     preview: true,
     robots: "noindex,nofollow",
-    item: { ...artistDto(artist), relatedProductions: productions.map(productionSummaryDto) },
+    item: { ...artistDto(artist, req.query.lang), relatedProductions: productions.map((item) => productionSummaryDto(item, req.query.lang)) },
   });
 });
 
@@ -68,7 +69,7 @@ const updateArtist = asyncHandler(async (req, res) => {
   const artist = await Artist.findById(req.params.id);
   if (!artist) throw createHttpError(404, "Umetnik nije pronadjen.");
   const previousStatus = artist.status;
-  Object.assign(artist, req.body);
+  assignLocalizedPayload(artist, req.body);
   applyAudit(artist, req.admin);
   applyPublishing(artist, previousStatus);
   await artist.save();

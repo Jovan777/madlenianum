@@ -6,6 +6,10 @@ import { finalize } from 'rxjs';
 import { MediaItem, MediaUsage } from '../../../core/models/media.models';
 import { AdminMediaService } from '../../../core/services/admin-media.service';
 import { AdminNotificationService } from '../../../core/services/admin-notification.service';
+import {
+  AdminContentLanguage,
+  AdminLanguageTabsComponent,
+} from '../../components/admin-language-tabs.component';
 import { MediaGridComponent } from '../../components/media-grid/media-grid.component';
 import { MediaPreviewComponent } from '../../components/media-preview/media-preview.component';
 import { MediaUploadComponent } from '../../components/media-upload/media-upload.component';
@@ -24,6 +28,7 @@ interface DeleteConflict {
     MediaUploadComponent,
     MediaGridComponent,
     MediaPreviewComponent,
+    AdminLanguageTabsComponent,
   ],
   templateUrl: './admin-media-library.component.html',
   styleUrl: './admin-media-library.component.scss',
@@ -42,6 +47,7 @@ export class AdminMediaLibraryComponent implements OnInit {
   readonly previewItem = signal<MediaItem | null>(null);
   readonly editItem = signal<MediaItem | null>(null);
   readonly deleteConflict = signal<DeleteConflict | null>(null);
+  readonly activeLanguage = signal<AdminContentLanguage>('sr');
   searchText = '';
 
   readonly metadataForm = this.fb.nonNullable.group({
@@ -49,11 +55,19 @@ export class AdminMediaLibraryComponent implements OnInit {
     altText: [''],
     caption: [''],
     credit: [''],
+    translations: this.fb.nonNullable.group({
+      en: this.fb.nonNullable.group({
+        title: [''],
+        alt: [''],
+        caption: [''],
+        credit: [''],
+      }),
+    }),
   });
 
   constructor(
     private readonly mediaApi: AdminMediaService,
-    private readonly notifications: AdminNotificationService
+    private readonly notifications: AdminNotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -102,19 +116,35 @@ export class AdminMediaLibraryComponent implements OnInit {
   }
 
   uploaded(items: MediaItem[]): void {
-    this.notifications.success(`${items.length} media item${items.length === 1 ? '' : 's'} uploaded.`);
+    this.notifications.success(
+      `${items.length} media item${items.length === 1 ? '' : 's'} uploaded.`,
+    );
     this.page.set(1);
     this.loadMedia();
   }
 
   openEdit(item: MediaItem): void {
     this.editItem.set(item);
+    this.activeLanguage.set('sr');
     this.metadataForm.reset({
       title: item.title || '',
       altText: item.altText || item.alt || '',
       caption: item.caption || '',
       credit: item.credit || '',
+      translations: {
+        en: {
+          title: item.translations?.en?.title || '',
+          alt: item.translations?.en?.alt || '',
+          caption: item.translations?.en?.caption || '',
+          credit: item.translations?.en?.credit || '',
+        },
+      },
     });
+  }
+
+  englishComplete(): boolean {
+    const value = this.metadataForm.controls.translations.controls.en.getRawValue();
+    return Boolean(value.title.trim() && value.alt.trim());
   }
 
   saveMetadata(): void {
@@ -128,7 +158,7 @@ export class AdminMediaLibraryComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.items.update((items) =>
-            items.map((entry) => (entry._id === response.item._id ? response.item : entry))
+            items.map((entry) => (entry._id === response.item._id ? response.item : entry)),
           );
           this.editItem.set(null);
           this.notifications.success('Media metadata updated.');
@@ -153,7 +183,9 @@ export class AdminMediaLibraryComponent implements OnInit {
             return;
           }
 
-          if (window.confirm(`Delete "${item.title || item.originalName}"? This cannot be undone.`)) {
+          if (
+            window.confirm(`Delete "${item.title || item.originalName}"? This cannot be undone.`)
+          ) {
             this.deleteUnused(item);
           }
         },

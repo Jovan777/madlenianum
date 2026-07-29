@@ -7,13 +7,14 @@ import { CmsOption } from '../../../core/models/cms.models';
 import { MediaSelectionResult, MediaSelectionValue } from '../../../core/models/media.models';
 import { CmsAdminService } from '../../../core/services/cms-admin.service';
 import { AdminNotificationService } from '../../../core/services/admin-notification.service';
+import { AdminContentLanguage, AdminLanguageTabsComponent } from '../../components/admin-language-tabs.component';
 import { MediaPickerComponent } from '../../components/media-picker/media-picker.component';
 import { SearchPickerComponent } from '../../components/search-picker/search-picker.component';
 
 @Component({
   selector: 'app-admin-promo-slide-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, MediaPickerComponent, SearchPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AdminLanguageTabsComponent, MediaPickerComponent, SearchPickerComponent],
   templateUrl: './admin-promo-slide-form.component.html',
   styleUrl: './admin-promo-slide-form.component.scss',
 })
@@ -32,14 +33,18 @@ export class AdminPromoSlideFormComponent implements OnInit {
   readonly events = signal<CmsOption[]>([]);
   readonly statuses = signal<Array<{ value: string; label: string }>>([]);
   readonly languages = signal<Array<{ value: string; label: string }>>([]);
+  readonly activeLanguage = signal<AdminContentLanguage>('sr');
   readonly form = this.fb.group({
     title: ['', Validators.required], slug: [''], subtitle: [''], description: [''], image: [''],
     linkLabel: [''], linkUrl: [''], relatedProduction: [''], relatedEvent: [''],
-    activeFrom: [''], activeUntil: [''], language: ['sr'], status: ['draft'], publishedAt: [''],
+    activeFrom: [''], activeUntil: [''], language: ['und'], status: ['draft'], publishedAt: [''],
+    translations: this.fb.group({ en: this.fb.group({ title: [''], slug: [''], subtitle: [''], description: [''], linkLabel: [''] }) }),
   });
 
   ngOnInit(): void { const id = this.route.snapshot.paramMap.get('id'); this.itemId.set(id); this.loadOptions(); if (id) this.loadItem(id); }
   get isEditMode(): boolean { return Boolean(this.itemId()); }
+  get english() { return this.form.controls.translations.controls.en; }
+  englishComplete(): boolean { const value = this.english.getRawValue(); return Boolean(value.title?.trim() && value.slug?.trim()); }
   statusLabel(): string { return contentStatusLabel(this.form.controls.status.value || undefined); }
   hasUnsavedChanges(): boolean { return this.form.dirty && !this.saving(); }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent): void { if (this.hasUnsavedChanges()) event.preventDefault(); }
@@ -65,12 +70,13 @@ export class AdminPromoSlideFormComponent implements OnInit {
   }
 
   patch(item: Record<string, unknown>): void {
-    this.form.patchValue({ title: String(item['title'] || ''), slug: String(item['slug'] || ''), subtitle: String(item['subtitle'] || ''), description: String(item['description'] || ''), image: this.id(item['image']), linkLabel: String(item['linkLabel'] || ''), linkUrl: String(item['linkUrl'] || ''), relatedProduction: this.id(item['relatedProduction']), relatedEvent: this.id(item['relatedEvent']), activeFrom: this.dateTime(item['activeFrom']), activeUntil: this.dateTime(item['activeUntil']), language: String(item['language'] || 'sr'), status: String(item['status'] || 'draft'), publishedAt: this.dateTime(item['publishedAt']) });
+    const english = this.obj(this.obj(item['translations'])['en']);
+    this.form.patchValue({ title: String(item['title'] || ''), slug: String(item['slug'] || ''), subtitle: String(item['subtitle'] || ''), description: String(item['description'] || ''), image: this.id(item['image']), linkLabel: String(item['linkLabel'] || ''), linkUrl: String(item['linkUrl'] || ''), relatedProduction: this.id(item['relatedProduction']), relatedEvent: this.id(item['relatedEvent']), activeFrom: this.dateTime(item['activeFrom']), activeUntil: this.dateTime(item['activeUntil']), language: String(item['language'] || 'und'), status: String(item['status'] || 'draft'), publishedAt: this.dateTime(item['publishedAt']), translations: { en: { title: String(english['title'] || ''), slug: String(english['slug'] || ''), subtitle: String(english['subtitle'] || ''), description: String(english['description'] || ''), linkLabel: String(english['linkLabel'] || '') } } });
     this.imageSelection.set(item['image'] ? [item['image'] as MediaSelectionValue] : []); this.form.markAsPristine();
   }
 
   updateImage(selection: MediaSelectionResult): void { this.imageSelection.set(selection.items.length ? selection.items : selection.ids); this.form.controls.image.setValue(selection.ids[0] || ''); this.form.controls.image.markAsDirty(); }
-  preview(): void { if (this.itemId()) window.open(`/admin/promo-slides/${this.itemId()}/preview`, '_blank', 'noopener'); }
+  preview(): void { if (this.itemId()) window.open(`/admin/promo-slides/${this.itemId()}/preview?lang=${this.activeLanguage()}`, '_blank', 'noopener'); }
   save(status?: 'draft' | 'published'): void {
     if (status) this.form.controls.status.setValue(status);
     if (this.form.invalid || this.saving()) { this.form.markAllAsTouched(); this.error.set('Naslov je obavezan.'); return; }
@@ -78,7 +84,7 @@ export class AdminPromoSlideFormComponent implements OnInit {
     request.subscribe({ next: ({ item }) => { const savedId = this.id(item); this.notifications.success('Promo slajd je sacuvan.'); this.patch(item); if (!id && savedId) this.router.navigate(['/admin/promo-slides', savedId, 'edit'], { replaceUrl: true }); }, error: (error) => { const message = error?.error?.message || 'Cuvanje nije uspelo.'; this.error.set(message); this.notifications.error(message); }, complete: () => this.saving.set(false) });
   }
 
-  private payload(): Record<string, unknown> { const raw = this.form.getRawValue(); return { ...raw, image: raw.image || null, relatedProduction: raw.relatedProduction || null, relatedEvent: raw.relatedEvent || null, activeFrom: this.iso(raw.activeFrom), activeUntil: this.iso(raw.activeUntil), publishedAt: this.iso(raw.publishedAt) }; }
+  private payload(): Record<string, unknown> { const raw = this.form.getRawValue(); return { ...raw, language: 'und', image: raw.image || null, relatedProduction: raw.relatedProduction || null, relatedEvent: raw.relatedEvent || null, activeFrom: this.iso(raw.activeFrom), activeUntil: this.iso(raw.activeUntil), publishedAt: this.iso(raw.publishedAt) }; }
   private pairs(value: unknown): Array<{ value: string; label: string }> { return this.objects(value).map((item) => ({ value: String(item['value'] || ''), label: String(item['label'] || item['value'] || '') })); }
   private id(value: unknown): string { if (typeof value === 'string') return value; const item = this.obj(value); return String(item['_id'] || item['id'] || ''); }
   private obj(value: unknown): Record<string, unknown> { return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}; }

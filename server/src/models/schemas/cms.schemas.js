@@ -27,6 +27,14 @@ const seoSchema = new mongoose.Schema(
     keywords: [{ type: String, trim: true }],
     canonicalUrl: { type: String, trim: true, default: "", validate: optionalUrl },
     noIndex: { type: Boolean, default: false },
+    translations: {
+      en: {
+        title: { type: String, trim: true, default: "" },
+        description: { type: String, trim: true, default: "" },
+        keywords: [{ type: String, trim: true }],
+        canonicalUrl: { type: String, trim: true, default: "", validate: optionalUrl },
+      },
+    },
   },
   { _id: false }
 );
@@ -41,6 +49,13 @@ const galleryItemSchema = new mongoose.Schema(
     caption: { type: String, trim: true, default: "" },
     credit: { type: String, trim: true, default: "" },
     altText: { type: String, trim: true, default: "" },
+    translations: {
+      en: {
+        caption: { type: String, trim: true, default: "" },
+        credit: { type: String, trim: true, default: "" },
+        altText: { type: String, trim: true, default: "" },
+      },
+    },
     displayOrder: { type: Number, min: 0, default: 0 },
   },
   { _id: true }
@@ -58,6 +73,9 @@ const externalLinkSchema = new mongoose.Schema(
     type: { type: String, trim: true, default: "other" },
     displayOrder: { type: Number, min: 0, default: 0 },
     enabled: { type: Boolean, default: true },
+    translations: {
+      en: { label: { type: String, trim: true, default: "" } },
+    },
   },
   { _id: true }
 );

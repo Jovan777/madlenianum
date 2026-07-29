@@ -41,6 +41,7 @@ const statusHistorySchema = new mongoose.Schema(
 
 const rentalInquirySchema = new mongoose.Schema(
   {
+    locale: { type: String, enum: ["sr", "en"], default: "sr" },
     referenceNumber: { type: String, unique: true, trim: true },
     rentalSpace: {
       type: mongoose.Schema.Types.ObjectId,

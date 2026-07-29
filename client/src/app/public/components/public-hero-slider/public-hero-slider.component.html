@@ -1,4 +1,4 @@
-<section class="hero" tabindex="0" aria-roledescription="carousel" [attr.aria-label]="'Izdvojeno: ' + title()">
+<section class="hero" tabindex="0" aria-roledescription="carousel" [attr.aria-label]="title()">
   <ng-container *ngFor="let active of [activeSlide()]">
   <img
     *ngIf="imageUrl()"
@@ -17,7 +17,7 @@
       <ng-container *ngIf="event() as linkedEvent">
         <span>{{ display.dayMonth(linkedEvent.startsAt) }}</span>
         <span>{{ display.time(linkedEvent.startsAt) }}</span>
-        <strong *ngIf="linkedEvent.isPremiere || linkedEvent.badge === 'Premijera'">Premijera</strong>
+        <strong *ngIf="linkedEvent.isPremiere || linkedEvent.badge === 'Premijera'">{{ locale.isEnglish() ? 'Premiere' : 'Premijera' }}</strong>
       </ng-container>
     </div>
 
@@ -25,11 +25,11 @@
     <p>{{ description() }}</p>
 
     <div class="hero-actions">
-      <a *ngIf="production()?.slug" class="outline-action" [routerLink]="['/predstave', production()?.slug]">
-        <span aria-hidden="true">ⓘ</span> Saznaj više
+      <a *ngIf="production()?.slug" class="outline-action" [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production()?.slug]">
+        <span aria-hidden="true">ⓘ</span> {{ i18n.t('common.learnMore') }}
       </a>
-      <a *ngIf="sale()?.canPurchase && eventId()" class="ticket-action" [routerLink]="['/kupovina', eventId()]">
-        Kupi karte
+      <a *ngIf="sale()?.canPurchase && eventId()" class="ticket-action" [routerLink]="[locale.equivalentPath('/kupovina', locale.current()), eventId()]">
+        {{ i18n.t('repertoire.buyTickets') }}
       </a>
       <span class="sale-status" *ngIf="sale() && !sale()?.canPurchase">{{ sale()?.label }}</span>
     </div>
@@ -37,18 +37,18 @@
   </ng-container>
 
   <div class="slider-controls" *ngIf="slides().length > 1">
-    <button type="button" (click)="previous()" aria-label="Prethodni slajd">‹</button>
-    <div class="indicators" role="tablist" aria-label="Izbor slajda">
+    <button type="button" (click)="previous()" [attr.aria-label]="i18n.t('common.previous')">‹</button>
+    <div class="indicators" role="tablist" [attr.aria-label]="i18n.t('common.viewAll')">
       <button
         *ngFor="let slide of slides(); let index = index"
         type="button"
         role="tab"
         [class.active]="index === activeIndex()"
         [attr.aria-selected]="index === activeIndex()"
-        [attr.aria-label]="'Prikaži slajd ' + (index + 1)"
+        [attr.aria-label]="i18n.t('common.showSlide', { number: index + 1 })"
         (click)="setSlide(index)"
       ></button>
     </div>
-    <button type="button" (click)="next()" aria-label="Sledeći slajd">›</button>
+    <button type="button" (click)="next()" [attr.aria-label]="i18n.t('common.next')">›</button>
   </div>
 </section>

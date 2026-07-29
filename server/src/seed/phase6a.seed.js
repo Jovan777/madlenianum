@@ -16,6 +16,7 @@ const PropScenographyItem = require("../models/PropScenographyItem");
 const RentalSpace = require("../models/RentalSpace");
 const RentalInquiry = require("../models/RentalInquiry");
 const EventPlanningInquiry = require("../models/EventPlanningInquiry");
+const seedEnglishContent = require("./seedEnglishContent");
 
 const UPLOAD_ROOT = path.join(__dirname, "../../uploads/madlenianum");
 
@@ -84,66 +85,145 @@ const galleryItems = (items) => (items || [])
     displayOrder: index,
   }));
 
-const upsertCostume = async (payload) => CostumeItem.findOneAndUpdate(
-  { inventoryNumber: payload.inventoryNumber.toUpperCase() },
-  {
-    ...payload,
-    slug: slugify(payload.slug || payload.title),
-    mainImage: payload.mainImage?._id,
-    gallery: (payload.gallery || []).filter(Boolean).map((item) => item._id),
-    galleryItems: galleryItems(payload.gallery),
-    relatedProduction: payload.relatedProduction?._id,
-    status: "published",
-    publishedAt: payload.publishedAt || new Date(),
-    seo: {
-      title: `${payload.title} | Fundus Madlenianum`,
-      description: payload.shortDescription || payload.availabilityNote || "",
-      keywords: ["Madlenianum", "fundus", "kostimi", payload.epoch].filter(Boolean),
-    },
-  },
-  { upsert: true, returnDocument: "after", runValidators: true }
+const meaningfulTranslationValues = (value = {}) => Object.fromEntries(
+  Object.entries(value || {}).filter(([, entry]) => (
+    Array.isArray(entry) ? entry.length > 0 : entry !== undefined && entry !== null && entry !== ""
+  ))
 );
 
-const upsertPropScenography = async (payload) => PropScenographyItem.findOneAndUpdate(
-  { inventoryNumber: payload.inventoryNumber.toUpperCase() },
-  {
-    ...payload,
-    slug: slugify(payload.slug || payload.title),
-    mainImage: payload.mainImage?._id,
-    gallery: (payload.gallery || []).filter(Boolean).map((item) => item._id),
-    galleryItems: galleryItems(payload.gallery),
-    relatedProduction: payload.relatedProduction?._id,
-    status: "published",
-    publishedAt: payload.publishedAt || new Date(),
-    seo: {
-      title: `${payload.title} | Fundus Madlenianum`,
-      description: payload.description?.replace(/<[^>]+>/g, "").slice(0, 155) || "",
-      keywords: ["Madlenianum", "fundus", payload.itemType, payload.category].filter(Boolean),
-    },
+const seedTranslations = (existing, sr, en) => ({
+  sr: {
+    ...meaningfulTranslationValues(sr),
+    ...meaningfulTranslationValues(existing?.sr),
   },
-  { upsert: true, returnDocument: "after", runValidators: true }
-);
+  en: {
+    ...meaningfulTranslationValues(en),
+    ...meaningfulTranslationValues(existing?.en),
+  },
+});
 
-const upsertRentalSpace = async (payload) => RentalSpace.findOneAndUpdate(
-  { slug: slugify(payload.slug || payload.title) },
-  {
-    ...payload,
-    slug: slugify(payload.slug || payload.title),
-    heroImage: payload.heroImage?._id,
-    gallery: (payload.gallery || []).filter(Boolean).map((item) => item._id),
-    galleryItems: galleryItems(payload.gallery),
-    floorPlanPdf: payload.floorPlanPdf?._id,
-    linkedVenue: payload.linkedVenue?._id,
-    status: "published",
-    publishedAt: payload.publishedAt || new Date(),
-    seo: {
-      title: `${payload.title} | Zakup prostora Madlenianum`,
-      description: payload.shortDescription || "",
-      keywords: ["Madlenianum", "zakup prostora", payload.title],
+const upsertCostume = async (payload) => {
+  const inventoryNumber = payload.inventoryNumber.toUpperCase();
+  const slug = slugify(payload.slug || payload.title);
+  const existing = await CostumeItem.findOne({ inventoryNumber }).select("translations").lean();
+  return CostumeItem.findOneAndUpdate(
+    { inventoryNumber },
+    {
+      ...payload,
+      slug,
+      mainImage: payload.mainImage?._id,
+      gallery: (payload.gallery || []).filter(Boolean).map((item) => item._id),
+      galleryItems: galleryItems(payload.gallery),
+      relatedProduction: payload.relatedProduction?._id,
+      translations: seedTranslations(
+        existing?.translations,
+        {
+          slug,
+          title: payload.title,
+          shortDescription: payload.shortDescription,
+          description: payload.description,
+          epoch: payload.epoch,
+          size: payload.size,
+          color: payload.color,
+          material: payload.material,
+          availabilityNote: payload.availabilityNote,
+        },
+        seedEnglishContent.costumes[inventoryNumber]
+      ),
+      status: "published",
+      publishedAt: payload.publishedAt || new Date(),
+      seo: {
+        title: `${payload.title} | Fundus Madlenianum`,
+        description: payload.shortDescription || payload.availabilityNote || "",
+        keywords: ["Madlenianum", "fundus", "kostimi", payload.epoch].filter(Boolean),
+      },
     },
-  },
-  { upsert: true, returnDocument: "after", runValidators: true }
-);
+    { upsert: true, returnDocument: "after", runValidators: true }
+  );
+};
+
+const upsertPropScenography = async (payload) => {
+  const inventoryNumber = payload.inventoryNumber.toUpperCase();
+  const slug = slugify(payload.slug || payload.title);
+  const existing = await PropScenographyItem.findOne({ inventoryNumber }).select("translations").lean();
+  return PropScenographyItem.findOneAndUpdate(
+    { inventoryNumber },
+    {
+      ...payload,
+      slug,
+      mainImage: payload.mainImage?._id,
+      gallery: (payload.gallery || []).filter(Boolean).map((item) => item._id),
+      galleryItems: galleryItems(payload.gallery),
+      relatedProduction: payload.relatedProduction?._id,
+      translations: seedTranslations(
+        existing?.translations,
+        {
+          slug,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category,
+          epochOrStyle: payload.epochOrStyle,
+          dimensionsNote: payload.dimensions?.note,
+          material: payload.material,
+          availabilityNote: payload.availabilityNote,
+        },
+        seedEnglishContent.props[inventoryNumber]
+      ),
+      status: "published",
+      publishedAt: payload.publishedAt || new Date(),
+      seo: {
+        title: `${payload.title} | Fundus Madlenianum`,
+        description: payload.description?.replace(/<[^>]+>/g, "").slice(0, 155) || "",
+        keywords: ["Madlenianum", "fundus", payload.itemType, payload.category].filter(Boolean),
+      },
+    },
+    { upsert: true, returnDocument: "after", runValidators: true }
+  );
+};
+
+const upsertRentalSpace = async (payload) => {
+  const slug = slugify(payload.slug || payload.title);
+  const existing = await RentalSpace.findOne({ slug }).select("translations").lean();
+  return RentalSpace.findOneAndUpdate(
+    { slug },
+    {
+      ...payload,
+      slug,
+      heroImage: payload.heroImage?._id,
+      gallery: (payload.gallery || []).filter(Boolean).map((item) => item._id),
+      galleryItems: galleryItems(payload.gallery),
+      floorPlanPdf: payload.floorPlanPdf?._id,
+      linkedVenue: payload.linkedVenue?._id,
+      translations: seedTranslations(
+        existing?.translations,
+        {
+          slug,
+          title: payload.title,
+          shortDescription: payload.shortDescription,
+          description: payload.description,
+          amenities: payload.amenities,
+          technicalEquipment: payload.technicalEquipment,
+          suitableEventTypes: payload.suitableEventTypes,
+          accessibilityInfo: payload.accessibilityInfo,
+          dressingRooms: payload.dressingRooms,
+          cateringInfo: payload.cateringInfo,
+          barInfo: payload.barInfo,
+          internetInfo: payload.internetInfo,
+          avInfo: payload.avInfo,
+        },
+        seedEnglishContent.rentalSpaces[slug]
+      ),
+      status: "published",
+      publishedAt: payload.publishedAt || new Date(),
+      seo: {
+        title: `${payload.title} | Zakup prostora Madlenianum`,
+        description: payload.shortDescription || "",
+        keywords: ["Madlenianum", "zakup prostora", payload.title],
+      },
+    },
+    { upsert: true, returnDocument: "after", runValidators: true }
+  );
+};
 
 const runPhase6ASeed = async () => {
   const media = {

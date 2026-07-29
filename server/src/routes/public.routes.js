@@ -1,4 +1,5 @@
 const express = require("express");
+const { publicLocale } = require("../services/locale.service");
 
 const {
   getHome,
@@ -38,6 +39,8 @@ const {
 } = require("../controllers/ticketingPublic.controller");
 
 const router = express.Router();
+
+router.use(publicLocale);
 
 router.get("/home", getHome);
 

@@ -1,37 +1,37 @@
 <section class="planning" id="planiranje" aria-labelledby="planning-title" data-motion="up">
   <div class="planning-copy" data-motion="left">
-    <h2 id="planning-title">Planirajte vaš događaj na vreme</h2>
-    <p>Kontaktirajte naš Sektor komercijalnih poslova direktno ili popunite brzu formu ispod, a {{responseText()}}</p>
+    <h2 id="planning-title">{{ i18n.t('planning.title') }}</h2>
+    <p>{{ i18n.t('planning.intro', { responseText: responseText() }) }}</p>
     <div class="contact">
-      <h3>Sektor komercijalnih poslova</h3>
+      <h3>{{ i18n.t('planning.department') }}</h3>
       <dl>
-        <div><dt>Kontakt osoba</dt><dd>{{contactName()}}</dd></div>
-        <div><dt>Telefon</dt><dd><a [href]="'tel:'+phone()">{{phone()}}</a></dd></div>
-        <div><dt>E-mail</dt><dd><a [href]="'mailto:'+email()">{{email()}}</a></dd></div>
+        <div><dt>{{ i18n.t('planning.contactPerson') }}</dt><dd>{{contactName()}}</dd></div>
+        <div><dt>{{ i18n.t('planning.phone') }}</dt><dd><a [href]="'tel:'+phone()">{{phone()}}</a></dd></div>
+        <div><dt>{{ i18n.t('planning.email') }}</dt><dd><a [href]="'mailto:'+email()">{{email()}}</a></dd></div>
       </dl>
     </div>
   </div>
   <div class="success" *ngIf="reference();else planningForm">
     <span aria-hidden="true">✓</span>
-    <h3>Hvala, upit je primljen</h3>
-    <p>Referentni broj: <strong>{{reference()}}</strong></p>
-    <p>Naš tim će Vas kontaktirati u najkraćem roku.</p>
-    <p *ngIf="emailWarning()">Upit je sačuvan iako email obaveštenje trenutno nije poslato.</p>
+    <h3>{{ i18n.t('planning.successTitle') }}</h3>
+    <p>{{ i18n.t('planning.reference') }}: <strong>{{reference()}}</strong></p>
+    <p>{{ i18n.t('planning.successText') }}</p>
+    <p *ngIf="emailWarning()">{{ i18n.t('planning.emailWarning') }}</p>
   </div>
   <ng-template #planningForm>
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <label><span>Ime*</span><input formControlName="firstName" autocomplete="given-name" placeholder="Ime*" /></label>
-      <label><span>Prezime*</span><input formControlName="lastName" autocomplete="family-name" placeholder="Prezime*" /></label>
-      <label><span>Naziv kompanije</span><input formControlName="companyName" autocomplete="organization" placeholder="Naziv kompanije" /></label>
-      <label><span>Email adresa*</span><input type="email" formControlName="email" autocomplete="email" placeholder="Email adresa*" /></label>
-      <label><span>Kontakt telefon*</span><input formControlName="phone" autocomplete="tel" placeholder="Kontakt telefon*" /></label>
-      <label><span>Sala</span><select formControlName="preferredRentalSpace"><option value="">Sala</option><option *ngFor="let space of spaces()" [value]="space.id">{{space.title}}</option></select></label>
-      <label><span>Datum</span><input type="date" formControlName="desiredDate" /></label>
-      <label><span>Okviran broj zvanica</span><input type="number" min="1" formControlName="approximateGuestCount" placeholder="Okviran broj zvanica" /></label>
-      <label class="wide"><span>Tip događaja</span><input formControlName="eventType" placeholder="Tip događaja" /></label>
-      <label class="wide"><span>Napomena</span><textarea rows="4" formControlName="note" placeholder="Napomena"></textarea></label>
+      <label><span>{{ i18n.t('rental.firstName') }}*</span><input formControlName="firstName" autocomplete="given-name" [placeholder]="i18n.t('rental.firstName') + '*'" /></label>
+      <label><span>{{ i18n.t('rental.lastName') }}*</span><input formControlName="lastName" autocomplete="family-name" [placeholder]="i18n.t('rental.lastName') + '*'" /></label>
+      <label><span>{{ i18n.t('rental.companyName') }}</span><input formControlName="companyName" autocomplete="organization" [placeholder]="i18n.t('rental.companyName')" /></label>
+      <label><span>{{ i18n.t('forms.email') }}*</span><input type="email" formControlName="email" autocomplete="email" [placeholder]="i18n.t('forms.email') + '*'" /></label>
+      <label><span>{{ i18n.t('rental.phone') }}*</span><input formControlName="phone" autocomplete="tel" [placeholder]="i18n.t('rental.phone') + '*'" /></label>
+      <label><span>{{ i18n.t('planning.preferredSpace') }}</span><select formControlName="preferredRentalSpace"><option value="">{{ i18n.t('planning.preferredSpace') }}</option><option *ngFor="let space of spaces()" [value]="space.id">{{space.title}}</option></select></label>
+      <label><span>{{ i18n.t('rental.desiredDate') }}</span><input type="date" formControlName="desiredDate" /></label>
+      <label><span>{{ i18n.t('rental.guestCount') }}</span><input type="number" min="1" formControlName="approximateGuestCount" [placeholder]="i18n.t('rental.guestCount')" /></label>
+      <label class="wide"><span>{{ i18n.t('planning.eventType') }}</span><input formControlName="eventType" [placeholder]="i18n.t('planning.eventType')" /></label>
+      <label class="wide"><span>{{ i18n.t('rental.note') }}</span><textarea rows="4" formControlName="note" [placeholder]="i18n.t('rental.note')"></textarea></label>
       <p class="error wide" *ngIf="error()">{{error()}}</p>
-      <button type="submit" [disabled]="submitting()"><span class="send-icon" aria-hidden="true"></span>{{submitting()?'Slanje...':'Pošalji upit'}}</button>
+      <button type="submit" [disabled]="submitting()"><span class="send-icon" aria-hidden="true"></span>{{ i18n.t(submitting() ? 'forms.sending' : 'rental.inquiry') }}</button>
     </form>
   </ng-template>
 </section>

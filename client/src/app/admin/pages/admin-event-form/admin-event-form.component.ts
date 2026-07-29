@@ -13,6 +13,10 @@ import {
 import { UnsavedChangesAware } from '../../../core/guards/unsaved-changes.guard';
 import { AdminApiService } from '../../../core/services/admin-api.service';
 import { AdminNotificationService } from '../../../core/services/admin-notification.service';
+import {
+  AdminContentLanguage,
+  AdminLanguageTabsComponent,
+} from '../../components/admin-language-tabs.component';
 
 interface SeatMapOption extends AdminReference {
   venue?: AdminReference;
@@ -30,7 +34,7 @@ interface PricePlanCompatibilityCheck {
 @Component({
   selector: 'app-admin-event-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AdminLanguageTabsComponent],
   templateUrl: './admin-event-form.component.html',
   styleUrl: './admin-event-form.component.scss',
 })
@@ -49,6 +53,7 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
   readonly warnings = signal<AdminValidationIssue[]>([]);
   readonly options = signal<AdminEventFormOptions | null>(null);
   readonly eventId = signal<string | null>(null);
+  readonly activeLanguage = signal<AdminContentLanguage>('sr');
 
   readonly form = this.fb.nonNullable.group({
     production: ['', Validators.required],
@@ -72,6 +77,12 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
       legacyEventId: [''],
       externalCheckoutUrl: [''],
       note: [''],
+    }),
+    translations: this.fb.nonNullable.group({
+      en: this.fb.nonNullable.group({
+        badge: [''],
+        ticketingNote: [''],
+      }),
     }),
   });
 
@@ -102,6 +113,13 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
   get saleStatuses() { return this.options()?.saleStatuses || []; }
   get ticketingProviders() { return this.options()?.ticketingProviders || []; }
   get provider(): string { return this.form.controls.ticketing.controls.provider.value; }
+  englishComplete(): boolean {
+    const baseBadge = this.form.controls.badge.value.trim();
+    const baseNote = this.form.controls.ticketing.controls.note.value.trim();
+    const english = this.form.controls.translations.controls.en.controls;
+    return (!baseBadge || Boolean(english.badge.value.trim()))
+      && (!baseNote || Boolean(english.ticketingNote.value.trim()));
+  }
 
   get seatMaps(): SeatMapOption[] {
     const venueId = this.form.controls.venue.value;
@@ -259,6 +277,12 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
         enabled: Boolean(item.ticketing?.enabled), provider: item.ticketing?.provider || 'manual',
         legacyEventId: item.ticketing?.legacyEventId || '', externalCheckoutUrl: item.ticketing?.externalCheckoutUrl || '', note: item.ticketing?.note || '',
       },
+      translations: {
+        en: {
+          badge: item.translations?.en?.badge || '',
+          ticketingNote: item.translations?.en?.ticketingNote || '',
+        },
+      },
     }, { emitEvent: false });
     this.applyConditionalValidators();
     this.form.markAsPristine();
@@ -318,6 +342,12 @@ export class AdminEventFormComponent implements OnInit, UnsavedChangesAware {
         legacyEventId: provider === 'legacy_php' ? raw.ticketing.legacyEventId.trim() : '',
         externalCheckoutUrl: provider === 'external' ? raw.ticketing.externalCheckoutUrl.trim() : '',
         note: raw.ticketing.note.trim(),
+      },
+      translations: {
+        en: {
+          badge: raw.translations.en.badge.trim(),
+          ticketingNote: raw.translations.en.ticketingNote.trim(),
+        },
       },
     };
   }

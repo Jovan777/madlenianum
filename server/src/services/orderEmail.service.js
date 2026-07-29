@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 const SiteSettings = require("../models/SiteSettings");
 const { ORDER_STATUS_LABELS } = require("../constants/order.constants");
+const { localizedValue, normalizeLocale } = require("./locale.service");
 
 let cachedTransport = null;
 
@@ -44,6 +45,14 @@ const getMessageType = (order) => {
 
 const getSubject = (order) => {
   const reference = order.orderCode;
+  if (normalizeLocale(order.locale) === "en") {
+    if (order.status === "reserved") return `Madlenianum reservation ${reference}`;
+    if (order.status === "pending_payment") return `Madlenianum purchase pending ${reference}`;
+    if (order.status === "paid") return `Madlenianum payment confirmation ${reference}`;
+    if (order.status === "cancelled") return `Madlenianum cancellation ${reference}`;
+    if (order.status === "expired") return `Madlenianum reservation expired ${reference}`;
+    return `Madlenianum order ${reference}`;
+  }
   if (order.status === "reserved") return `Madlenianum rezervacija ${reference}`;
   if (order.status === "pending_payment") return `Madlenianum kupovina u toku ${reference}`;
   if (order.status === "paid") return `Madlenianum potvrda placanja ${reference}`;
@@ -53,6 +62,14 @@ const getSubject = (order) => {
 };
 
 const getLeadText = (order) => {
+  if (normalizeLocale(order.locale) === "en") {
+    if (order.status === "reserved") return "Your seats are reserved until the stated deadline.";
+    if (order.status === "pending_payment") return "Your purchase has started. This message is not a payment confirmation.";
+    if (order.status === "paid") return "Your payment has been recorded and the tickets are confirmed.";
+    if (order.status === "cancelled") return "The order or reservation has been cancelled.";
+    if (order.status === "expired") return "The deadline has expired and the seats have been released.";
+    return "We have received your request.";
+  }
   if (order.status === "reserved") return "Vasa sedista su rezervisana do navedenog roka.";
   if (order.status === "pending_payment") {
     return "Kupovina je pokrenuta. Ova poruka nije potvrda uspesnog placanja.";
@@ -63,15 +80,15 @@ const getLeadText = (order) => {
   return "Primili smo vas zahtev.";
 };
 
-const formatDate = (value) => value
-  ? new Intl.DateTimeFormat("sr-Latn-RS", {
+const formatDate = (value, locale = "sr") => value
+  ? new Intl.DateTimeFormat(normalizeLocale(locale) === "en" ? "en-GB" : "sr-Latn-RS", {
       timeZone: "Europe/Belgrade",
       dateStyle: "full",
       timeStyle: "short",
     }).format(new Date(value))
   : "-";
 
-const formatMoney = (amount, currency) => new Intl.NumberFormat("sr-Latn-RS", {
+const formatMoney = (amount, currency, locale = "sr") => new Intl.NumberFormat(normalizeLocale(locale) === "en" ? "en-GB" : "sr-Latn-RS", {
   style: "currency",
   currency: currency || "RSD",
   maximumFractionDigits: 2,
@@ -79,15 +96,17 @@ const formatMoney = (amount, currency) => new Intl.NumberFormat("sr-Latn-RS", {
 
 const buildOrderEmail = async (order, accessToken) => {
   const settings = await SiteSettings.findOne({ key: "default" }).lean();
+  const locale = normalizeLocale(order.locale);
+  const en = locale === "en";
   const event = order.event || {};
   const snapshot = order.eventSnapshot || {};
-  const productionTitle = event.production?.title || snapshot.productionTitle || "";
-  const venueName = event.venue?.name || snapshot.venueName || "";
+  const productionTitle = localizedValue(event.production, "title", locale) || snapshot.productionTitle || event.production?.title || "";
+  const venueName = localizedValue(event.venue, "name", locale) || snapshot.venueName || event.venue?.name || "";
   const startsAt = event.startsAt || snapshot.eventStartsAt;
   const expiresAt = order.reservationExpiresAt || order.paymentExpiresAt || order.expiresAt;
   const baseUrl = String(process.env.PUBLIC_SITE_URL || process.env.CLIENT_URL || "http://localhost:4200")
     .replace(/\/+$/, "");
-  const orderUrl = `${baseUrl}/porudzbina/${encodeURIComponent(order.orderCode)}?token=${encodeURIComponent(accessToken)}`;
+  const orderUrl = `${baseUrl}${en ? "/en/order" : "/porudzbina"}/${encodeURIComponent(order.orderCode)}?token=${encodeURIComponent(accessToken)}`;
   const contactEmail = settings?.contact?.ticketOfficeEmail
     || settings?.contact?.generalEmail
     || process.env.EMAIL_FROM_ADDRESS
@@ -99,38 +118,38 @@ const buildOrderEmail = async (order, accessToken) => {
     <tr>
       <td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(item.section)} / ${escapeHtml(item.row)} / ${escapeHtml(item.number ?? item.seatLabel)}</td>
       <td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(item.priceCategoryName || item.priceCategoryCode)}</td>
-      <td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">${escapeHtml(formatMoney(item.finalPrice, item.currency))}</td>
+      <td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">${escapeHtml(formatMoney(item.finalPrice, item.currency, locale))}</td>
     </tr>`).join("");
 
   return {
     subject: getSubject(order),
     text: [
       getLeadText(order),
-      `Referenca: ${order.orderCode}`,
-      `Predstava: ${productionTitle}`,
-      `Termin: ${formatDate(startsAt)}`,
-      `Scena: ${venueName}`,
-      `Status: ${ORDER_STATUS_LABELS[order.status] || order.status}`,
-      expiresAt ? `Rok: ${formatDate(expiresAt)}` : "",
-      `Ukupno: ${formatMoney(order.totalAmount, order.currency)}`,
-      `Pregled: ${orderUrl}`,
-      contactEmail ? `Kontakt: ${contactEmail}` : "",
-      contactPhones.length ? `Telefon: ${contactPhones.join(", ")}` : "",
+      `${en ? "Reference" : "Referenca"}: ${order.orderCode}`,
+      `${en ? "Production" : "Predstava"}: ${productionTitle}`,
+      `${en ? "Date" : "Termin"}: ${formatDate(startsAt, locale)}`,
+      `${en ? "Venue" : "Scena"}: ${venueName}`,
+      `${en ? "Status" : "Status"}: ${en ? ({ reserved: "Reserved", pending_payment: "Payment pending", paid: "Paid", cancelled: "Cancelled", expired: "Expired" }[order.status] || order.status) : ORDER_STATUS_LABELS[order.status] || order.status}`,
+      expiresAt ? `${en ? "Deadline" : "Rok"}: ${formatDate(expiresAt, locale)}` : "",
+      `${en ? "Total" : "Ukupno"}: ${formatMoney(order.totalAmount, order.currency, locale)}`,
+      `${en ? "View order" : "Pregled"}: ${orderUrl}`,
+      contactEmail ? `${en ? "Contact" : "Kontakt"}: ${contactEmail}` : "",
+      contactPhones.length ? `${en ? "Phone" : "Telefon"}: ${contactPhones.join(", ")}` : "",
     ].filter(Boolean).join("\n"),
     html: `
       <div style="font-family:Arial,sans-serif;color:#1c1b19;max-width:680px;margin:auto">
         <h1 style="font-family:Georgia,serif">${escapeHtml(productionTitle || "Madlenianum")}</h1>
         <p>${escapeHtml(getLeadText(order))}</p>
-        <p><strong>Referenca:</strong> ${escapeHtml(order.orderCode)}</p>
-        <p><strong>Termin:</strong> ${escapeHtml(formatDate(startsAt))}<br>
-        <strong>Scena:</strong> ${escapeHtml(venueName)}<br>
-        <strong>Status:</strong> ${escapeHtml(ORDER_STATUS_LABELS[order.status] || order.status)}
-        ${expiresAt ? `<br><strong>Rok:</strong> ${escapeHtml(formatDate(expiresAt))}` : ""}</p>
+        <p><strong>${en ? "Reference" : "Referenca"}:</strong> ${escapeHtml(order.orderCode)}</p>
+        <p><strong>${en ? "Date" : "Termin"}:</strong> ${escapeHtml(formatDate(startsAt, locale))}<br>
+        <strong>${en ? "Venue" : "Scena"}:</strong> ${escapeHtml(venueName)}<br>
+        <strong>Status:</strong> ${escapeHtml(en ? ({ reserved: "Reserved", pending_payment: "Payment pending", paid: "Paid", cancelled: "Cancelled", expired: "Expired" }[order.status] || order.status) : ORDER_STATUS_LABELS[order.status] || order.status)}
+        ${expiresAt ? `<br><strong>${en ? "Deadline" : "Rok"}:</strong> ${escapeHtml(formatDate(expiresAt, locale))}` : ""}</p>
         <table style="border-collapse:collapse;width:100%"><tbody>${items}</tbody></table>
-        <p style="font-size:20px"><strong>Ukupno: ${escapeHtml(formatMoney(order.totalAmount, order.currency))}</strong></p>
-        <p><a href="${escapeHtml(orderUrl)}" style="display:inline-block;background:#1c1b19;color:#fff;padding:12px 18px;text-decoration:none">Pregled porudzbine</a></p>
-        ${contactEmail ? `<p>Kontakt: ${escapeHtml(contactEmail)}</p>` : ""}
-        ${contactPhones.length ? `<p>Telefon: ${escapeHtml(contactPhones.join(", "))}</p>` : ""}
+        <p style="font-size:20px"><strong>${en ? "Total" : "Ukupno"}: ${escapeHtml(formatMoney(order.totalAmount, order.currency, locale))}</strong></p>
+        <p><a href="${escapeHtml(orderUrl)}" style="display:inline-block;background:#1c1b19;color:#fff;padding:12px 18px;text-decoration:none">${en ? "View order" : "Pregled porudzbine"}</a></p>
+        ${contactEmail ? `<p>${en ? "Contact" : "Kontakt"}: ${escapeHtml(contactEmail)}</p>` : ""}
+        ${contactPhones.length ? `<p>${en ? "Phone" : "Telefon"}: ${escapeHtml(contactPhones.join(", "))}</p>` : ""}
       </div>`,
     orderUrl,
   };

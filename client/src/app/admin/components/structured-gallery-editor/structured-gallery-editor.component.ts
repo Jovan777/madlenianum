@@ -16,6 +16,7 @@ import { MediaPickerComponent } from '../media-picker/media-picker.component';
 })
 export class StructuredGalleryEditorComponent implements ControlValueAccessor {
   @Input() label = 'Galerija';
+  @Input() language: 'sr' | 'en' = 'sr';
   items: GalleryItemInput[] = [];
   disabled = false;
   private onChange: (value: GalleryItemInput[]) => void = () => undefined;
@@ -47,8 +48,22 @@ export class StructuredGalleryEditorComponent implements ControlValueAccessor {
   }
 
   update(index: number, field: 'caption' | 'credit' | 'altText', value: string): void {
-    this.items = this.items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item);
+    this.items = this.items.map((item, itemIndex) => {
+      if (itemIndex !== index) return item;
+      if (this.language === 'sr') return { ...item, [field]: value };
+      return {
+        ...item,
+        translations: {
+          ...item.translations,
+          en: { ...item.translations?.en, [field]: value },
+        },
+      };
+    });
     this.emit();
+  }
+
+  fieldValue(item: GalleryItemInput, field: 'caption' | 'credit' | 'altText'): string {
+    return this.language === 'en' ? item.translations?.en?.[field] || '' : item[field] || '';
   }
 
   move(index: number, direction: -1 | 1): void {
