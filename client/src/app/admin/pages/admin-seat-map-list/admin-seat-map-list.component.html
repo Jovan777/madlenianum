@@ -38,11 +38,23 @@
         <h2>{{ item.name }}</h2>
         <p>{{ item.seatCounts?.active || 0 }} aktivnih od {{ item.seatCounts?.total || 0 }} sedišta · {{ item.sectionNames?.length || 0 }} sekcija</p>
       </div>
-      <div class="usage">
-        <span>{{ item.usage?.events || 0 }} termina</span>
-        <span>{{ item.usage?.orders || 0 }} porudžbina</span>
-        <span>{{ item.usage?.overrides || 0 }} izuzetaka</span>
-        <strong [class.warning]="item.configurationWarnings?.length">{{ item.status }}</strong>
+      <div class="usage" aria-label="Korišćenje mape">
+        <div class="usage-stat">
+          <strong>{{ item.usage?.events || 0 }}</strong>
+          <span>termina</span>
+        </div>
+        <div class="usage-stat">
+          <strong>{{ item.usage?.orders || 0 }}</strong>
+          <span>porudžbina</span>
+        </div>
+        <div class="usage-stat">
+          <strong>{{ item.usage?.overrides || 0 }}</strong>
+          <span>izuzetaka</span>
+        </div>
+        <div class="usage-stat usage-status">
+          <strong [class.warning]="item.configurationWarnings?.length">{{ item.status }}</strong>
+          <span>status</span>
+        </div>
       </div>
       <ul class="warnings" *ngIf="item.configurationWarnings?.length">
         <li *ngFor="let warning of item.configurationWarnings">{{ warning.message }}</li>
