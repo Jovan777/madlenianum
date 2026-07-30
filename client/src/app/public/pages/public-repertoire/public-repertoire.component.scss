@@ -47,7 +47,7 @@
 
 .hero-content h1 {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(4rem, 6vw, 6rem);
   font-weight: 400;
   line-height: 0.95;
@@ -127,7 +127,7 @@
   align-self: start;
   margin: 0.75rem 0 0;
   color: #b59656;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 4.5rem;
   font-weight: 400;
   line-height: 1;
@@ -144,7 +144,7 @@
   margin: 0;
   border-bottom: 1px solid #cbc7c0;
   padding: 0 0 0.65rem;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(2.3rem, 3.4vw, 3.75rem);
   font-weight: 400;
   line-height: 1;
@@ -208,7 +208,7 @@
 
 .empty-panel h2 {
   margin: 0 0 0.65rem;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 400;
 }

@@ -1,8 +1,10 @@
 <div class="map-toolbar">
-  <div class="section-tabs" aria-label="Nivoi sale">
+  <div class="section-tabs" role="tablist" aria-label="Nivoi sale">
     <button
       *ngFor="let group of mapGroups()"
       type="button"
+      role="tab"
+      [attr.aria-selected]="activeSection() === group.key"
       [class.active]="activeSection() === group.key"
       (click)="setSection(group.key)"
     >
@@ -10,12 +12,19 @@
     </button>
   </div>
 
-</div>
-
-<div class="legend" [attr.aria-label]="i18n.t('ticketing.legend')">
-  <span *ngFor="let item of legend" [class]="'legend-' + item.status">
-    <i aria-hidden="true"></i>{{ item.label }}
-  </span>
+  <div class="zoom-controls" [attr.aria-label]="'ticketing.mapZoom' | publicTranslate">
+    <button type="button" (click)="zoomIn()" [disabled]="zoomFactor() >= 1.25" [title]="'ticketing.zoomIn' | publicTranslate">
+      <span aria-hidden="true">+</span>
+      <span class="sr-only">{{ 'ticketing.zoomIn' | publicTranslate }}</span>
+    </button>
+    <button type="button" (click)="zoomOut()" [disabled]="zoomFactor() <= 0.85" [title]="'ticketing.zoomOut' | publicTranslate">
+      <span aria-hidden="true">−</span>
+      <span class="sr-only">{{ 'ticketing.zoomOut' | publicTranslate }}</span>
+    </button>
+    <button class="reset-zoom" type="button" *ngIf="zoomFactor() !== 1" (click)="resetZoom()">
+      {{ 'ticketing.showFullHall' | publicTranslate }}
+    </button>
+  </div>
 </div>
 
 <div class="map-viewport" #viewport>
@@ -29,13 +38,24 @@
   >
     <div
       class="seat-canvas"
+      [class.gallery-canvas]="activeSection() === 'galerija'"
       [style.width.px]="mapWidth()"
       [style.height.px]="mapHeight()"
       [style.transform]="'scale(' + scale() + ')'"
     >
-      <div class="stage">Scena</div>
+      <div class="stage" *ngIf="activeSection() === 'parter'">Scena</div>
+
+      <ng-container *ngFor="let guide of rowGuides()">
+        <span class="row-label row-label-left" [style.left.px]="guide.left" [style.top.px]="guide.top">
+          {{ guide.label }}
+        </span>
+        <span class="row-label row-label-right" [style.left.px]="guide.right" [style.top.px]="guide.top">
+          {{ guide.label }}
+        </span>
+      </ng-container>
+
       <button
-        *ngFor="let seat of visibleSeats()"
+        *ngFor="let seat of visibleSeats(); trackBy: trackSeat"
         type="button"
         class="seat"
         [ngClass]="seatClass(seat)"
@@ -49,9 +69,17 @@
         [attr.aria-label]="seatTitle(seat)"
         [title]="seatTitle(seat)"
         (click)="toggleSeat(seat)"
-      >
-        <span>{{ seat.number || '' }}</span>
-      </button>
+      ></button>
     </div>
   </div>
+</div>
+
+<div class="category-legend" [attr.aria-label]="i18n.t('ticketing.legend')">
+  <span *ngFor="let item of categoryLegend()" [class.circle-key]="item.shape === 'circle'">
+    <i [class]="'category-key category-key-' + item.key.toLowerCase()" aria-hidden="true"></i>
+    <b>{{ item.label }}</b>
+    <ng-container *ngIf="item.amount !== null">
+      ({{ item.amount | number : '1.0-0' }} {{ item.currency }})
+    </ng-container>
+  </span>
 </div>

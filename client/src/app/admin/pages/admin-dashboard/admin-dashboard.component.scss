@@ -28,7 +28,7 @@
 .dashboard-hero h1 {
   margin: 8px 0 8px;
   color: #f6f0e8;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font-display);
   font-size: 4.2rem;
   font-weight: 400;
   letter-spacing: 0;
@@ -92,7 +92,7 @@
 .quiet-panel strong {
   display: block;
   margin-top: 18px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font-display);
   font-size: 3rem;
   font-weight: 400;
   letter-spacing: 0;

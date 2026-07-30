@@ -15,7 +15,7 @@
 }
 .section-header h2 {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(3rem, 4.75vw, 4.5rem);
   font-weight: 400;
   line-height: 1;
@@ -48,7 +48,7 @@
   text-align: left;
   color: #777;
   background: transparent;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(1.9rem, 3.7vw, 3.5rem);
 }
 .date-tabs button.active {
@@ -82,7 +82,7 @@
 }
 .time {
   display: block;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 3rem;
   font-weight: 400;
   line-height: 1;
@@ -104,7 +104,7 @@
 }
 .event-copy h3 {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(2.2rem, 3.2vw, 3rem);
   font-weight: 400;
   line-height: 1;
@@ -134,8 +134,8 @@
   border: 1px solid #171717;
 }
 .buy {
-  width: 50px;
-  padding: 0;
+  min-width: 74px;
+  padding: 0 1.1rem;
   color: #fff;
   background: #9c1f2e;
   font-size: 0.9rem;
@@ -213,6 +213,6 @@
     display: inline;
   }
   .buy {
-    width: 54px;
+    min-width: 72px;
   }
 }

@@ -10,6 +10,9 @@ const SeatMap = require("../models/SeatMap");
 const Seat = require("../models/Seat");
 const Production = require("../models/Production");
 const Event = require("../models/Event");
+const EventSeatOverride = require("../models/EventSeatOverride");
+const OrderItem = require("../models/OrderItem");
+const SeatLock = require("../models/SeatLock");
 const seedEnglishContent = require("./seedEnglishContent");
 
 const meaningfulTranslationValues = (value = {}) => Object.fromEntries(
@@ -29,24 +32,30 @@ const seedTranslations = (existing, sr, en) => ({
   },
 });
 
-const romanRows = [
-  "I",
-  "II",
-  "III",
-  "IV",
-  "V",
-  "VI",
-  "VII",
-  "VIII",
-  "IX",
-  "X",
-  "XI",
-  "XII",
-  "XIII",
-  "XIV",
-  "XV",
-  "XVI",
+// Measured from the approved auditorium plan. Row lengths and offsets are
+// intentionally asymmetric and must not be replaced with a rectangular grid.
+const parterRowLayout = [
+  { row: "I", count: 23, startX: 136, endX: 832, y: 161 },
+  { row: "II", count: 24, startX: 120, endX: 848, y: 192 },
+  { row: "III", count: 25, startX: 104, endX: 863, y: 224 },
+  { row: "IV", count: 26, startX: 89, endX: 879, y: 256 },
+  { row: "V", count: 27, startX: 73, endX: 895, y: 287 },
+  { row: "VI", count: 28, startX: 57, endX: 911, y: 319 },
+  { row: "VII", count: 29, startX: 41, endX: 927, y: 351 },
+  { row: "VIII", count: 28, startX: 57, endX: 911, y: 382 },
+  { row: "IX", count: 29, startX: 41, endX: 927, y: 414 },
+  { row: "X", count: 30, startX: 25, endX: 942, y: 445 },
+  { row: "XI", count: 30, startX: 25, endX: 942, y: 530 },
+  { row: "XII", count: 29, startX: 41, endX: 927, y: 561 },
+  { row: "XIII", count: 29, startX: 41, endX: 927, y: 593 },
+  { row: "XIV", count: 28, startX: 57, endX: 911, y: 625 },
+  { row: "XV", count: 27, startX: 73, endX: 895, y: 656 },
+  { row: "XVI", count: 20, startX: 183, endX: 784, y: 688 },
 ];
+
+const distributedPosition = (start, end, count, index) => (
+  count <= 1 ? start : Math.round(start + ((end - start) * index) / (count - 1))
+);
 
 const getOrCreatePriceCategory = async ({ code, name, description }) => {
   const normalizedCode = code.toUpperCase().trim();
@@ -219,8 +228,8 @@ const getOrCreateSeatMap = async (venue) => {
       description:
         "Plan sedišta za Veliku scenu na osnovu javno dostupnog rasporeda: Parter 442, Galerija 62.",
       canvas: {
-        width: 1400,
-        height: 1000,
+        width: 1000,
+        height: 850,
       },
       sections: [
         {
@@ -252,37 +261,29 @@ const getOrCreateSeatMap = async (venue) => {
 const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }) => {
   const seats = [];
 
-  const startY = 165;
-  const gapX = 38;
-  const gapY = 34;
-
-  romanRows.forEach((rowLabel, rowIndex) => {
-    for (let seatNumber = 1; seatNumber <= 27; seatNumber += 1) {
-      const side = seatNumber <= 13 ? "left" : seatNumber === 14 ? "center" : "right";
-      const rowStagger = Math.abs(7.5 - rowIndex) * 3;
-      const aisleOffset = rowIndex >= 8 ? 70 : 0;
-      let x;
-      if (seatNumber <= 13) {
-        x = 118 + rowStagger + (seatNumber - 1) * gapX;
-      } else if (seatNumber === 14) {
-        x = 675;
-      } else {
-        x = 820 - rowStagger + (27 - seatNumber) * gapX;
-      }
+  parterRowLayout.forEach((layout, rowIndex) => {
+    for (let seatNumber = 1; seatNumber <= layout.count; seatNumber += 1) {
+      const x = distributedPosition(
+        layout.startX,
+        layout.endX,
+        layout.count,
+        seatNumber - 1
+      );
+      const side = x < 485 ? "left" : x > 515 ? "right" : "center";
 
       seats.push({
         seatMap: seatMap._id,
         venue: venue._id,
         section: "Parter",
-        row: rowLabel,
+        row: layout.row,
         number: seatNumber,
-        label: `${rowLabel}-${seatNumber}`,
+        label: `${layout.row}-${seatNumber}`,
         seatType: "standard",
         priceCategory: categoryII._id,
         x,
-        y: startY + rowIndex * gapY + aisleOffset,
-        width: 30,
-        height: 30,
+        y: layout.y,
+        width: 22,
+        height: 22,
         rotation: 0,
         sortOrder: rowIndex * 100 + seatNumber,
         isActive: true,
@@ -296,22 +297,32 @@ const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }
     {
       boxName: "Loža parter levo",
       count: 4,
-      x: 90,
-      y: 835,
+      positions: [
+        { x: 67, y: 772 },
+        { x: 99, y: 772 },
+        { x: 152, y: 772 },
+        { x: 183, y: 772 },
+      ],
       category: categoryI._id,
     },
     {
       boxName: "Loža parter desno",
       count: 4,
-      x: 1215,
-      y: 835,
+      positions: [
+        { x: 784, y: 772 },
+        { x: 816, y: 772 },
+        { x: 784, y: 804 },
+        { x: 816, y: 804 },
+      ],
       category: categoryI._id,
     },
     {
       boxName: "Pomoćna loža parter",
       count: 2,
-      x: 650,
-      y: 835,
+      positions: [
+        { x: 67, y: 804 },
+        { x: 99, y: 804 },
+      ],
       category: categoryIII._id,
     },
   ];
@@ -327,10 +338,10 @@ const buildParterSeats = ({ seatMap, venue, categoryII, categoryI, categoryIII }
         label: `${box.boxName} ${i}`,
         seatType: box.category.equals?.(categoryIII._id) ? "auxiliary" : "box",
         priceCategory: box.category,
-        x: box.x + ((i - 1) % 2) * 36,
-        y: box.y + (i > 2 ? 34 : 0),
-        width: 30,
-        height: 30,
+        x: box.positions[i - 1].x,
+        y: box.positions[i - 1].y,
+        width: 22,
+        height: 22,
         rotation: 0,
         sortOrder: 2000 + boxIndex * 100 + i,
         isActive: true,
@@ -438,6 +449,138 @@ const buildGallerySeats = ({ seatMap, venue, categoryI, categoryII, categoryIII 
   return seats;
 };
 
+const migrateOverridesFromRetiredSeats = async ({
+  retiredSeats,
+  retainedSeats,
+}) => {
+  if (!retiredSeats.length) {
+    return 0;
+  }
+
+  const retiredSeatById = new Map(
+    retiredSeats.map((seat) => [String(seat._id), seat])
+  );
+  const overrides = await EventSeatOverride.find({
+    seat: { $in: retiredSeats.map((seat) => seat._id) },
+  }).sort("event seat createdAt _id");
+
+  if (!overrides.length) {
+    return 0;
+  }
+
+  const retainedByRow = new Map();
+  retainedSeats.forEach((seat) => {
+    const current = retainedByRow.get(seat.row) || [];
+    current.push(seat);
+    retainedByRow.set(seat.row, current);
+  });
+  retainedByRow.forEach((seats) => {
+    seats.sort((left, right) => Number(left.number) - Number(right.number));
+  });
+
+  const eventIds = [...new Set(overrides.map((override) => String(override.event)))];
+  const retainedIds = retainedSeats.map((seat) => seat._id);
+  const [existingOverrides, occupiedItems] = await Promise.all([
+    EventSeatOverride.find({
+      event: { $in: eventIds },
+      seat: { $in: retainedIds },
+    }).select("event seat type active"),
+    OrderItem.find({
+      event: { $in: eventIds },
+      seat: { $in: retainedIds },
+      status: { $nin: ["cancelled", "refunded"] },
+    }).select("event seat"),
+  ]);
+
+  const unavailableTargets = new Set([
+    ...existingOverrides.map((override) => (
+      `${override.event}:${override.seat}`
+    )),
+    ...occupiedItems.map((item) => `${item.event}:${item.seat}`),
+  ]);
+  const existingOverrideByTarget = new Map(
+    existingOverrides.map((override) => [
+      `${override.event}:${override.seat}`,
+      override,
+    ])
+  );
+  const plannedTargets = new Set();
+  const overridesByEventAndRow = new Map();
+
+  overrides.forEach((override) => {
+    const retiredSeat = retiredSeatById.get(String(override.seat));
+    const key = `${override.event}:${retiredSeat.row}`;
+    const current = overridesByEventAndRow.get(key) || [];
+    current.push({ override, retiredSeat });
+    overridesByEventAndRow.set(key, current);
+  });
+
+  const operations = [];
+  overridesByEventAndRow.forEach((entries) => {
+    const row = entries[0].retiredSeat.row;
+    const eventId = String(entries[0].override.event);
+    const rowSeats = retainedByRow.get(row) || [];
+    const candidates = [...rowSeats]
+      .reverse()
+      .filter((seat) => {
+        const key = `${eventId}:${seat._id}`;
+        return !unavailableTargets.has(key) && !plannedTargets.has(key);
+      })
+      .slice(0, entries.length)
+      .reverse();
+
+    if (candidates.length !== entries.length) {
+      const sourceTypes = new Set(entries.map(({ override }) => override.type));
+      const fullRowAlreadyCovered = sourceTypes.size === 1
+        && rowSeats.every((seat) => {
+          const existing = existingOverrideByTarget.get(`${eventId}:${seat._id}`);
+          return existing?.active && existing.type === entries[0].override.type;
+        });
+
+      if (fullRowAlreadyCovered) {
+        entries.forEach(({ override }) => {
+          operations.push({
+            deleteOne: {
+              filter: { _id: override._id },
+            },
+          });
+        });
+        return;
+      }
+
+      throw new Error(
+        `Cannot safely relocate EventSeatOverrides from retired row ${row}.`
+      );
+    }
+
+    entries
+      .sort((left, right) => (
+        Number(left.retiredSeat.number) - Number(right.retiredSeat.number)
+      ))
+      .forEach(({ override }, index) => {
+        const target = candidates[index];
+        plannedTargets.add(`${eventId}:${target._id}`);
+        operations.push({
+          updateOne: {
+            filter: { _id: override._id },
+            update: {
+              $set: {
+                seat: target._id,
+                seatMap: target.seatMap,
+              },
+            },
+          },
+        });
+      });
+  });
+
+  if (operations.length) {
+    await EventSeatOverride.bulkWrite(operations, { ordered: true });
+  }
+
+  return operations.length;
+};
+
 const seedSeats = async ({ seatMap, venue, categoryI, categoryII, categoryIII }) => {
   const parterSeats = buildParterSeats({
     seatMap,
@@ -456,22 +599,75 @@ const seedSeats = async ({ seatMap, venue, categoryI, categoryII, categoryIII })
   });
 
   const seats = [...parterSeats, ...gallerySeats];
+  const existingSeats = await Seat.find({ seatMap: seatMap._id }).sort("sortOrder _id");
+  const targetLabels = new Set(seats.map((seat) => seat.label));
+  const existingByLabel = new Map(existingSeats.map((seat) => [seat.label, seat]));
+  const missingTargets = seats.filter((seat) => !existingByLabel.has(seat.label));
+  const reusableSeats = existingSeats.filter((seat) => !targetLabels.has(seat.label));
 
+  if (reusableSeats.length) {
+    const reusableIds = reusableSeats.map((seat) => seat._id);
+    const [orderItems, locks] = await Promise.all([
+      OrderItem.countDocuments({ seat: { $in: reusableIds } }),
+      SeatLock.countDocuments({ seat: { $in: reusableIds } }),
+    ]);
+
+    if (orderItems || locks) {
+      throw new Error(
+        "The corrected auditorium layout cannot reuse seats referenced by "
+        + `ticketing history (orders: ${orderItems}, locks: ${locks}).`
+      );
+    }
+
+    await migrateOverridesFromRetiredSeats({
+      retiredSeats: reusableSeats,
+      retainedSeats: existingSeats.filter((seat) => targetLabels.has(seat.label)),
+    });
+
+    await Seat.bulkWrite(
+      reusableSeats.map((seat) => ({
+        updateOne: {
+          filter: { _id: seat._id },
+          update: {
+            $set: {
+              label: `__phase2a_layout_${seat._id}`,
+              section: "__layout_reconciliation__",
+              row: "",
+              number: null,
+              isActive: false,
+              isSellable: false,
+            },
+          },
+        },
+      })),
+      { ordered: true }
+    );
+  }
+
+  const reassignedByLabel = new Map(
+    missingTargets.map((seat, index) => [seat.label, reusableSeats[index]])
+  );
   await Seat.bulkWrite(
-    seats.map((seat) => ({
-      updateOne: {
-        filter: { seatMap: seatMap._id, label: seat.label },
-        update: { $set: seat },
-        upsert: true,
-      },
-    })),
-    { ordered: false }
+    seats.map((seat) => {
+      const existing = existingByLabel.get(seat.label) || reassignedByLabel.get(seat.label);
+      return {
+        updateOne: {
+          filter: existing ? { _id: existing._id } : { seatMap: seatMap._id, label: seat.label },
+          update: { $set: seat },
+          upsert: !existing,
+        },
+      };
+    }),
+    { ordered: true }
   );
 
-  await Seat.updateMany(
-    { seatMap: seatMap._id, label: { $nin: seats.map((seat) => seat.label) } },
-    { $set: { isActive: false, isSellable: false } }
-  );
+  const unusedReusableSeats = reusableSeats.slice(missingTargets.length);
+  if (unusedReusableSeats.length) {
+    await Seat.updateMany(
+      { _id: { $in: unusedReusableSeats.map((seat) => seat._id) } },
+      { $set: { isActive: false, isSellable: false } }
+    );
+  }
 
   return {
     parter: parterSeats.length,

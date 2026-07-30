@@ -86,7 +86,7 @@ export class PublicHeaderComponent {
   }
 
   logo(): string {
-    return this.media.resolve(this.settings()?.mainLogo) || '/madlenianum/logo.png';
+    return '/madlenianum/LogoMadlenianum%20(1).png';
   }
 
   menuImage(item: PublicRepertoireMenuItem): string {

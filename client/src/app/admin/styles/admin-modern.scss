@@ -1,4 +1,6 @@
 .admin-shell {
+  --admin-font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --admin-font-ui: "DM Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --admin-canvas: #ebe7df;
   --admin-canvas-deep: #ddd7cd;
   --admin-surface: #fffdf9;
@@ -26,6 +28,65 @@
   --admin-shadow: 0 14px 38px rgba(19, 16, 13, 0.09);
 
   color: var(--admin-ink);
+  font-family: var(--admin-font-ui);
+
+  :is(button, a, input, select, textarea, label, small, strong, span, p, td, th, option) {
+    font-family: var(--admin-font-ui);
+  }
+
+  :is(
+    .side-rail,
+    .side-rail *,
+    .admin-top,
+    .admin-top *,
+    nav,
+    nav *,
+    .logout,
+    .view-site
+  ) {
+    font-family: var(--admin-font-ui) !important;
+  }
+
+  .admin-main :is(
+    h1,
+    h2,
+    h3,
+    .display-title,
+    .section-title,
+    .card-title,
+    .resource-card h2,
+    .seat-note h2,
+    .quick-grid strong,
+    .quiet-panel strong,
+    .event-list time span,
+    .metadata-dialog h2,
+    .conflict-dialog h2
+  ) {
+    font-family: var(--admin-font-display) !important;
+    font-weight: 400 !important;
+  }
+
+  .admin-main :is(
+    button,
+    input,
+    select,
+    textarea,
+    label,
+    table,
+    th,
+    td,
+    .filters,
+    .toolbar,
+    .actions,
+    .badge,
+    .status-pill,
+    .meta,
+    .helper,
+    .hint,
+    .selector-note
+  ) {
+    font-family: var(--admin-font-ui) !important;
+  }
 
   .admin-main > router-outlet + * {
     display: block;
@@ -193,7 +254,7 @@
   :is(h1, h2) {
     margin: 0.3rem 0 0.45rem;
     color: #fffaf3;
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: var(--admin-font-display);
     font-size: clamp(2rem, 3.5vw, 3.35rem);
     font-weight: 400;
     letter-spacing: 0;

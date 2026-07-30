@@ -134,7 +134,7 @@ button:not(.ghost),
 
 .usage-stat strong {
   color: #1c1916;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--admin-font-display);
   font-size: 1.45rem;
   font-weight: 400;
   line-height: 1;

@@ -19,7 +19,7 @@
   max-width: 650px;
   margin: 0 0 24px;
   color: #0c0c0c;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(3.5rem, 5vw, 5.4rem);
   font-weight: 400;
   line-height: 0.98;
@@ -43,7 +43,7 @@
 .contact h3 {
   margin: 0 0 26px;
   color: #171717;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.55rem;
   font-weight: 400;
 }
@@ -68,7 +68,7 @@
 .contact dd {
   margin: 0;
   color: #181818;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
 }
 
@@ -227,7 +227,7 @@ button:disabled {
 }
 
 .success h3 {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 400;
 }

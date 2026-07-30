@@ -26,7 +26,7 @@
 
 .artists-hero h1 {
   margin: 12px 0 16px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(3.2rem, 4.4vw, 4.55rem);
   font-weight: 400;
   line-height: 0.88;
@@ -49,7 +49,7 @@
 }
 
 .artists-hero aside strong {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 2.4rem;
   font-weight: 400;
   line-height: 0.9;
@@ -78,7 +78,7 @@
 
 .artists-list h2 {
   margin: 13px 0 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(2.35rem, 3vw, 3.2rem);
   font-weight: 400;
   line-height: 0.95;
@@ -130,7 +130,7 @@
   height: 100%;
   place-items: center;
   color: #8d7865;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 4rem;
 }
 
@@ -147,7 +147,7 @@
 
 .artist-card h3 {
   margin: 7px 0 11px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(1.65rem, 1.8vw, 2rem);
   font-weight: 400;
   line-height: 0.98;

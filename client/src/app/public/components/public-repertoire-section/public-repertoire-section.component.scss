@@ -17,7 +17,7 @@
 .section-top h2 {
   max-width: 720px;
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(3rem, 4.75vw, 4.5rem);
   font-weight: 400;
   line-height: 1;
@@ -83,7 +83,7 @@
 .production-grid h3 {
   min-height: 2.25em;
   margin: 0 0 1rem;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.6rem;
   font-weight: 400;
   line-height: 1.08;

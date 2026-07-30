@@ -38,7 +38,7 @@
 
         <div class="event-actions">
           <a *ngIf="production(event)?.slug" class="details" [routerLink]="[locale.equivalentPath('/predstave', locale.current()), production(event)?.slug]">ⓘ <span>{{ i18n.t('common.learnMore') }}</span></a>
-          <a *ngIf="display.eventSale(event).canPurchase && eventId(event)" class="buy" [routerLink]="[locale.equivalentPath('/kupovina', locale.current()), eventId(event)]" [attr.aria-label]="i18n.t('repertoire.buyTickets')">{{ i18n.t('repertoire.buyTickets') }}</a>
+          <a *ngIf="display.eventSale(event).canPurchase && eventId(event)" class="buy" [routerLink]="[locale.equivalentPath('/kupovina', locale.current()), eventId(event)]" [attr.aria-label]="i18n.t('repertoire.buyTickets')">{{ i18n.t('repertoire.buyShort') }}</a>
           <span class="sale-status" *ngIf="!display.eventSale(event).canPurchase">{{ display.eventSale(event).label }}</span>
         </div>
       </article>

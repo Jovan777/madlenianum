@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import { PublicEvent } from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
@@ -11,7 +10,7 @@ import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 @Component({
   selector: 'app-public-ticket-event-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, PublicTranslatePipe],
+  imports: [CommonModule, PublicTranslatePipe],
   templateUrl: './public-ticket-event-card.component.html',
   styleUrl: './public-ticket-event-card.component.scss',
 })
@@ -35,15 +34,19 @@ export class PublicTicketEventCardComponent {
     return this.publicApi.mediaUrl(production?.poster) || this.publicApi.fallbackImage(1);
   }
 
-  eventDate(): string {
+  eventDay(): string {
     if (!this.event.startsAt) return this.i18n.t('event.dateSoon');
-
     return new Intl.DateTimeFormat(this.locale.isEnglish() ? 'en-GB' : 'sr-Latn-RS', {
       timeZone: 'Europe/Belgrade',
-      weekday: 'long',
       day: '2-digit',
-      month: 'long',
-      year: 'numeric',
+      month: 'short',
+    }).format(new Date(this.event.startsAt));
+  }
+
+  eventTime(): string {
+    if (!this.event.startsAt) return '--:--';
+    return new Intl.DateTimeFormat(this.locale.isEnglish() ? 'en-GB' : 'sr-Latn-RS', {
+      timeZone: 'Europe/Belgrade',
       hour: '2-digit',
       minute: '2-digit',
     }).format(new Date(this.event.startsAt));
@@ -51,16 +54,5 @@ export class PublicTicketEventCardComponent {
 
   venueName(): string {
     return this.event.venue?.name || this.event.venue?.title || 'Madlenianum';
-  }
-
-  statusLabel(): string {
-    const labels: Record<string, string> = {
-      draft: this.i18n.t('event.status.draft'),
-      scheduled: this.i18n.t('event.status.scheduled'),
-      completed: this.i18n.t('event.status.completed'),
-      cancelled: this.i18n.t('event.status.cancelled'),
-      postponed: this.i18n.t('event.status.postponed'),
-    };
-    return labels[this.event.status || ''] || '';
   }
 }

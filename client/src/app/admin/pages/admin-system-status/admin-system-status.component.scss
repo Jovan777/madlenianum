@@ -69,7 +69,7 @@ header {
   h2 {
     margin: 0.3rem 0 0.45rem;
     color: #fffaf3;
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--admin-font-display);
     font-size: clamp(2rem, 3.5vw, 3.35rem);
     font-weight: 400;
     line-height: 1.02;

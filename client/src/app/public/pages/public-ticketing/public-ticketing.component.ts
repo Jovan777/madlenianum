@@ -4,7 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize, Subscription } from 'rxjs';
 
-import { PublicEvent, PublicOrder, PublicSeat } from '../../../core/models/public.models';
+import {
+  PublicEvent,
+  PublicOrder,
+  PublicProduction,
+  PublicSeat,
+} from '../../../core/models/public.models';
 import { PublicApiService } from '../../../core/services/public-api.service';
 import { PublicLocaleService } from '../../../core/services/public-locale.service';
 import { PublicSeatMapComponent } from '../../components/public-seat-map/public-seat-map.component';
@@ -132,6 +137,64 @@ export class PublicTicketingComponent implements OnInit, OnDestroy {
 
   selectedCurrency(seats = this.selectedSeats()): string {
     return seats[0]?.price?.currency || this.order()?.currency || 'RSD';
+  }
+
+  production(): PublicProduction | null {
+    const currentEvent = this.event();
+    return currentEvent ? this.publicApi.productionFromEvent(currentEvent) : null;
+  }
+
+  productionTitle(): string {
+    return this.production()?.title || this.i18n.t('ticketing.event');
+  }
+
+  changeDatePath(): string {
+    const slug = this.production()?.slug;
+    return slug
+      ? this.locale.productionPath(slug)
+      : this.locale.equivalentPath('/repertoar', this.locale.current());
+  }
+
+  selectedSubtotal(): number {
+    return this.selectedTotal() / 1.2;
+  }
+
+  selectedVat(): number {
+    return this.selectedTotal() - this.selectedSubtotal();
+  }
+
+  seatCode(seat: PublicSeat): string {
+    if (!seat.number) return seat.label;
+    if (!String(seat.section || '').toLocaleLowerCase('sr-RS').includes('parter')) {
+      return String(seat.number);
+    }
+    const side = Number(seat.x || 0) <= 500 ? 'L' : 'D';
+    return `${seat.number}${side}`;
+  }
+
+  seatRowLabel(seat: PublicSeat): string {
+    const rows = [
+      'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII',
+      'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI',
+    ];
+    const index = rows.indexOf(String(seat.row || '').toUpperCase());
+    return index >= 0
+      ? this.i18n.t('ticketing.rowOrdinal', { row: index + 1 })
+      : `${this.i18n.t('ticketing.row')} ${seat.row || '-'}`;
+  }
+
+  seatAreaLabel(seat: PublicSeat): string {
+    return seat.section || this.i18n.t('ticketing.hall');
+  }
+
+  seatCategoryLabel(seat: PublicSeat): string {
+    return seat.priceCategory?.name
+      || seat.priceCategory?.code
+      || this.i18n.t('ticketing.ticket');
+  }
+
+  confirmSeatSelection(): void {
+    this.beginCheckout('purchase');
   }
 
   beginCheckout(action: OrderAction): void {

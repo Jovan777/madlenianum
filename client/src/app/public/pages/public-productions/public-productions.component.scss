@@ -10,7 +10,7 @@
 
 .page-head h1 {
   margin: 12px 0 14px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 7.2rem;
   font-weight: 400;
   letter-spacing: 0;
@@ -107,7 +107,7 @@
 .work-copy h2 {
   max-width: 720px;
   margin: 10px 0 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 4.2rem;
   font-weight: 400;
   letter-spacing: 0;

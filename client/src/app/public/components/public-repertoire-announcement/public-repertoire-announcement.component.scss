@@ -64,7 +64,7 @@
 h2 {
   max-width: 680px;
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(3rem, 5vw, 5.6rem);
   font-weight: 400;
   line-height: 0.98;

@@ -16,6 +16,7 @@ import {
 
 import { PublicSeat } from '../../../core/models/public.models';
 import { PublicI18nService } from '../../i18n/public-i18n.service';
+import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
 
 interface MapBounds {
   minX: number;
@@ -30,20 +31,36 @@ interface PublicMapGroup {
   sections: string[];
 }
 
+interface PublicRowGuide {
+  label: string;
+  top: number;
+  left: number;
+  right: number;
+}
+
+interface PublicCategoryLegend {
+  key: string;
+  label: string;
+  amount: number | null;
+  currency: string;
+  shape: 'square' | 'circle';
+}
+
 @Component({
   selector: 'app-public-seat-map',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PublicTranslatePipe],
   templateUrl: './public-seat-map.component.html',
   styleUrl: './public-seat-map.component.scss',
 })
 export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   readonly i18n = inject(PublicI18nService);
+
   @Input() seats: PublicSeat[] = [];
   @Input() selectedSeatIds: string[] = [];
   @Input() lockedSeatIds: string[] = [];
-  @Input() canvasWidth = 1200;
-  @Input() canvasHeight = 760;
+  @Input() canvasWidth = 1000;
+  @Input() canvasHeight = 850;
   @Input() disabled = false;
   @Input() maxSelection = 4;
   @Output() selectionChange = new EventEmitter<string[]>();
@@ -53,19 +70,10 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   readonly activeSection = signal('parter');
   readonly fitScale = signal(1);
-
-  readonly legend = [
-    { status: 'available', label: this.i18n.t('ticketing.available') },
-    { status: 'selected', label: this.i18n.t('ticketing.selected') },
-    { status: 'locked', label: this.i18n.t('ticketing.locked') },
-    { status: 'reserved', label: this.i18n.t('ticketing.reserved') },
-    { status: 'sold', label: this.i18n.t('ticketing.sold') },
-    { status: 'box_office_only', label: this.i18n.t('ticketing.boxOfficeOnly') },
-    { status: 'unavailable', label: this.i18n.t('ticketing.unavailable') },
-  ];
+  readonly zoomFactor = signal(1);
 
   private resizeObserver?: ResizeObserver;
-  private bounds: MapBounds = { minX: 0, minY: 0, width: 900, height: 620 };
+  private bounds: MapBounds = { minX: 0, minY: 0, width: 1000, height: 850 };
 
   ngAfterViewInit(): void {
     this.resizeObserver = new ResizeObserver(() => this.updateFitScale());
@@ -95,7 +103,7 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
     );
     const gallerySections = sections.filter((section) => {
       const normalized = section.toLocaleLowerCase('sr-RS');
-      return normalized.includes('galerija') || normalized.includes('centralna loža');
+      return normalized.includes('galerija') || normalized.includes('centralna');
     });
     const assigned = new Set([...parterSections, ...gallerySections]);
     const groups: PublicMapGroup[] = [];
@@ -126,14 +134,77 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
     return this.seats.filter((seat) => includedSections.has(seat.section || 'Ostalo'));
   }
 
+  rowGuides(): PublicRowGuide[] {
+    if (this.activeSection() !== 'parter') return [];
+
+    const rows = new Map<string, PublicSeat[]>();
+    this.visibleSeats()
+      .filter((seat) => seat.section === 'Parter' && Boolean(seat.row))
+      .forEach((seat) => {
+        const current = rows.get(String(seat.row)) || [];
+        current.push(seat);
+        rows.set(String(seat.row), current);
+      });
+
+    return [...rows.entries()]
+      .map(([label, seats]) => {
+        const xValues = seats.map((seat) => this.seatLeft(seat));
+        const top = seats.reduce((sum, seat) => sum + this.seatTop(seat), 0) / seats.length;
+        return {
+          label,
+          top,
+          left: Math.max(8, Math.min(...xValues) - 38),
+          right: Math.min(this.mapWidth() - 8, Math.max(...xValues) + 38),
+        };
+      })
+      .sort((a, b) => a.top - b.top);
+  }
+
+  categoryLegend(): PublicCategoryLegend[] {
+    const byCategory = new Map<string, PublicCategoryLegend>();
+
+    this.visibleSeats().forEach((seat) => {
+      const code = String(seat.priceCategory?.code || '').trim().toUpperCase();
+      const isAuxiliary = seat.seatType === 'auxiliary' || code === 'III';
+      const key = isAuxiliary ? 'III' : code || String(seat.priceCategory?.id || 'seat');
+      if (byCategory.has(key)) return;
+
+      byCategory.set(key, {
+        key,
+        label: seat.priceCategory?.name || this.i18n.t('ticketing.ticket'),
+        amount: seat.price ? Number(seat.price.amount) : null,
+        currency: seat.price?.currency || 'RSD',
+        shape: isAuxiliary ? 'circle' : 'square',
+      });
+    });
+
+    const order = new Map([['I', 1], ['II', 2], ['III', 3], ['ALL', 4]]);
+    return [...byCategory.values()].sort(
+      (a, b) => (order.get(a.key) || 10) - (order.get(b.key) || 10)
+    );
+  }
+
   setSection(section: string): void {
     this.activeSection.set(section);
+    this.zoomFactor.set(1);
     this.updateBounds();
     queueMicrotask(() => this.updateFitScale());
   }
 
+  zoomIn(): void {
+    this.zoomFactor.update((value) => Math.min(1.25, Number((value + 0.1).toFixed(2))));
+  }
+
+  zoomOut(): void {
+    this.zoomFactor.update((value) => Math.max(0.85, Number((value - 0.1).toFixed(2))));
+  }
+
+  resetZoom(): void {
+    this.zoomFactor.set(1);
+  }
+
   scale(): number {
-    return this.fitScale();
+    return this.fitScale() * this.zoomFactor();
   }
 
   scaledWidth(): number {
@@ -142,21 +213,6 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   scaledHeight(): number {
     return Math.max(1, this.mapHeight() * this.scale());
-  }
-
-  private updateFitScale(): void {
-    const viewport = this.viewport?.nativeElement;
-    if (!viewport) return;
-
-    const availableWidth = Math.max(280, viewport.clientWidth - 24);
-    const availableHeight = Math.max(320, viewport.clientHeight - 24);
-    const nextScale = Math.min(
-      availableWidth / Math.max(1, this.mapWidth()),
-      availableHeight / Math.max(1, this.mapHeight()),
-      1.4
-    );
-
-    this.fitScale.set(Math.max(0.2, nextScale));
   }
 
   toggleSeat(seat: PublicSeat): void {
@@ -177,7 +233,12 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
   }
 
   seatClass(seat: PublicSeat): string[] {
-    const classes = [`status-${seat.availabilityStatus}`];
+    const code = String(seat.priceCategory?.code || '').trim().toLowerCase();
+    const classes = [
+      `status-${seat.availabilityStatus}`,
+      `category-${code || 'default'}`,
+      `seat-type-${seat.seatType || 'standard'}`,
+    ];
     if (this.selectedSeatIds.includes(String(seat.id))) classes.push('selected');
     if (this.lockedSeatIds.includes(String(seat.id))) classes.push('own-lock');
     if (seat.isAccessible) classes.push('accessible');
@@ -188,15 +249,20 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
     const price = seat.price
       ? `${seat.price.amount.toLocaleString('sr-RS')} ${seat.price.currency}`
       : 'Bez cene';
-    return `${seat.label}, ${this.statusLabel(seat.availabilityStatus)}, ${price}`;
+    const location = [
+      seat.section,
+      seat.row ? `red ${seat.row}` : '',
+      seat.number ? `sedište ${seat.number}` : '',
+    ].filter(Boolean).join(', ');
+    return `${location || seat.label}, ${this.statusLabel(seat.availabilityStatus)}, ${price}`;
   }
 
   seatWidth(seat: PublicSeat): number {
-    return Math.max(32, Math.min(34, Number(seat.width || 32)));
+    return Math.max(18, Math.min(24, Number(seat.width || 22)));
   }
 
   seatHeight(seat: PublicSeat): number {
-    return Math.max(30, Math.min(32, Number(seat.height || 30)));
+    return Math.max(18, Math.min(24, Number(seat.height || 22)));
   }
 
   seatLeft(seat: PublicSeat): number {
@@ -226,7 +292,33 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
   }
 
   statusLabel(status: string): string {
-    return this.legend.find((item) => item.status === status)?.label || status;
+    const labels: Record<string, string> = {
+      available: this.i18n.t('ticketing.available'),
+      selected: this.i18n.t('ticketing.selected'),
+      locked: this.i18n.t('ticketing.locked'),
+      reserved: this.i18n.t('ticketing.reserved'),
+      sold: this.i18n.t('ticketing.sold'),
+      box_office_only: this.i18n.t('ticketing.boxOfficeOnly'),
+      unavailable: this.i18n.t('ticketing.unavailable'),
+    };
+    return labels[status] || status;
+  }
+
+  trackSeat(_index: number, seat: PublicSeat): string {
+    return String(seat.id);
+  }
+
+  private updateFitScale(): void {
+    const viewport = this.viewport?.nativeElement;
+    if (!viewport) return;
+
+    const availableWidth = Math.max(280, viewport.clientWidth - 36);
+    const scaleCap = this.activeSection() === 'parter' ? 1.75 : 1.2;
+    const nextScale = Math.min(
+      availableWidth / Math.max(1, this.mapWidth()),
+      scaleCap
+    );
+    this.fitScale.set(Math.max(0.34, nextScale));
   }
 
   private updateBounds(): void {
@@ -236,18 +328,18 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
       return;
     }
 
-    const xValues = visible.map((seat) => Number(seat.x || 0));
-    const yValues = visible.map((seat) => Number(seat.y || 0));
-    const minX = Math.max(0, Math.min(...xValues) - 22);
-    const minY = Math.max(0, Math.min(...yValues) - 145);
-    const maxX = Math.max(...xValues) + 22;
-    const maxY = Math.max(...yValues) + 65;
-
+    const maxX = Math.max(...visible.map((seat) => Number(seat.x || 0))) + 55;
+    const maxY = Math.max(...visible.map((seat) => Number(seat.y || 0))) + 46;
+    const isParter = this.activeSection() === 'parter';
     this.bounds = {
-      minX,
-      minY,
-      width: Math.max(640, maxX - minX),
-      height: Math.max(460, maxY - minY),
+      minX: 0,
+      minY: 0,
+      width: isParter
+        ? Math.max(960, maxX)
+        : Math.max(700, this.canvasWidth, maxX),
+      height: isParter
+        ? Math.max(820, maxY)
+        : Math.max(500, this.canvasHeight, maxY),
     };
   }
 }
