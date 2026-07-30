@@ -34,7 +34,7 @@
       <a class="repertoire-card" *ngFor="let item of repertoireItems; let index = index" [routerLink]="path(item.path)" [queryParams]="item.queryParams || null" (click)="closeMenu()">
         <span class="repertoire-image"><img [src]="menuImage(item)" alt="" aria-hidden="true" /></span><span>{{ repertoireItemLabel(index) }}</span>
       </a>
-      <div class="repertoire-secondary"><a [routerLink]="path('/predstave')" (click)="closeMenu()">{{ i18n.t('nav.allProductions') }}</a><a [routerLink]="path('/repertoar')" (click)="closeMenu()">{{ i18n.t('nav.upcomingEvents') }}</a></div>
+      <div class="repertoire-secondary"><a [routerLink]="path('/repertoar')" (click)="closeMenu()">{{ i18n.t('nav.upcomingEvents') }}</a></div>
     </div>
   </div>
 </nav>

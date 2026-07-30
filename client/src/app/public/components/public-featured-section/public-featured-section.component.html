@@ -1,7 +1,6 @@
 <section class="featured-section" *ngIf="productions().length" data-motion="up">
   <header>
     <h2>{{ heading() || i18n.t('home.featured') }}</h2>
-    <a [routerLink]="locale.equivalentPath('/predstave', locale.current())">{{ i18n.t('repertoire.allProductions') }}</a>
   </header>
 
   <div class="feature-layout" data-motion-stagger>

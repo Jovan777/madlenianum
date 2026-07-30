@@ -25,7 +25,6 @@ export interface PublicRentalMenuItem {
 
 export const PUBLIC_NAVIGATION: PublicNavigationItem[] = [
   { label: 'Repertoar', path: '/repertoar' },
-  { label: 'Predstave', path: '/predstave' },
   { label: 'Umetnici', path: '/umetnici' },
   { label: 'Fundusi', path: '/fundusi' },
   { label: 'Zakup prostora', path: '/zakup-prostora' },
@@ -88,7 +87,6 @@ export const PUBLIC_RENTAL_MENU: PublicRentalMenuItem[] = [
 const PUBLIC_EXACT_ROUTES = new Set([
   '/',
   '/repertoar',
-  '/predstave',
   '/umetnici',
   '/fundusi',
   '/zakup-prostora',
@@ -101,7 +99,6 @@ const PUBLIC_EXACT_ROUTES = new Set([
 const PUBLIC_ENGLISH_EXACT_ROUTES = new Set([
   '/en',
   '/en/repertoire',
-  '/en/productions',
   '/en/artists',
   '/en/fundus',
   '/en/venue-rental',

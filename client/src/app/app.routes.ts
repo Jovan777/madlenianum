@@ -31,7 +31,6 @@ import { AdminPromoSlidePreviewComponent } from './admin/pages/admin-promo-slide
 
 import { PublicLayoutComponent } from './public/layout/public-layout/public-layout.component';
 import { PublicHomeComponent } from './public/pages/public-home/public-home.component';
-import { PublicProductionsComponent } from './public/pages/public-productions/public-productions.component';
 import { PublicProductionDetailComponent } from './public/pages/public-production-detail/public-production-detail.component';
 import { PublicRepertoireComponent } from './public/pages/public-repertoire/public-repertoire.component';
 import { PublicTicketingComponent } from './public/pages/public-ticketing/public-ticketing.component';
@@ -226,7 +225,6 @@ export const routes: Routes = [
     children: [
       { path: '', component: PublicHomeComponent },
       { path: 'repertoire', component: PublicRepertoireComponent },
-      { path: 'productions', component: PublicProductionsComponent },
       { path: 'productions/:slug', component: PublicProductionDetailComponent },
       { path: 'tickets/:eventId', component: PublicTicketingComponent },
       { path: 'order', component: PublicOrderLookupComponent },
@@ -280,10 +278,6 @@ export const routes: Routes = [
       {
         path: 'repertoar',
         component: PublicRepertoireComponent,
-      },
-      {
-        path: 'predstave',
-        component: PublicProductionsComponent,
       },
       {
         path: 'predstave/:slug',
