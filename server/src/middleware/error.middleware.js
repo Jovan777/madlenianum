@@ -33,11 +33,19 @@ const errorHandler = (err, req, res, next) => {
       : `Upload failed: ${err.message}`;
   }
 
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction && statusCode >= 500) {
+    message = "Došlo je do interne greške. Pokušajte ponovo kasnije.";
+  }
+
+  const safeDetails = statusCode < 500 ? err.details : undefined;
+
   res.status(statusCode).json({
     success: false,
     message,
-    details: err.details,
-    stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
+    code: err.code && statusCode < 500 ? err.code : undefined,
+    details: safeDetails,
+    stack: isProduction ? undefined : err.stack,
   });
 };
 

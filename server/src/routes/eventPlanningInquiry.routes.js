@@ -8,10 +8,11 @@ const {
 } = require("../controllers/rental.controller");
 
 const router = express.Router();
+const { resendLimiter } = require("../middleware/securityLimits.middleware");
 
 router.get("/", listEventPlanningInquiries);
 router.get("/:id", getEventPlanningInquiryById);
-router.post("/:id/resend", resendEventPlanningInquiry);
+router.post("/:id/resend", resendLimiter, resendEventPlanningInquiry);
 router.patch("/:id/status", updateEventPlanningInquiryStatus);
 router.put("/:id/status", updateEventPlanningInquiryStatus);
 router.patch("/:id/notes", updateEventPlanningInquiryNotes);

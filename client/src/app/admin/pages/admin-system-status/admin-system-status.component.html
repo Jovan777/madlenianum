@@ -38,7 +38,7 @@
     <h3>Detalji upozorenja</h3>
     <div class="warning-list">
       <article *ngFor="let item of warningItems()">
-        <div><strong>{{ label(item.code) }}</strong><span>{{ item.targetLabel }}</span><p>{{ item.message }}</p></div>
+        <div><strong>{{ label(item.code) }}</strong><span class="severity" [class.error-severity]="item.severity === 'error'">{{ item.severity === 'error' ? 'Kritično' : item.severity === 'info' ? 'Informacija' : 'Upozorenje' }}</span><span>{{ item.targetLabel }}</span><p>{{ item.message }}</p></div>
         <a [routerLink]="item.link">Otvori</a>
       </article>
     </div>

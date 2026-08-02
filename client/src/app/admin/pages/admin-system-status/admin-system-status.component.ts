@@ -59,6 +59,8 @@ export class AdminSystemStatusComponent implements OnInit {
       venue_mismatch: 'Pogrešna scena', not_yet_valid: 'Cenovnik još ne važi', expired: 'Cenovnik je istekao', unsupported_production_type: 'Nepodržan tip predstave',
       premiere_mismatch: 'Premijerni status se ne podudara', invalid_range: 'Neispravan period', scheduled_in_past: 'Prošao termin je zakazan', sale_open_after_start: 'Prodaja otvorena posle početka',
       inactive_category: 'Neaktivna kategorija', overlapping_active_plan: 'Preklapanje cenovnika', missing_sale_start: 'Nedostaje početak prodaje', missing_sale_end: 'Nedostaje kraj prodaje',
+      expired_locks_not_cleaned: 'Istekla zaključavanja nisu očišćena', email_transport_not_configured: 'Email nije konfigurisan', cors_allowlist_not_configured: 'CORS allowlista nije konfigurisana',
+      order_confirmation_email_failed: 'Potvrda porudžbine nije poslata', active_order_past_expiry: 'Aktivna porudžbina je istekla', missing_order_snapshot: 'Nedostaje istorijski snapshot', duplicate_active_order_seat: 'Duplirana aktivna rezervacija sedišta', rental_inquiry_email_failed: 'Email za zakup nije poslat', event_planning_inquiry_email_failed: 'Email za događaj nije poslat', no_publicly_available_seats: 'Nema javno dostupnih sedišta', invalid_override_reference: 'Neispravna referenca izuzetka', override_seat_map_mismatch: 'Izuzetak van mape',
     } as Record<string, string>)[key] || key;
   }
 }

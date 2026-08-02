@@ -28,13 +28,17 @@ const propScenographyRoutes = require("./propScenography.routes");
 const rentalSpaceRoutes = require("./rentalSpace.routes");
 const rentalInquiryRoutes = require("./rentalInquiry.routes");
 const eventPlanningInquiryRoutes = require("./eventPlanningInquiry.routes");
+const adminAuditRoutes = require("./adminAudit.routes");
 const { protectAdmin } = require("../middleware/auth.middleware");
+const { adminAuditTrail } = require("../middleware/adminAudit.middleware");
 
 const router = express.Router();
 
 router.use("/auth", authRoutes);
 
 router.use(protectAdmin);
+router.use(adminAuditTrail);
+router.use("/audit-logs", adminAuditRoutes);
 router.use("/customers", adminCustomerRoutes);
 router.use("/orders", adminOrderRoutes);
 router.get("/auth/me", me);

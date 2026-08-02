@@ -82,6 +82,16 @@ const galleryItems = (items) => (items || [])
     caption: "",
     credit: "Madlenianum",
     altText: media.alt || media.title || "",
+    translations: {
+      en: {
+        caption: "",
+        credit: "Madlenianum",
+        altText: seedEnglishContent.translateSeedMetadata(
+          media.alt || media.title || "",
+          { preserveUnknown: true }
+        ),
+      },
+    },
     displayOrder: index,
   }));
 

@@ -28,8 +28,11 @@ build/
 tmp/
 coverage/
 
-# Uploads / user generated files
-uploads/
+# Repository-managed Madlenianum media is part of the deploy artifact.
+# Keep unrelated runtime upload directories ignored.
+uploads/*
+!uploads/madlenianum/
+!uploads/madlenianum/**
 src/uploads/
 
 # OS files

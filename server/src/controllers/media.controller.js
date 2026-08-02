@@ -3,6 +3,7 @@ const Media = require("../models/Media");
 const mediaStorage = require("../services/localMediaStorage.service");
 const { findMediaUsage } = require("../services/mediaUsage.service");
 const { withMergedTranslations } = require("../services/localizedContent.service");
+const { validateUploadedFileContent } = require("../services/mediaFileValidation.service");
 
 const getFileType = (mimeType) => (mimeType.startsWith("image/") ? "image" : "document");
 
@@ -35,6 +36,7 @@ const buildMediaPayload = (file, body, adminId) => {
 
 const createUploadedMedia = async (files, body, adminId) => {
   try {
+    await Promise.all(files.map(validateUploadedFileContent));
     const payloads = files.map((file) => buildMediaPayload(file, body, adminId));
     return await Media.insertMany(payloads);
   } catch (error) {

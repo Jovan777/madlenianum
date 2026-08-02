@@ -33,6 +33,7 @@ export class AdminLayoutComponent {
     { label: 'Promo slides', path: '/admin/promo-slides', icon: 'B' },
     { label: 'Homepage', path: '/admin/homepage', icon: 'H' },
     { label: 'Site settings', path: '/admin/site-settings', icon: 'T' },
+    { label: 'Audit aktivnosti', path: '/admin/audit-logs', icon: 'Q' },
     { label: 'System', path: '/admin/system', icon: 'S' },
   ];
 

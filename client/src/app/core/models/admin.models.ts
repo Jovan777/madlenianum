@@ -432,9 +432,23 @@ export interface AdminSystemStatusResponse {
   counts: Record<string, number>;
   warnings: Record<string, number>;
   warningItems?: Array<AdminValidationIssue & {
-    targetType: 'event' | 'pricePlan' | 'seatMap' | 'order';
+    severity?: 'info' | 'warning' | 'error';
+    targetType: 'event' | 'pricePlan' | 'seatMap' | 'order' | 'rentalInquiry' | 'eventPlanningInquiry' | 'system';
     targetId: string;
     targetLabel: string;
     link: string;
   }>;
+}
+
+export interface AdminAuditLog {
+  _id: string;
+  adminIdentity: { username?: string; email?: string };
+  action: string;
+  entityType: string;
+  entityId?: string;
+  method?: string;
+  path?: string;
+  statusCode: number;
+  summary?: Record<string, string | number | boolean>;
+  createdAt: string;
 }

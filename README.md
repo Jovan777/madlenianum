@@ -31,19 +31,24 @@ ADMIN_PASSWORD=Admin123!
 
 Never commit `server/.env` or real production credentials.
 
-## Demo media files
+## Repository-managed media files
 
-`server/uploads` contains runtime/user files and is intentionally ignored by Git. The content seed expects the demo files supplied in `client/public/madlenianum` to also exist under `server/uploads/madlenianum`.
+Production media is stored below `server/uploads/madlenianum` and is intentionally
+versioned with the project. Render serves these files through `/uploads/*`; content
+seeds create or update the matching MongoDB Media records without duplicating the
+physical files.
 
-On a new machine, copy them once before `seed:content`:
+The production media workflow is:
 
-```powershell
-cd C:\Zepter\Madlenianum
-New-Item -ItemType Directory -Force -Path .\server\uploads\madlenianum
-Copy-Item -Recurse -Force .\client\public\madlenianum\* .\server\uploads\madlenianum\
-```
+1. Add an image or PDF locally through the Media Library, or place it in the correct
+   `server/uploads/madlenianum` directory.
+2. Verify the Media record and all content references locally.
+3. Commit the physical file together with the related source/seed changes.
+4. Redeploy Render so the file becomes part of the immutable deploy artifact.
 
-The seed creates or updates Media database records but does not duplicate the physical files.
+Free Render filesystems are ephemeral. An upload performed directly against the
+deployed admin can disappear after a restart or redeploy and cannot write itself
+back into Git. Production editors must therefore use the local-and-redeploy workflow.
 
 ## Backend setup
 
@@ -71,6 +76,9 @@ The backend runs at `http://localhost:5000`.
 ## Frontend setup
 
 The API and media origins are centralized in `client/src/environments/environment.ts`.
+Local development uses `http://localhost:5000`. A Vercel build reads the Render
+origin from `MADLENIANUM_API_ORIGIN` and writes it to the generated browser runtime
+configuration.
 
 ```powershell
 cd C:\Zepter\Madlenianum\client
@@ -102,6 +110,9 @@ Allowed uploads:
 - PDF (`.pdf`)
 
 Video upload is not supported. The default limit is 10 MB per file and can be changed with `MEDIA_MAX_FILE_SIZE_MB`. New uploads are stored below `server/uploads/madlenianum/media`; existing `/uploads/madlenianum/...` URLs remain valid.
+
+On the free Render deployment, use uploads only during local content preparation.
+Commit every approved file under `server/uploads/madlenianum` before deployment.
 
 Deletion is blocked when a Media record is referenced by a production, artist, news article, promo slide, static page, or venue. Unused managed files are deleted from both MongoDB and local storage.
 
@@ -203,3 +214,46 @@ npm run build
 ```
 
 If PowerShell blocks the `npm.ps1` shim, use `npm.cmd` for the same commands.
+
+## Ticketing, Orders and inquiries
+
+Public visitors never create accounts. Seat selection, locking, reservation, pending purchase and secure Order review are guest-based. Prices are recalculated from the Event's stored PricePlan on the backend; Angular totals are display-only. Reservations and pending-payment Orders expire, while genuinely paid OrderItems remain sold. Confirmation email failure is recorded without rolling back the business transaction.
+
+Fundus is a read-only public catalogue. RentalSpace and Event Planning submissions are non-binding inquiries and do not create theatre Events, Orders or reservations.
+
+## Security and production checks
+
+The backend uses an exact CORS allowlist, Helmet headers, configurable request/upload limits, endpoint-specific rate limits, rich-text sanitization, upload content-signature checks, safe production errors, admin activity audit records, readiness checks and SIGTERM/SIGINT cleanup.
+
+Run the complete backend checks against a disposable development/test database:
+
+```powershell
+cd C:\Zepter\Madlenianum\server
+npm run test:cms
+npm run test:phase4a
+npm run test:phase4b
+npm run test:ticketing-flow
+npm run test:phase5
+npm run test:phase6a
+npm run test:localization
+npm run test:phase7
+npm run validate:indexes
+npm run test:production-startup
+```
+
+Frontend checks:
+
+```powershell
+cd C:\Zepter\Madlenianum\client
+npm run test:i18n
+npm test -- --watch=false
+npm run build
+```
+
+Detailed operational references:
+
+- [API route inventory](docs/API_ROUTE_INVENTORY.md)
+- [Manual test matrix](docs/MANUAL_TEST_MATRIX.md)
+- [Atlas, Render and Vercel readiness](docs/DEPLOYMENT_READINESS.md)
+
+Development seeds are idempotent but may update existing demo records and reset the configured development administrator password. They must never be part of production startup. Production initialization consists of environment configuration, reviewed optional migrations and index validation; it must not wipe or overwrite data.

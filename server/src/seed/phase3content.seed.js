@@ -208,6 +208,19 @@ const roleKeyFor = (role) => {
   return "other";
 };
 
+const englishCreativeRoleLabel = (roleKey, sourceLabel) => ({
+  writer: "Writer",
+  director: "Director",
+  composer: "Composer",
+  conductor: "Conductor",
+  choreographer: "Choreographer",
+  dramaturg: "Dramaturg",
+  scenographer: "Set designer",
+  costumeDesigner: "Costume designer",
+  music: "Music",
+  other: sourceLabel || "Creative team",
+}[roleKey] || sourceLabel || "Creative team");
+
 const upsertHomepageMedia = ({ fileName, title, altText }) => upsertMedia({
   relativePath: fileName,
   title,
@@ -215,22 +228,28 @@ const upsertHomepageMedia = ({ fileName, title, altText }) => upsertMedia({
   legacyUrls: [`/madlenianum/${encodeURIComponent(fileName)}`],
 });
 
-const normalizeCredits = (items) => (items || []).map((entry, index) => ({
-  roleKey: entry.roleKey || roleKeyFor(entry.label || entry.role),
+const normalizeCredits = (items) => (items || []).map((entry, index) => {
+  const sourceLabel = entry.label || entry.role || "Saradnik";
+  const roleKey = entry.roleKey || roleKeyFor(sourceLabel);
+  return {
+  roleKey,
   label: entry.label || entry.role || "Saradnik",
   artist: entry.artist,
   name: entry.name || "",
   note: entry.note || "",
   translations: {
     en: {
-      label: seedEnglishContent.translateSeedMetadata(entry.label || entry.role || ""),
-      name: seedEnglishContent.translateSeedMetadata(entry.name || "", { preserveUnknown: true }),
+      label: seedEnglishContent.translateSeedMetadata(sourceLabel)
+        || englishCreativeRoleLabel(roleKey, sourceLabel),
+      name: seedEnglishContent.translateSeedMetadata(entry.name || "", { preserveUnknown: true })
+        || entry.name || "",
       note: seedEnglishContent.translateSeedMetadata(entry.note || ""),
-      ...(entry.translations?.en || {}),
+      ...meaningfulTranslationValues(entry.translations?.en),
     },
   },
   displayOrder: entry.displayOrder ?? entry.order ?? index,
-}));
+  };
+});
 
 const normalizeCast = (items) => (items || []).flatMap((entry, index) => {
   if (entry.artist || entry.name) {
@@ -242,9 +261,10 @@ const normalizeCast = (items) => (items || []).flatMap((entry, index) => {
       translations: {
         en: {
           name: seedEnglishContent.translateSeedMetadata(entry.name || "", { preserveUnknown: true }),
-          role: seedEnglishContent.translateSeedMetadata(entry.role || entry.character || "", { preserveUnknown: true }),
+          role: seedEnglishContent.translateSeedMetadata(entry.role || entry.character || "", { preserveUnknown: true })
+            || entry.role || entry.character || "",
           note: seedEnglishContent.translateSeedMetadata(entry.note || ""),
-          ...(entry.translations?.en || {}),
+          ...meaningfulTranslationValues(entry.translations?.en),
         },
       },
       displayOrder: entry.displayOrder ?? entry.order ?? index,
@@ -262,9 +282,10 @@ const normalizeCast = (items) => (items || []).flatMap((entry, index) => {
     translations: {
       en: {
         name: seedEnglishContent.translateSeedMetadata(names[personIndex] || "", { preserveUnknown: true }),
-        role: seedEnglishContent.translateSeedMetadata(entry.character || "", { preserveUnknown: true }),
+        role: seedEnglishContent.translateSeedMetadata(entry.character || "", { preserveUnknown: true })
+          || entry.character || "",
         note: seedEnglishContent.translateSeedMetadata(entry.note || ""),
-        ...(entry.translations?.en || {}),
+        ...meaningfulTranslationValues(entry.translations?.en),
       },
     },
     displayOrder: (entry.order ?? index) + personIndex,

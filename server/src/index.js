@@ -4,8 +4,9 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const customerRoutes = require("./routes/customer.routes");
+const mongoose = require("mongoose");
 const mediaConfig = require("./config/media.config");
+const securityConfig = require("./config/security.config");
 
 const connectDB = require("./config/db");
 
@@ -18,19 +19,42 @@ const SeatLock = require("./models/SeatLock");
 
 const app = express();
 
+const validateProductionConfiguration = () => {
+  if (process.env.NODE_ENV !== "production") return;
+  const secret = String(process.env.JWT_SECRET || "");
+  if (secret.length < 32 || secret.includes("replace_with")) {
+    throw new Error("JWT_SECRET must be a unique production secret with at least 32 characters.");
+  }
+  if (!process.env.CLIENT_URLS && !process.env.CLIENT_URL) {
+    throw new Error("CLIENT_URLS or CLIENT_URL is required in production.");
+  }
+};
+
+validateProductionConfiguration();
+
+app.disable("x-powered-by");
+app.set("trust proxy", securityConfig.trustProxy);
+
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:4200",
+    origin(origin, callback) {
+      if (!origin || securityConfig.allowedOrigins.includes(origin.replace(/\/+$/, ""))) {
+        return callback(null, true);
+      }
+      const error = new Error("Origin is not allowed by CORS policy.");
+      error.statusCode = 403;
+      return callback(error);
+    },
     credentials: true,
   })
 );
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: securityConfig.jsonBodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: securityConfig.urlEncodedBodyLimit }));
 
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
@@ -53,18 +77,41 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.get("/api/ready", (req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+  res.status(databaseReady ? 200 : 503).json({
+    success: databaseReady,
+    status: databaseReady ? "ready" : "not_ready",
+    checks: { database: databaseReady ? "connected" : "disconnected" },
+  });
+});
+
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
-app.use("/api/customer", customerRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+let server;
+let expiryTimer;
+let shutdownStarted = false;
+
+const shutdown = async (signal) => {
+  if (shutdownStarted) return;
+  shutdownStarted = true;
+  console.log(`${signal} received. Shutting down gracefully.`);
+  if (expiryTimer) clearInterval(expiryTimer);
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  if (mongoose.connection.readyState) await mongoose.disconnect();
+};
+
 connectDB()
   .then(() => {
-    const server = app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
 
@@ -72,7 +119,7 @@ connectDB()
       30000,
       Number(process.env.ORDER_EXPIRY_INTERVAL_MS || 60000)
     );
-    const expiryTimer = setInterval(async () => {
+    expiryTimer = setInterval(async () => {
       try {
         const now = new Date();
         await SeatLock.updateMany(
@@ -86,8 +133,17 @@ connectDB()
     }, cleanupIntervalMs);
     expiryTimer.unref();
     server.on("close", () => clearInterval(expiryTimer));
+
+    process.once("SIGTERM", () => {
+      shutdown("SIGTERM").then(() => process.exit(0));
+    });
+    process.once("SIGINT", () => {
+      shutdown("SIGINT").then(() => process.exit(0));
+    });
   })
   .catch((error) => {
     console.error("MongoDB connection error:", error.message);
     process.exit(1);
   });
+
+module.exports = { app, shutdown };

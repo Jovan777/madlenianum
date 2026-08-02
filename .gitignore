@@ -10,8 +10,11 @@ client/tmp/
 client/out-tsc/
 client/.angular/cache/
 
-# Backend uploads
-server/uploads/
+# Repository-managed production media. Files added below this directory must be
+# committed and redeployed; free Render instances do not persist runtime writes.
+server/uploads/*
+!server/uploads/madlenianum/
+!server/uploads/madlenianum/**
 server/logs/
 
 # Env
@@ -38,3 +41,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Reference-only legacy payment material; never include in runtime or deploy context.
+madlenianum_old_legacy_payment_setup/

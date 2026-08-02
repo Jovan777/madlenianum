@@ -1,5 +1,6 @@
 const express = require("express");
 const upload = require("../middleware/upload.middleware");
+const { uploadLimiter } = require("../middleware/securityLimits.middleware");
 const {
   uploadFile,
   uploadMultipleFiles,
@@ -13,8 +14,8 @@ const {
 const router = express.Router();
 
 router.get("/", listMedia);
-router.post("/", upload.single("file"), uploadFile);
-router.post("/multiple", upload.array("files", 20), uploadMultipleFiles);
+router.post("/", uploadLimiter, upload.single("file"), uploadFile);
+router.post("/multiple", uploadLimiter, upload.array("files"), uploadMultipleFiles);
 router.get("/:id/usage", getMediaUsage);
 router.get("/:id", getMedia);
 router.patch("/:id", updateMedia);

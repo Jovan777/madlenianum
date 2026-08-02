@@ -22,6 +22,10 @@ const parsedMaximumSize = Number(process.env.MEDIA_MAX_FILE_SIZE_MB || 10);
 const maximumFileSizeMb = Number.isFinite(parsedMaximumSize) && parsedMaximumSize > 0
   ? parsedMaximumSize
   : 10;
+const parsedMaximumFiles = Number.parseInt(process.env.MEDIA_MAX_FILES_PER_UPLOAD || "20", 10);
+const maximumFilesPerUpload = Number.isInteger(parsedMaximumFiles) && parsedMaximumFiles > 0
+  ? Math.min(parsedMaximumFiles, 100)
+  : 20;
 
 const allowedMimeExtensions = Object.freeze({
   "image/jpeg": [".jpg", ".jpeg"],
@@ -38,6 +42,6 @@ module.exports = Object.freeze({
   publicBasePath: "/uploads",
   maximumFileSizeMb,
   maximumFileSizeBytes: Math.round(maximumFileSizeMb * 1024 * 1024),
-  maximumFilesPerUpload: 20,
+  maximumFilesPerUpload,
   allowedMimeExtensions,
 });

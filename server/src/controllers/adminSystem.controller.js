@@ -44,6 +44,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
     orders,
     orderItemsCount,
     activeLocksCount,
+    staleLocks,
     overrides,
     costumeItemsCount,
     propScenographyItemsCount,
@@ -68,6 +69,7 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
       .populate("event", "startsAt production venue"),
     OrderItem.countDocuments(),
     SeatLock.countDocuments({ status: "active", expiresAt: { $gt: now } }),
+    SeatLock.find({ status: "active", expiresAt: { $lte: now } }).select("event expiresAt").limit(100),
     EventSeatOverride.find()
       .populate("event", "seatMap venue startsAt status saleStatus")
       .populate("seat", "seatMap label"),
@@ -80,38 +82,44 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
 
   const warningItems = [];
   const warningCounts = {};
-  const addWarning = (problem, targetType, target) => {
+  const addWarning = (problem, targetType, target, severity = "warning") => {
     warningCounts[problem.code] = (warningCounts[problem.code] || 0) + 1;
     warningItems.push({
       code: problem.code,
       field: problem.field,
       message: problem.message,
+      severity,
       targetType,
-      targetId: String(target._id),
+      targetId: String(target?._id || ""),
       targetLabel: targetType === "order"
         ? target.orderCode
         : targetType === "rentalInquiry" || targetType === "eventPlanningInquiry"
         ? target.referenceNumber
         : targetType === "event"
         ? `${target.production?.title || "Termin"} - ${new Date(target.startsAt).toLocaleString("sr-RS")}`
+        : targetType === "system"
+        ? "Sistemska konfiguracija"
         : target.name,
       link: targetType === "order"
         ? `/admin/orders/${target._id}`
         : targetType === "rentalInquiry"
-        ? `/admin/rental-inquiries/${target._id}`
+        ? `/admin/inquiries/rental/${target._id}`
         : targetType === "eventPlanningInquiry"
-        ? `/admin/event-planning-inquiries/${target._id}`
+        ? `/admin/inquiries/planning/${target._id}`
         : targetType === "event"
         ? `/admin/events/${target._id}`
         : targetType === "seatMap"
           ? `/admin/seat-maps/${target._id}/map`
-          : `/admin/price-plans/${target._id}/edit`,
+          : targetType === "system"
+            ? "/admin/site-settings"
+            : `/admin/price-plans/${target._id}/edit`,
     });
   };
 
   for (const event of events) {
     const result = await validateEventConfiguration({}, { existingEvent: event });
-    [...result.errors, ...result.warnings].forEach((problem) => addWarning(problem, "event", event));
+    result.errors.forEach((problem) => addWarning(problem, "event", event, "error"));
+    result.warnings.forEach((problem) => addWarning(problem, "event", event, "warning"));
   }
   for (const pricePlan of pricePlans) {
     const result = await validatePricePlanPayload({}, { existingPlan: pricePlan });
@@ -206,6 +214,28 @@ const getAdminSystemStatus = asyncHandler(async (req, res) => {
         message: "Obavestenje za event planning upit nije poslato.",
       }, "eventPlanningInquiry", inquiry);
     }
+  }
+
+  if (staleLocks.length) {
+    addWarning({
+      code: "expired_locks_not_cleaned",
+      field: "seatLocks",
+      message: `${staleLocks.length} isteklih zaključavanja i dalje čeka čišćenje. Pokrenite lifecycle obradu.`,
+    }, "system", null, "error");
+  }
+  if (process.env.NODE_ENV === "production" && !process.env.SMTP_HOST) {
+    addWarning({
+      code: "email_transport_not_configured",
+      field: "SMTP_HOST",
+      message: "Produkcioni SMTP transport nije konfigurisan; potvrde i upiti neće biti poslati.",
+    }, "system", null, "error");
+  }
+  if (process.env.NODE_ENV === "production" && !process.env.CLIENT_URLS && !process.env.CLIENT_URL) {
+    addWarning({
+      code: "cors_allowlist_not_configured",
+      field: "CLIENT_URLS",
+      message: "Produkcijska CORS allowlista nije konfigurisana.",
+    }, "system", null, "error");
   }
 
   const activeOrderIds = orders

@@ -32,6 +32,67 @@ const seedTranslations = (existing, sr, en) => ({
   },
 });
 
+const creativeRoleKey = (role = "") => {
+  const value = String(role).toLowerCase();
+  if (value.includes("redit")) return "director";
+  if (value.includes("kompoz") || value.includes("muzik")) return "composer";
+  if (value.includes("dirigent")) return "conductor";
+  if (value.includes("koreograf")) return "choreographer";
+  if (value.includes("scenograf")) return "scenographer";
+  if (value.includes("kostim")) return "costumeDesigner";
+  if (value.includes("libret") || value.includes("pis") || value.includes("tekst")) return "writer";
+  return "other";
+};
+
+const englishCreativeRole = (roleKey, source) => ({
+  director: "Director",
+  composer: "Composer",
+  conductor: "Conductor",
+  choreographer: "Choreographer",
+  scenographer: "Set designer",
+  costumeDesigner: "Costume designer",
+  writer: "Writer",
+  other: source || "Creative team",
+}[roleKey] || source || "Creative team");
+
+const structuredCredit = ({ role, name, order }) => {
+  const roleKey = creativeRoleKey(role);
+  return {
+    roleKey,
+    label: role,
+    name,
+    translations: {
+      en: {
+        label: seedEnglishContent.translateSeedMetadata(role)
+          || englishCreativeRole(roleKey, role),
+        name: seedEnglishContent.translateSeedMetadata(name, { preserveUnknown: true }) || name,
+        note: "",
+      },
+    },
+    displayOrder: Math.max(0, Number(order || 1) - 1),
+    role,
+    order,
+  };
+};
+
+const structuredCastMember = ({ character, names = [], order }) => ({
+  name: names[0] || "",
+  role: character || "",
+  translations: {
+    en: {
+      name: seedEnglishContent.translateSeedMetadata(names[0] || "", { preserveUnknown: true })
+        || names[0] || "",
+      role: seedEnglishContent.translateSeedMetadata(character || "", { preserveUnknown: true })
+        || character || "",
+      note: "",
+    },
+  },
+  displayOrder: Math.max(0, Number(order || 1) - 1),
+  character,
+  names,
+  order,
+});
+
 // Measured from the approved auditorium plan. Row lengths and offsets are
 // intentionally asymmetric and must not be replaced with a rectangular grid.
 const parterRowLayout = [
@@ -747,7 +808,7 @@ const getOrCreateGiulioCesareProduction = async (venue) => {
           name: "Anja Stojankić",
           order: 9,
         },
-      ],
+      ].map(structuredCredit),
       cast: [
         {
           character: "Giulio Cesare",
@@ -779,7 +840,7 @@ const getOrCreateGiulioCesareProduction = async (venue) => {
           names: ["Sreten Manojlović"],
           order: 6,
         },
-      ],
+      ].map(structuredCastMember),
       season: "2025/2026",
       tags: ["opera", "premijera", "barokna opera", "velika scena"],
       translations: seedTranslations(

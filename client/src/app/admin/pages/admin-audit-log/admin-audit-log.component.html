@@ -1,0 +1,25 @@
+<section class="audit-page">
+  <header class="audit-hero">
+    <div><span>{{ total() }} zapisa</span><h1>Audit aktivnosti</h1><p>Bezbedan operativni pregled važnih administratorskih izmena.</p></div>
+  </header>
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="apply()">
+    <label>Akcija<select formControlName="action"><option value="">Sve akcije</option><option value="create">Kreirano</option><option value="update">Izmenjeno</option><option value="publish">Objavljeno</option><option value="archive">Arhivirano</option><option value="delete">Obrisano</option><option value="resend_email">Ponovni email</option><option value="login_success">Uspešna prijava</option><option value="login_failed">Neuspešna prijava</option></select></label>
+    <label>Vrsta zapisa<input formControlName="entityType" placeholder="events, orders, media..." /></label>
+    <div class="filter-actions"><button type="submit">Primeni</button><button type="button" class="secondary" (click)="reset()">Poništi</button></div>
+  </form>
+
+  <p class="state" *ngIf="loading()">Učitavanje aktivnosti...</p>
+  <p class="state error" *ngIf="error()">{{ error() }} <button type="button" (click)="load()">Pokušaj ponovo</button></p>
+  <p class="state" *ngIf="!loading() && !error() && !items().length">Nema aktivnosti za izabrane filtere.</p>
+
+  <div class="audit-list" *ngIf="!loading() && items().length">
+    <article *ngFor="let item of items()">
+      <div class="audit-main"><span class="badge" [class.failed]="item.statusCode >= 400">{{ actionLabel(item.action) }}</span><h2>{{ item.entityType }}</h2><p>{{ item.adminIdentity.email || item.adminIdentity.username || 'Sistem / nepoznat administrator' }}</p></div>
+      <dl><div><dt>Vreme</dt><dd>{{ item.createdAt | date:'dd.MM.yyyy. HH:mm:ss' }}</dd></div><div><dt>Odgovor</dt><dd>{{ item.statusCode }}</dd></div><div *ngIf="item.entityId"><dt>Zapis</dt><dd>{{ item.entityId }}</dd></div></dl>
+      <div class="summary" *ngIf="summaryEntries(item).length"><span *ngFor="let entry of summaryEntries(item)"><strong>{{ entry[0] }}</strong>: {{ entry[1] }}</span></div>
+    </article>
+  </div>
+
+  <nav class="pagination" *ngIf="pages() > 1" aria-label="Stranice audit zapisa"><button type="button" (click)="changePage(page() - 1)" [disabled]="page() === 1">Prethodna</button><span>Strana {{ page() }} od {{ pages() }}</span><button type="button" (click)="changePage(page() + 1)" [disabled]="page() === pages()">Sledeća</button></nav>
+</section>

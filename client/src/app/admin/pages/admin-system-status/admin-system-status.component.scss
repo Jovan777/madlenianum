@@ -35,6 +35,22 @@
   margin: 0;
 }
 
+.warning-list .severity {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+  color: #49360a;
+  background: #f4df9e;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.warning-list .error-severity {
+  color: #791d17;
+  background: #f6d3cf;
+}
+
 .warning-list a {
   min-height: 38px;
   border-radius: 5px;

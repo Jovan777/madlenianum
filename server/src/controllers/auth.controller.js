@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const AdminUser = require("../models/AdminUser");
+const { recordAdminAudit } = require("../services/adminAudit.service");
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -21,6 +22,11 @@ const login = asyncHandler(async (req, res) => {
   }).select("+passwordHash");
 
   if (!admin) {
+    await recordAdminAudit({
+      action: "login_failed", entityType: "adminAuth", method: req.method,
+      path: req.originalUrl, statusCode: 401, summary: { reason: "invalid_credentials" },
+      ip: req.ip, userAgent: req.get("user-agent"),
+    });
     res.status(401);
     throw new Error("Wrong email or password.");
   }
@@ -28,17 +34,33 @@ const login = asyncHandler(async (req, res) => {
   const isPasswordValid = await admin.comparePassword(password);
 
   if (!isPasswordValid) {
+    await recordAdminAudit({
+      admin, action: "login_failed", entityType: "adminAuth", entityId: admin._id,
+      method: req.method, path: req.originalUrl, statusCode: 401,
+      summary: { reason: "invalid_credentials" }, ip: req.ip, userAgent: req.get("user-agent"),
+    });
     res.status(401);
     throw new Error("Wrong email or password.");
   }
 
   if (admin.status !== "active") {
+    await recordAdminAudit({
+      admin, action: "login_blocked", entityType: "adminAuth", entityId: admin._id,
+      method: req.method, path: req.originalUrl, statusCode: 403,
+      summary: { reason: "inactive_admin" }, ip: req.ip, userAgent: req.get("user-agent"),
+    });
     res.status(403);
     throw new Error("Admin account is blocked.");
   }
 
   admin.lastLoginAt = new Date();
   await admin.save();
+
+  await recordAdminAudit({
+    admin, action: "login_success", entityType: "adminAuth", entityId: admin._id,
+    method: req.method, path: req.originalUrl, statusCode: 200,
+    ip: req.ip, userAgent: req.get("user-agent"),
+  });
 
   res.json({
     success: true,

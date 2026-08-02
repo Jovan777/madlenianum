@@ -39,6 +39,11 @@ const {
 } = require("../controllers/ticketingPublic.controller");
 
 const router = express.Router();
+const {
+  publicLookupLimiter,
+  publicMutationLimiter,
+  seatLockLimiter,
+} = require("../middleware/securityLimits.middleware");
 
 router.use(publicLocale);
 
@@ -65,19 +70,19 @@ router.get("/fundus/props-scenography/:slug", getPublicPropScenography);
 
 router.get("/rental-spaces", listPublicRentalSpaces);
 router.get("/rental-spaces/:slug", getPublicRentalSpace);
-router.post("/rental-inquiries", createRentalInquiry);
-router.post("/event-planning-inquiries", createEventPlanningInquiry);
+router.post("/rental-inquiries", publicMutationLimiter, createRentalInquiry);
+router.post("/event-planning-inquiries", publicMutationLimiter, createEventPlanningInquiry);
 
 router.get("/events/:eventId/seats", getEventSeats);
-router.post("/events/:eventId/seats/lock", lockSeats);
-router.post("/events/:eventId/seats/release", releaseSeats);
+router.post("/events/:eventId/seats/lock", seatLockLimiter, lockSeats);
+router.post("/events/:eventId/seats/release", seatLockLimiter, releaseSeats);
 router.get("/events/:eventId/seats/locks/current", restoreSeatLocks);
 
-router.post("/orders", createOrder);
-router.post("/orders/lookup", lookupPublicOrder);
+router.post("/orders", publicMutationLimiter, createOrder);
+router.post("/orders/lookup", publicLookupLimiter, lookupPublicOrder);
 router.get("/orders/:identifier", getPublicOrder);
 
-router.post("/newsletter/subscribe", subscribeNewsletter);
-router.post("/contact", sendContactMessage);
+router.post("/newsletter/subscribe", publicMutationLimiter, subscribeNewsletter);
+router.post("/contact", publicMutationLimiter, sendContactMessage);
 
 module.exports = router;

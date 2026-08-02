@@ -58,6 +58,10 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/pages/admin-system-status/admin-system-status.component').then((item) => item.AdminSystemStatusComponent),
       },
       {
+        path: 'audit-logs',
+        loadComponent: () => import('./admin/pages/admin-audit-log/admin-audit-log.component').then((item) => item.AdminAuditLogComponent),
+      },
+      {
         path: 'events/new',
         loadComponent: () => import('./admin/pages/admin-event-form/admin-event-form.component').then((item) => item.AdminEventFormComponent),
         canDeactivate: [unsavedChangesGuard],
