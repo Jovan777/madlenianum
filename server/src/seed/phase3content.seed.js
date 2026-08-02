@@ -860,33 +860,51 @@ const upsertSiteSettings = async ({ socialImage }) => {
         ticketOfficePhones: ["+381 11 316 27 20"],
       },
       socialLinks: [
-        { platform: "instagram", label: "Instagram", url: "https://www.instagram.com/madlenianum/", enabled: true, displayOrder: 0 },
+        { platform: "instagram", label: "Instagram", url: "https://www.instagram.com/madlenianum/?hl=en", enabled: true, displayOrder: 0 },
+        { platform: "youtube", label: "YouTube", url: "https://www.youtube.com/@OperaTheatreMadlenianumBeograd/featured", enabled: true, displayOrder: 1 },
+        { platform: "facebook", label: "Facebook", url: "https://www.facebook.com/Madlenianum/", enabled: true, displayOrder: 2 },
       ],
-      legalLinks: [],
+      legalLinks: [
+        { label: "Politika privatnosti", url: "https://www.zepter.rs/rules/privacy-policy", enabled: true, displayOrder: 0 },
+        { label: "Uslovi korišćenja", url: "https://www.zepter.rs/rules/regulation", enabled: true, displayOrder: 1 },
+      ],
       footerNavigation: [
         {
-          title: "Program",
+          title: "Repertoar",
           enabled: true,
           displayOrder: 0,
           links: [
-            { label: "Repertoar", url: "/repertoar", enabled: true, displayOrder: 0 },
-            { label: "Predstave", url: "/predstave", enabled: true, displayOrder: 1 },
+            { label: "Dramski", url: "/repertoar?group=dramski", enabled: true, displayOrder: 0 },
+            { label: "Muzički", url: "/repertoar?group=muzicki", enabled: true, displayOrder: 1 },
+            { label: "Gostovanja", url: "/repertoar?group=gostovanja", enabled: true, displayOrder: 2 },
           ],
         },
         {
-          title: "Umetnici",
+          title: "Partnerstvo",
           enabled: true,
           displayOrder: 1,
-          links: [{ label: "Svi umetnici", url: "/umetnici", enabled: true, displayOrder: 0 }],
+          links: [
+            { label: "Zakup prostora", url: "/zakup-prostora", enabled: true, displayOrder: 0 },
+            { label: "Gostovanje", url: "/strana/kontakt", enabled: true, displayOrder: 1 },
+          ],
         },
         {
-          title: "Madlenianum",
+          title: "Fundusi",
           enabled: true,
           displayOrder: 2,
           links: [
-            { label: "O nama", url: "/strana/o-nama", enabled: true, displayOrder: 0 },
-            { label: "Kontakt", url: "/strana/kontakt", enabled: true, displayOrder: 1 },
-            { label: "Provera porudzbine", url: "/porudzbina", enabled: true, displayOrder: 2 },
+            { label: "Kostimi", url: "/fundusi", enabled: true, displayOrder: 0 },
+            { label: "Rekviziti i scenografija", url: "/fundusi?tab=props", enabled: true, displayOrder: 1 },
+          ],
+        },
+        {
+          title: "O nama",
+          enabled: true,
+          displayOrder: 3,
+          links: [
+            { label: "Mapa objekta", url: "/strana/kontakt#mapa-objekta", enabled: true, displayOrder: 0 },
+            { label: "Vesti", url: "/vesti", enabled: true, displayOrder: 1 },
+            { label: "Kontakt", url: "/strana/kontakt", enabled: true, displayOrder: 2 },
           ],
         },
       ],
@@ -901,9 +919,10 @@ const upsertSiteSettings = async ({ socialImage }) => {
   );
 
   const englishFooterGroups = [
-    { title: "Programme", links: ["Repertoire", "Productions"] },
-    { title: "Artists", links: ["All artists"] },
-    { title: "Madlenianum", links: ["About us", "Contact", "Order lookup"] },
+    { title: "Repertoire", links: ["Drama", "Music", "Guest performances"] },
+    { title: "Partnership", links: ["Venue rental", "Guest performance"] },
+    { title: "Fundus", links: ["Costumes", "Props and scenography"] },
+    { title: "About us", links: ["Location map", "News", "Contact"] },
   ];
   settings.translations = seedTranslations(
     existing?.translations,
@@ -911,6 +930,8 @@ const upsertSiteSettings = async ({ socialImage }) => {
       siteName: settings.siteName,
       shortDescription: settings.shortDescription,
       contactAddress: settings.contact.address,
+      socialLinks: settings.socialLinks.map((link) => ({ sourceId: link._id, label: link.label })),
+      legalLinks: settings.legalLinks.map((link) => ({ sourceId: link._id, label: link.label })),
       footerNavigation: settings.footerNavigation.map((group) => ({
         sourceId: group._id,
         title: group.title,
@@ -923,6 +944,11 @@ const upsertSiteSettings = async ({ socialImage }) => {
       siteName: "Madlenianum",
       shortDescription: "Madlenianum Opera and Theatre in Zemun.",
       contactAddress: "32 Glavna Street, Zemun, Belgrade",
+      socialLinks: settings.socialLinks.map((link) => ({ sourceId: link._id, label: link.label })),
+      legalLinks: settings.legalLinks.map((link, index) => ({
+        sourceId: link._id,
+        label: index === 0 ? "Privacy policy" : "Terms of use",
+      })),
       footerNavigation: settings.footerNavigation.map((group, groupIndex) => ({
         sourceId: group._id,
         title: englishFooterGroups[groupIndex]?.title || group.title,

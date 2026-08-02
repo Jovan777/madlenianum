@@ -1,37 +1,72 @@
 <footer class="site-footer">
-  <div class="footer-inner" data-motion="up">
-    <div class="footer-groups" *ngIf="navigationGroups().length">
+  <div class="footer-top" data-motion="up">
+    <div class="footer-groups">
       <nav *ngFor="let group of navigationGroups()" [attr.aria-label]="group.title">
-        <h2>{{ group.title }}</h2>
+        <h2><a *ngIf="group.titleLink as titleLink" [routerLink]="titleLink.route">{{ group.title }}</a></h2>
         <ng-container *ngFor="let link of group.links">
           <a *ngIf="isExternal(link.url); else internalNavigation" [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
-          <ng-template #internalNavigation><a [routerLink]="internalPath(link.url)">{{ link.label }}</a></ng-template>
+          <ng-template #internalNavigation>
+            <a [routerLink]="link.route" [queryParams]="link.queryParams" [fragment]="link.fragment">{{ link.label }}</a>
+          </ng-template>
         </ng-container>
       </nav>
     </div>
 
     <div class="footer-brand">
-      <a [routerLink]="locale.isEnglish() ? '/en' : '/'" [attr.aria-label]="i18n.t('footer.homeLabel')"><img [src]="logo()" [alt]="settings()?.siteName || 'Madlenianum'" /></a>
+      <a class="footer-logo" [routerLink]="locale.isEnglish() ? '/en' : '/'" [attr.aria-label]="i18n.t('footer.homeLabel')">
+        <img [src]="logo()" [alt]="settings()?.siteName || 'Madlenianum'" />
+      </a>
       <p class="copyright">© {{ currentYear }} {{ settings()?.siteName || 'Madlenianum' }}</p>
-      <p *ngIf="settings()?.shortDescription">{{ settings()?.shortDescription }}</p>
-      <address *ngIf="settings()?.contact?.address">{{ settings()?.contact?.address }}</address>
-      <div class="socials" *ngIf="socialLinks().length">
-        <a *ngFor="let link of socialLinks()" [href]="link.url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="link.label || link.platform">{{ socialShort(link) }}</a>
+      <p class="footer-description" *ngIf="settings()?.shortDescription">{{ settings()?.shortDescription }}</p>
+
+      <div class="socials" [attr.aria-label]="locale.isEnglish() ? 'Social media' : 'Društvene mreže'">
+        <a *ngFor="let link of socialLinks()" [href]="link.url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="link.label || link.platform">
+          <ng-container [ngSwitch]="socialPlatform(link)">
+            <svg *ngSwitchCase="'instagram'" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm5.3-3.2a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Z" />
+            </svg>
+            <svg *ngSwitchCase="'youtube'" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.6 4.6 12 4.6 12 4.6s-5.6 0-7.5.5a3 3 0 0 0-2.1 2.1C2 9.1 2 12 2 12s0 2.9.4 4.8a3 3 0 0 0 2.1 2.1c1.9.5 7.5.5 7.5.5s5.6 0 7.5-.5a3 3 0 0 0 2.1-2.1c.4-1.9.4-4.8.4-4.8s0-2.9-.4-4.8ZM10 15.2V8.8l5.5 3.2-5.5 3.2Z" />
+            </svg>
+            <svg *ngSwitchCase="'facebook'" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13.7 22v-9h3l.5-3h-3.5V8.1c0-.9.3-1.5 1.6-1.5h2V3.9c-.4 0-1.7-.2-2.6-.2-2.6 0-4.3 1.5-4.3 4.4V10H7.5v3h2.9v9h3.3Z" />
+            </svg>
+            <svg *ngSwitchDefault viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10.6 13.4a1 1 0 0 1 0-1.4l4-4a3 3 0 0 1 4.2 4.2l-2.5 2.5a3 3 0 0 1-4.2 0 1 1 0 0 1 1.4-1.4 1 1 0 0 0 1.4 0l2.5-2.5a1 1 0 0 0-1.4-1.4l-4 4a1 1 0 0 1-1.4 0Zm2.8-2.8a1 1 0 0 1 0 1.4l-4 4a1 1 0 1 0 1.4 1.4l2.5-2.5a1 1 0 0 0 0-1.4 1 1 0 1 1 1.4-1.4 3 3 0 0 1 0 4.2l-2.5 2.5A3 3 0 0 1 8 14.6l4-4a1 1 0 0 1 1.4 0Z" />
+            </svg>
+          </ng-container>
+        </a>
       </div>
     </div>
   </div>
 
-  <div class="partner-row" *ngIf="partners().length" data-motion="fade">
-    <ng-container *ngFor="let partner of partners()">
-      <a *ngIf="partner.url; else partnerOnly" [href]="partner.url" target="_blank" rel="noopener noreferrer"><img [src]="media.resolve(partner.media)" [alt]="partner.label || 'Partner'" loading="lazy" /></a>
-      <ng-template #partnerOnly><img [src]="media.resolve(partner.media)" [alt]="partner.label || 'Partner'" loading="lazy" /></ng-template>
-    </ng-container>
-  </div>
+  <div class="footer-bottom" data-motion="fade">
+    <section class="membership" [attr.aria-label]="locale.isEnglish() ? 'Memberships and partners' : 'Članstva i partneri'">
+      <p>{{ locale.isEnglish() ? 'Proud member' : 'Ponosni član' }}</p>
+      <div class="membership-logos">
+        <a class="zepter-wordmark" href="https://www.zepter.rs/" target="_blank" rel="noopener noreferrer" aria-label="Zepter International">
+          <span class="zepter-emblem" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>zepter</span><sup>®</sup>
+        </a>
+        <a class="zepter-club" href="https://www.zepter.rs/rules/regulation-cl-100" target="_blank" rel="noopener noreferrer" aria-label="ZepterClub uslovi">
+          <span>zepter</span><strong>CLUB</strong>
+        </a>
+        <ng-container *ngFor="let partner of partners()">
+          <a *ngIf="partner.url; else partnerOnly" class="cms-partner" [href]="partner.url" target="_blank" rel="noopener noreferrer">
+            <img [src]="media.resolve(partner.media)" [alt]="partner.label || 'Partner'" loading="lazy" />
+          </a>
+          <ng-template #partnerOnly><img class="cms-partner" [src]="media.resolve(partner.media)" [alt]="partner.label || 'Partner'" loading="lazy" /></ng-template>
+        </ng-container>
+      </div>
+    </section>
 
-  <nav class="legal" *ngIf="legalLinks().length" aria-label="Pravni linkovi">
-    <ng-container *ngFor="let link of legalLinks()">
-      <a *ngIf="isExternal(link.url); else internalLegal" [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
-      <ng-template #internalLegal><a [routerLink]="internalPath(link.url)">{{ link.label }}</a></ng-template>
-    </ng-container>
-  </nav>
+    <nav class="legal" [attr.aria-label]="locale.isEnglish() ? 'Legal links' : 'Pravni linkovi'">
+      <ng-container *ngFor="let link of legalLinks()">
+        <a *ngIf="isExternal(link.url); else internalLegal" [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
+        <ng-template #internalLegal>
+          <a [routerLink]="link.route" [queryParams]="link.queryParams" [fragment]="link.fragment">{{ link.label }}</a>
+        </ng-template>
+      </ng-container>
+    </nav>
+  </div>
 </footer>

@@ -20,7 +20,7 @@
     <div class="contact-fact" data-motion-item data-motion-card><span>{{ 'contact.officeHours' | publicTranslate }}</span><strong>{{ officeHours() }}</strong></div>
   </section>
 
-  <section class="contact-workspace" data-motion="up">
+  <section id="mapa-objekta" class="contact-workspace" data-motion="up">
     <div class="contact-map" data-motion="left">
       <iframe [src]="mapUrl" [title]="'contact.mapTitle' | publicTranslate" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       <div class="contact-map__footer">
