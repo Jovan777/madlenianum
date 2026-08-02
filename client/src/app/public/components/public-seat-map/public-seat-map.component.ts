@@ -15,28 +15,19 @@ import {
 } from '@angular/core';
 
 import { PublicSeat } from '../../../core/models/public.models';
+import {
+  SeatMapLayoutBounds,
+  SeatMapLayoutGroup,
+  SeatMapRowGuide,
+  buildSeatMapGroups,
+  buildSeatMapRowGuides,
+  calculateSeatMapBounds,
+  seatMapSeatHeight,
+  seatMapSeatWidth,
+  seatsForSeatMapGroup,
+} from '../../../core/utils/seat-map-layout';
 import { PublicI18nService } from '../../i18n/public-i18n.service';
 import { PublicTranslatePipe } from '../../i18n/public-translate.pipe';
-
-interface MapBounds {
-  minX: number;
-  minY: number;
-  width: number;
-  height: number;
-}
-
-interface PublicMapGroup {
-  key: string;
-  label: string;
-  sections: string[];
-}
-
-interface PublicRowGuide {
-  label: string;
-  top: number;
-  left: number;
-  right: number;
-}
 
 interface PublicCategoryLegend {
   key: string;
@@ -73,7 +64,7 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
   readonly zoomFactor = signal(1);
 
   private resizeObserver?: ResizeObserver;
-  private bounds: MapBounds = { minX: 0, minY: 0, width: 1000, height: 850 };
+  private bounds: SeatMapLayoutBounds = { minX: 0, minY: 0, width: 1000, height: 850 };
 
   ngAfterViewInit(): void {
     this.resizeObserver = new ResizeObserver(() => this.updateFitScale());
@@ -96,68 +87,17 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
     this.resizeObserver?.disconnect();
   }
 
-  mapGroups(): PublicMapGroup[] {
-    const sections = [...new Set(this.seats.map((seat) => seat.section || 'Ostalo'))];
-    const parterSections = sections.filter((section) =>
-      section.toLocaleLowerCase('sr-RS').includes('parter')
-    );
-    const gallerySections = sections.filter((section) => {
-      const normalized = section.toLocaleLowerCase('sr-RS');
-      return normalized.includes('galerija') || normalized.includes('centralna');
-    });
-    const assigned = new Set([...parterSections, ...gallerySections]);
-    const groups: PublicMapGroup[] = [];
-
-    if (parterSections.length) {
-      groups.push({ key: 'parter', label: 'Parter', sections: parterSections });
-    }
-    if (gallerySections.length) {
-      groups.push({ key: 'galerija', label: 'Galerija', sections: gallerySections });
-    }
-    sections
-      .filter((section) => !assigned.has(section))
-      .forEach((section) => {
-        groups.push({
-          key: `section-${section}`,
-          label: this.formatSectionLabel(section),
-          sections: [section],
-        });
-      });
-
-    return groups;
+  mapGroups(): SeatMapLayoutGroup[] {
+    return buildSeatMapGroups(this.seats);
   }
 
   visibleSeats(): PublicSeat[] {
     const group = this.mapGroups().find((item) => item.key === this.activeSection());
-    if (!group) return this.seats;
-    const includedSections = new Set(group.sections);
-    return this.seats.filter((seat) => includedSections.has(seat.section || 'Ostalo'));
+    return seatsForSeatMapGroup(this.seats, group);
   }
 
-  rowGuides(): PublicRowGuide[] {
-    if (this.activeSection() !== 'parter') return [];
-
-    const rows = new Map<string, PublicSeat[]>();
-    this.visibleSeats()
-      .filter((seat) => seat.section === 'Parter' && Boolean(seat.row))
-      .forEach((seat) => {
-        const current = rows.get(String(seat.row)) || [];
-        current.push(seat);
-        rows.set(String(seat.row), current);
-      });
-
-    return [...rows.entries()]
-      .map(([label, seats]) => {
-        const xValues = seats.map((seat) => this.seatLeft(seat));
-        const top = seats.reduce((sum, seat) => sum + this.seatTop(seat), 0) / seats.length;
-        return {
-          label,
-          top,
-          left: Math.max(8, Math.min(...xValues) - 38),
-          right: Math.min(this.mapWidth() - 8, Math.max(...xValues) + 38),
-        };
-      })
-      .sort((a, b) => a.top - b.top);
+  rowGuides(): SeatMapRowGuide[] {
+    return buildSeatMapRowGuides(this.visibleSeats(), this.bounds, this.activeSection());
   }
 
   categoryLegend(): PublicCategoryLegend[] {
@@ -258,11 +198,11 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
   }
 
   seatWidth(seat: PublicSeat): number {
-    return Math.max(18, Math.min(24, Number(seat.width || 22)));
+    return seatMapSeatWidth(seat);
   }
 
   seatHeight(seat: PublicSeat): number {
-    return Math.max(18, Math.min(24, Number(seat.height || 22)));
+    return seatMapSeatHeight(seat);
   }
 
   seatLeft(seat: PublicSeat): number {
@@ -279,12 +219,6 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   mapHeight(): number {
     return this.bounds.height;
-  }
-
-  formatSectionLabel(section: string): string {
-    return section
-      .toLocaleLowerCase('sr-RS')
-      .replace(/(^|\s)\S/g, (value) => value.toLocaleUpperCase('sr-RS'));
   }
 
   canSelect(seat: PublicSeat): boolean {
@@ -322,24 +256,11 @@ export class PublicSeatMapComponent implements AfterViewInit, OnChanges, OnDestr
   }
 
   private updateBounds(): void {
-    const visible = this.visibleSeats();
-    if (visible.length === 0) {
-      this.bounds = { minX: 0, minY: 0, width: this.canvasWidth, height: this.canvasHeight };
-      return;
-    }
-
-    const maxX = Math.max(...visible.map((seat) => Number(seat.x || 0))) + 55;
-    const maxY = Math.max(...visible.map((seat) => Number(seat.y || 0))) + 46;
-    const isParter = this.activeSection() === 'parter';
-    this.bounds = {
-      minX: 0,
-      minY: 0,
-      width: isParter
-        ? Math.max(960, maxX)
-        : Math.max(700, this.canvasWidth, maxX),
-      height: isParter
-        ? Math.max(820, maxY)
-        : Math.max(500, this.canvasHeight, maxY),
-    };
+    this.bounds = calculateSeatMapBounds(
+      this.visibleSeats(),
+      this.activeSection(),
+      this.canvasWidth,
+      this.canvasHeight
+    );
   }
 }

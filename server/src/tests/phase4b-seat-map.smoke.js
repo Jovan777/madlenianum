@@ -102,6 +102,16 @@ const run = async () => {
   const initialSeats = await Seat.find({ seatMap: seatMap._id }).sort("sortOrder");
   assert.equal(initialSeats.length, 504, "Existing SeatMap must load all 504 seats.");
 
+  const basePreview = await request(`/admin/seat-maps/${seatMap._id}/preview`, { token });
+  assert.equal(basePreview.response.status, 200, JSON.stringify(basePreview.payload));
+  assert.equal(basePreview.payload.item.seats.length, 504);
+  assert.ok(
+    !basePreview.payload.item.warnings.some((warning) =>
+      ["outside_canvas", "outside_coordinate_space"].includes(warning.code)
+    ),
+    "Valid seeded seats must not be reported outside the canonical coordinate space."
+  );
+
   const coordinateSeat = initialSeats[20];
   coordinateSeatId = coordinateSeat._id;
   originalCoordinates = { x: coordinateSeat.x, y: coordinateSeat.y };
@@ -292,6 +302,34 @@ const run = async () => {
   let publicSeats = await request(`/public/events/${event._id}/seats`);
   assert.equal(publicSeats.response.status, 200);
   const publicById = new Map(publicSeats.payload.seats.map((seat) => [String(seat.id), seat]));
+  const adminById = new Map(eventPreview.payload.item.seats.map((seat) => [String(seat.id), seat]));
+  publicSeats.payload.seats.slice(0, 40).forEach((publicSeat) => {
+    const adminSeat = adminById.get(String(publicSeat.id));
+    assert.ok(adminSeat, `Admin preview is missing seat ${publicSeat.id}.`);
+    assert.deepEqual(
+      {
+        section: adminSeat.section,
+        row: adminSeat.row,
+        number: adminSeat.number,
+        x: adminSeat.x,
+        y: adminSeat.y,
+        width: adminSeat.width,
+        height: adminSeat.height,
+        rotation: adminSeat.rotation,
+      },
+      {
+        section: publicSeat.section,
+        row: publicSeat.row,
+        number: publicSeat.number,
+        x: publicSeat.x,
+        y: publicSeat.y,
+        width: publicSeat.width,
+        height: publicSeat.height,
+        rotation: publicSeat.rotation,
+      },
+      `Admin and public physical layout differ for seat ${publicSeat.id}.`
+    );
+  });
   overrideSeatIds.forEach((seatId) => {
     assert.equal(publicById.get(seatId).availabilityStatus, "unavailable");
   });
@@ -399,7 +437,7 @@ const run = async () => {
   coordinateSeatId = null;
   cleanupOrderIds.length = 0;
   cleanupLockIds.length = 0;
-  console.log("Phase 4B SeatMap/override smoke tests passed (31 scenarios).");
+  console.log("Phase 4B SeatMap/override smoke tests passed (34 scenarios).");
   if (serverErrors) console.log(serverErrors.trim());
 };
 

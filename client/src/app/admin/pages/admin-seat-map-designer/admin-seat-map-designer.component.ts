@@ -8,6 +8,7 @@ import {
   AdminPriceCategory,
   AdminSeat,
   AdminSeatMap,
+  AdminValidationIssue,
 } from '../../../core/models/admin.models';
 import { UnsavedChangesAware } from '../../../core/guards/unsaved-changes.guard';
 import { AdminApiService } from '../../../core/services/admin-api.service';
@@ -42,6 +43,7 @@ export class AdminSeatMapDesignerComponent implements OnInit, UnsavedChangesAwar
   readonly seatMap = signal<AdminSeatMap | null>(null);
   readonly seats = signal<AdminSeat[]>([]);
   readonly priceCategories = signal<AdminPriceCategory[]>([]);
+  readonly warnings = signal<AdminValidationIssue[]>([]);
   readonly selectedIds = signal<string[]>([]);
   readonly sectionFilter = signal('all');
   readonly isLoading = signal(false);
@@ -58,6 +60,21 @@ export class AdminSeatMapDesignerComponent implements OnInit, UnsavedChangesAwar
   readonly sectionNames = computed(() => [
     ...new Set(this.seats().map((seat) => seat.section).filter(Boolean)),
   ].sort((left, right) => left.localeCompare(right, 'sr')));
+
+  readonly warningSummaries = computed(() => {
+    const grouped = new Map<string, AdminValidationIssue[]>();
+    this.warnings().forEach((warning) => {
+      const key = warning.code || warning.field || warning.message;
+      grouped.set(key, [...(grouped.get(key) || []), warning]);
+    });
+    return [...grouped.values()].map((items) => ({
+      code: items[0].code,
+      count: items.reduce((sum, item) => sum + Number(item.meta?.['count'] || 1), 0),
+      message: items.length === 1
+        ? items[0].message
+        : `${items.length} problema istog tipa. ${items[0].message}`,
+    }));
+  });
 
   readonly inspectorForm = this.fb.nonNullable.group({
     label: [''],
@@ -98,6 +115,7 @@ export class AdminSeatMapDesignerComponent implements OnInit, UnsavedChangesAwar
       next: ({ preview, categories }) => {
         this.seatMap.set(preview.item.seatMap);
         this.seats.set((preview.item.seats || []).map((seat) => this.normalizeSeat(seat)));
+        this.warnings.set(preview.item.warnings || []);
         this.priceCategories.set(categories.items || []);
         this.selectedIds.set([]);
         this.positionDirty.set(false);

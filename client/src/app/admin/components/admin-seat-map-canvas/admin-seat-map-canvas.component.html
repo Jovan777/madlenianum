@@ -1,5 +1,16 @@
 <section class="map-shell" [class.readonly]="readOnly">
   <header class="map-toolbar" aria-label="Alati mape sedišta">
+    <div class="level-tabs" role="tablist" aria-label="Nivoi sale">
+      <button
+        *ngFor="let group of mapGroups()"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeGroup() === group.key"
+        [class.active]="activeGroup() === group.key"
+        (click)="setGroup(group.key)"
+      >{{ group.label }}</button>
+    </div>
+
     <div class="zoom-tools">
       <button type="button" title="Umanji" aria-label="Umanji mapu" (click)="zoomBy(-0.1)">−</button>
       <output aria-live="polite">{{ zoomPercent() }}%</output>
@@ -7,6 +18,7 @@
       <button type="button" (click)="fitToScreen()">Prikaži sve</button>
       <button type="button" (click)="resetView()">Početni prikaz</button>
     </div>
+
     <div class="selection-tools" *ngIf="!readOnly">
       <strong>{{ selectionCount() }} izabrano</strong>
       <button type="button" [disabled]="!selectionCount()" (click)="selectRow()">Ceo red</button>
@@ -27,24 +39,34 @@
   >
     <div
       class="seat-canvas"
-      [style.width.px]="canvasWidth"
-      [style.height.px]="canvasHeight"
+      [class.gallery-canvas]="activeGroup() === 'galerija'"
+      [style.width.px]="mapWidth()"
+      [style.height.px]="mapHeight()"
       [style.transform]="transform()"
     >
-      <div class="stage" *ngIf="showStage" aria-hidden="true">SCENA</div>
+      <div class="stage" *ngIf="showCanonicalStage()" aria-hidden="true">Scena</div>
+
+      <ng-container *ngFor="let guide of rowGuides()">
+        <span class="row-label row-label-left" [style.left.px]="guide.left" [style.top.px]="guide.top">
+          {{ guide.label }}
+        </span>
+        <span class="row-label row-label-right" [style.left.px]="guide.right" [style.top.px]="guide.top">
+          {{ guide.label }}
+        </span>
+      </ng-container>
+
       <button
-        *ngFor="let seat of visibleSeats()"
+        *ngFor="let seat of visibleSeats(); trackBy: trackSeat"
         type="button"
         class="seat-button"
         [ngClass]="seatClass(seat)"
         [ngStyle]="seatStyle(seat)"
-        [attr.aria-pressed]="selectedIds.includes(seat.id)"
+        [attr.aria-pressed]="selectedIds.includes(seatId(seat))"
         [attr.aria-label]="seatDescription(seat)"
         [title]="seatDescription(seat)"
         [attr.aria-disabled]="readOnly"
         (click)="selectSeat($event, seat)"
       >
-        <span>{{ seat.number || '' }}</span>
         <i *ngIf="seat.isAccessible" aria-hidden="true">A</i>
         <b *ngIf="seat.hasRestrictedView" aria-hidden="true">!</b>
       </button>

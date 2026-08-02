@@ -44,6 +44,7 @@
       [canvasHeight]="data.event.seatMap?.canvas?.height || 1000"
       [selectedIds]="selectedIds()"
       [visibleSection]="sectionFilter()"
+      (visibleSectionChange)="sectionFilter.set($event)"
       [highlightOverrideType]="highlightType()"
       (selectedIdsChange)="selectedIds.set($event)"
     />

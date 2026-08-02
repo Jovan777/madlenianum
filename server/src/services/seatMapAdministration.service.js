@@ -224,9 +224,9 @@ const validateSeatDocuments = async (seatMap, seatDocuments) => {
       errors.push(issue(`${prefix}.coordinates`, "invalid_coordinates", `Sedište ${seat.label || index + 1} nema ispravne koordinate.`));
     }
     if (Number(seat.x) < 0 || Number(seat.y) < 0
-        || Number(seat.x) > Number(seatMap.canvas?.width || 0)
-        || Number(seat.y) > Number(seatMap.canvas?.height || 0)) {
-      errors.push(issue(`${prefix}.coordinates`, "outside_canvas", `Sedište ${seat.label || index + 1} je van radne površine.`));
+        || Number(seat.x) > 10000
+        || Number(seat.y) > 10000) {
+      errors.push(issue(`${prefix}.coordinates`, "outside_coordinate_space", `Sedište ${seat.label || index + 1} je van dozvoljenog koordinatnog prostora.`));
     }
     if (!finiteNumber(seat.width) || Number(seat.width) < 8 || Number(seat.width) > 200
         || !finiteNumber(seat.height) || Number(seat.height) < 8 || Number(seat.height) > 200) {
@@ -380,7 +380,27 @@ const getSeatMapWarnings = async (seatMap) => {
     "_id venue section row number label x y width height isActive priceCategory companionSeat"
   );
   const errors = await validateSeatDocuments(seatMap, seats);
-  warnings.push(...errors);
+  const groupedErrors = new Map();
+  errors.forEach((error) => {
+    const current = groupedErrors.get(error.code) || [];
+    current.push(error);
+    groupedErrors.set(error.code, current);
+  });
+  groupedErrors.forEach((items, code) => {
+    if (items.length === 1) {
+      warnings.push(items[0]);
+      return;
+    }
+    warnings.push(issue(
+      "seats",
+      code,
+      `${items.length} problema sa sedištima. Primeri: ${items.slice(0, 3).map((item) => item.message).join(" ")}`,
+      {
+        count: items.length,
+        sampleFields: items.slice(0, 3).map((item) => item.field),
+      }
+    ));
+  });
 
   const activeSeats = seats.filter((seat) => seat.isActive).length;
   const configuredCapacity = (seatMap.sections || []).reduce(

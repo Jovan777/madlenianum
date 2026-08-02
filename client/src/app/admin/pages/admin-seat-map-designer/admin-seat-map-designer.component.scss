@@ -220,6 +220,16 @@ textarea {
   margin-bottom: 0;
 }
 
+.warnings li + li {
+  margin-top: 0.45rem;
+}
+
+.warnings small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #5d554c;
+}
+
 .empty-inspector {
   color: #51483e;
 }

@@ -19,9 +19,14 @@
   </p>
   <p class="message" *ngIf="isLoading()">Učitavanje mape...</p>
 
-  <section class="warnings" *ngIf="seatMap()?.configurationWarnings?.length">
+  <section class="warnings" *ngIf="warningSummaries().length">
     <strong>Provera rasporeda</strong>
-    <ul><li *ngFor="let warning of seatMap()?.configurationWarnings">{{ warning.message }}</li></ul>
+    <ul>
+      <li *ngFor="let warning of warningSummaries()">
+        {{ warning.message }}
+        <small *ngIf="warning.count > 1">Ukupno: {{ warning.count }}</small>
+      </li>
+    </ul>
   </section>
 
   <nav class="section-filter" *ngIf="!isLoading()">
@@ -41,6 +46,7 @@
       [canvasHeight]="map.canvas.height"
       [selectedIds]="selectedIds()"
       [visibleSection]="sectionFilter()"
+      (visibleSectionChange)="sectionFilter.set($event)"
       (selectedIdsChange)="onSelectionChange($event)"
     />
 

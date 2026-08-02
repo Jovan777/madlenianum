@@ -228,7 +228,7 @@ const getOrCreateSeatMap = async (venue) => {
       description:
         "Plan sedišta za Veliku scenu na osnovu javno dostupnog rasporeda: Parter 442, Galerija 62.",
       canvas: {
-        width: 1000,
+        width: 1320,
         height: 850,
       },
       sections: [
